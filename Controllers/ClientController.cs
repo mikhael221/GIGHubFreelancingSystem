@@ -11,22 +11,12 @@ namespace Freelancing.Controllers
         {
             _logger = logger;
         }
-        public IActionResult ClientLogin()
-        {
-            return View();
-        }
-
-        public IActionResult ClientRegister()
-        {
-            return View();
-        }
-
         [Authorize]
         public IActionResult Dashboard()
         {
-            ViewBag.Name = HttpContext.User.Identity.Name;
             return View();
         }
+        [Authorize]
         public IActionResult Feed()
         {
             return View();

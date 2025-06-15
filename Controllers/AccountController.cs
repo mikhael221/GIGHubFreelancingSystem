@@ -31,11 +31,12 @@ namespace Freelancing.Controllers
             if (ModelState.IsValid)
             {
                 UserAccount account = new UserAccount();
-                account.Email = model.Email;
-                account.UserName = model.UserName;
                 account.FirstName = model.FirstName;
                 account.LastName = model.LastName;
+                account.Email = model.Email;
+                account.UserName = model.UserName;
                 account.Password = model.Password;
+                account.Role = model.Role;
 
                 try
                 {
@@ -78,7 +79,7 @@ namespace Freelancing.Controllers
                     var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
                     HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(claimsIdentity));
 
-                    return RedirectToAction("SecurePage");
+                    return RedirectToAction("Dashboard", "Client");
                 }
                 else
                 {

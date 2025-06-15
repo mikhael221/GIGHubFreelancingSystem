@@ -27,6 +27,17 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 });
 
+//Select Role
+document.addEventListener('DOMContentLoaded', function () {
+	const urlParams = new URLSearchParams(window.location.search);
+	const role = urlParams.get('role');
+	if (role) {
+		const dropdown = document.getElementById('role-address-icon');
+		dropdown.value = role;
+	}
+});
+
+
 //SignUpForm
 let currentPart = 1;
 const totalParts = 2;
@@ -36,6 +47,23 @@ const backBtn = document.getElementById('backBtn');
 const submitBtn = document.getElementById('submitBtn');
 const firstPart = document.getElementById('firstPart');
 const secondPart = document.getElementById('secondPart');
+
+function initializeForm() {
+	const secondPartErrors = secondPart.querySelectorAll('.text-danger');
+	let hasSecondPartErrors = false;
+
+	secondPartErrors.forEach(error => {
+		if (error.textContent.trim() !== '') {
+			hasSecondPartErrors = true;
+		}
+	});
+
+	if (hasSecondPartErrors) {
+		currentPart = 2;
+	}
+
+	updateForm();
+}
 
 nextBtn.addEventListener('click', function () {
 	if (currentPart < totalParts) {
@@ -55,10 +83,12 @@ backBtn.addEventListener('click', function () {
 
 function validateCurrentPart() {
 	if (currentPart === 1) {
+		const role = document.getElementById('role-address-icon').value;
 		const firstName = document.getElementById('firstname-address-icon').value;
 		const lastName = document.getElementById('lastname-address-icon').value;
+		const userName = document.getElementById('username-address-icon').value;
 
-		if (!firstName || !lastName) {
+		if (!role || role === 'Select a Role' || !firstName || !lastName || !userName) {
 			alert('Please fill in all required fields.');
 			return false;
 		}
@@ -82,3 +112,5 @@ function updateForm() {
 		submitBtn.classList.remove('hidden');
 	}
 }
+
+document.addEventListener('DOMContentLoaded', initializeForm);
