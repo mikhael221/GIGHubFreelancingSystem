@@ -1,8 +1,11 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Freelancing.Controllers
 {
+    [Authorize(Roles = "Client")]
     public class ClientController : Controller
     {
         private readonly ILogger<ClientController> _logger;
@@ -11,12 +14,10 @@ namespace Freelancing.Controllers
         {
             _logger = logger;
         }
-        [Authorize]
         public IActionResult Dashboard()
         {
             return View();
         }
-        [Authorize]
         public IActionResult Feed()
         {
             return View();

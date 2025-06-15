@@ -66,20 +66,37 @@ namespace Freelancing.Controllers
         {
             if (ModelState.IsValid)
             {
-                var user = _context.UserAccounts.Where(x => (x.Email == model.UserNameorEmail || x.UserName == model.UserNameorEmail) && x.Password == model.Password).FirstOrDefault();
-                if (user != null) 
+                var user = _context.UserAccounts
+                    .Where(x => (x.Email == model.UserNameorEmail || x.UserName == model.UserNameorEmail) && x.Password == model.Password)
+                    .FirstOrDefault();
+                if (user != null)
                 {
                     var claims = new List<Claim>
                     {
+                        new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
                         new Claim(ClaimTypes.Name, user.UserName),
                         new Claim(ClaimTypes.Email, user.Email),
                         new Claim("FullName", $"{user.FirstName} {user.LastName}"),
+                        new Claim(ClaimTypes.Role, user.Role ?? string.Empty)
                     };
 
                     var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
                     HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(claimsIdentity));
 
-                    return RedirectToAction("Dashboard", "Client");
+                    // Redirect based on user role
+                    if (user.Role?.ToLower() == "client")
+                    {
+                        return RedirectToAction("Dashboard", "Client");
+                    }
+                    else if (user.Role?.ToLower() == "freelancer")
+                    {
+                        return RedirectToAction("Dashboard", "Freelancer");
+                    }
+                    else
+                    {
+                        // Default fallback
+                        return RedirectToAction("Index", "Home");
+                    }
                 }
                 else
                 {
@@ -88,7 +105,6 @@ namespace Freelancing.Controllers
             }
             return View();
         }
-
         public IActionResult LogOut()
         {
             HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
