@@ -1,0 +1,7 @@
+@import "tailwindcss";
+@plugin "flowbite/plugin";
+@source "../node_modules/flowbite";
+@import "flowbite/src/themes/default";
+@theme {
+    --font-sans: InterVariable, sans-serif;
+}

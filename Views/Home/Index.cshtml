@@ -1,0 +1,51 @@
+﻿@{
+	Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<title>GIGHub</title>
+	<link rel="stylesheet" href="~/css/output.css" />
+	<link rel="stylesheet" href="https://rsms.me/inter/inter.css" />
+</head>
+<body>
+	<header class="absolute inset-x-0 top-0 z-50">
+		<nav class="flex items-center justify-between p-6 lg:px-8" aria-label="Global">
+			<div class="flex lg:flex-1">
+				<a class="-m-1.5 p-1.5" asp-area="" asp-controller="Home" asp-action="Index">
+					<span class="sr-only">Your Company</span>
+					<img class="h-18 w-auto" src="https://ik.imagekit.io/6txj3mofs/GIGHub%20(2).png?updatedAt=1749718355580" alt="">
+				</a>
+			</div>
+		</nav>
+	</header>
+	<div class="bg-white">
+		<div class="relative isolate px-6 pt-[10px] lg:px-8">
+			<div class="absolute inset-x-0 -top-40 -z-10 transform-gpu overflow-hidden blur-3xl sm:-top-80" aria-hidden="true">
+				<div class="relative left-[calc(50%-11rem)] aspect-1155/678 w-144.5 -translate-x-1/2 rotate-30 bg-linear-to-tr from-[#ff80b5] to-[#9089fc] opacity-30 sm:left-[calc(50%-30rem)] sm:w-288.75" style="clip-path: polygon(74.1% 44.1%, 100% 61.6%, 97.5% 26.9%, 85.5% 0.1%, 80.7% 2%, 72.5% 32.5%, 60.2% 62.4%, 52.4% 68.1%, 47.5% 58.3%, 45.2% 34.5%, 27.5% 76.7%, 0.1% 64.9%, 17.9% 100%, 27.6% 76.8%, 76.1% 97.7%, 74.1% 44.1%)"></div>
+			</div>
+			<div class="grid grid-cols-1 lg:grid-cols-2 items-center py-16 sm:py-24 lg:py-32 px-4">
+				<div class="max-w-xl">
+					<div class="text-left">
+						<h1 class="text-5xl font-medium tracking-tight text-balance text-gray-800 sm:text-7xl">Unlock growth with every project</h1>
+						<p class="mt-5 text-xl font-light tracking-tight text-balance text-gray-700 sm:text-lg">Start your freelancing career with us. Post a project, bid, and interact with fellow freelancers. Get started now by choosing a role.</p>
+						<div class="mt-5 flex items-center justify-left gap-x-1">
+							<a type="button" class="text-white bg-gradient-to-r from-cyan-500 to-blue-500 hover:bg-gradient-to-bl focus:ring-4 focus:outline-none focus:ring-cyan-300 dark:focus:ring-cyan-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2" asp-controller="Freelancer" asp-action="Dashboard">Freelancer</a>
+							<a type="button" class="text-white bg-gradient-to-br from-green-400 to-blue-600 hover:bg-gradient-to-bl focus:ring-4 focus:outline-none focus:ring-green-200 dark:focus:ring-green-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2" asp-controller="Client" asp-action="ClientLogin">Client</a>
+						</div>
+					</div>
+				</div>
+				<div class="flex items-center justify-center w-full">
+					<img class="max-w-3/4 max-h-3/4" src="https://ik.imagekit.io/6txj3mofs/GIGHub%20(6).png?updatedAt=1749724247172" alt="">
+				</div>
+			</div>
+			<div class="absolute inset-x-0 top-[calc(100%-13rem)] -z-10 transform-gpu overflow-hidden blur-3xl sm:top-[calc(100%-30rem)]" aria-hidden="true">
+				<div class="relative left-[calc(50%+3rem)] aspect-1155/678 w-144.5 -translate-x-1/2 bg-linear-to-tr from-[#ff80b5] to-[#9089fc] opacity-30 sm:left-[calc(50%+36rem)] sm:w-288.75" style="clip-path: polygon(74.1% 44.1%, 100% 61.6%, 97.5% 26.9%, 85.5% 0.1%, 80.7% 2%, 72.5% 32.5%, 60.2% 62.4%, 52.4% 68.1%, 47.5% 58.3%, 45.2% 34.5%, 27.5% 76.7%, 0.1% 64.9%, 17.9% 100%, 27.6% 76.8%, 76.1% 97.7%, 74.1% 44.1%)"></div>
+			</div>
+		</div>
+	</div>
+</body>
+</html>
