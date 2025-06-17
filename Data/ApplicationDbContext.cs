@@ -12,12 +12,29 @@ namespace Freelancing.Data
 
         public DbSet<Project> Projects { get; set; }
         public DbSet<UserAccount> UserAccounts { get; set; }
+        public DbSet<Bidding> Biddings { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<Project>()
                 .HasOne(p => p.User)
                 .WithMany(u => u.Projects)
                 .HasForeignKey(p => p.UserId);
+
+            modelBuilder.Entity<Bidding>()
+                .HasOne(b => b.User)
+                .WithMany(u => u.Biddings)
+                .HasForeignKey(b => b.UserId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<Bidding>()
+                .HasOne(b => b.Project)
+                .WithMany(p => p.Biddings)
+                .HasForeignKey(b => b.ProjectId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Bidding>()
+                .HasIndex(b => new { b.UserId, b.ProjectId })
+                .IsUnique();
 
             base.OnModelCreating(modelBuilder);
         }

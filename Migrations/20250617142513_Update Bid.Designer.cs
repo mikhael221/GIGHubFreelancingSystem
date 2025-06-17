@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Freelancing.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250615070120_Update User Accounts")]
-    partial class UpdateUserAccounts
+    [Migration("20250617142513_Update Bid")]
+    partial class UpdateBid
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -24,6 +24,38 @@ namespace Freelancing.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
+
+            modelBuilder.Entity("Freelancing.Models.Entities.Bidding", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Budget")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Delivery")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("ProjectId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Proposal")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProjectId");
+
+                    b.HasIndex("UserId", "ProjectId")
+                        .IsUnique();
+
+                    b.ToTable("Biddings");
+                });
 
             modelBuilder.Entity("Freelancing.Models.Entities.Project", b =>
                 {
@@ -47,7 +79,12 @@ namespace Freelancing.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("Projects");
                 });
@@ -91,6 +128,48 @@ namespace Freelancing.Migrations
                         .IsUnique();
 
                     b.ToTable("UserAccounts");
+                });
+
+            modelBuilder.Entity("Freelancing.Models.Entities.Bidding", b =>
+                {
+                    b.HasOne("Freelancing.Models.Entities.Project", "Project")
+                        .WithMany("Biddings")
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Freelancing.Models.Entities.UserAccount", "User")
+                        .WithMany("Biddings")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("Project");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Freelancing.Models.Entities.Project", b =>
+                {
+                    b.HasOne("Freelancing.Models.Entities.UserAccount", "User")
+                        .WithMany("Projects")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Freelancing.Models.Entities.Project", b =>
+                {
+                    b.Navigation("Biddings");
+                });
+
+            modelBuilder.Entity("Freelancing.Models.Entities.UserAccount", b =>
+                {
+                    b.Navigation("Biddings");
+
+                    b.Navigation("Projects");
                 });
 #pragma warning restore 612, 618
         }

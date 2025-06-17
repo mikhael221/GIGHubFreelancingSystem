@@ -3,6 +3,7 @@
     public class Project
     {
         public Guid Id { get; set; }
+        public ICollection<Bidding> Biddings { get; set; }
         public Guid UserId { get; set; }
         public UserAccount User { get; set; }
         public string ProjectName { get; set; }

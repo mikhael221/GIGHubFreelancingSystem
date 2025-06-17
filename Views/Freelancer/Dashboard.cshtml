@@ -1,9 +1,9 @@
 ﻿@{
-	Layout = "_Layout";
+	Layout = "_LayoutFreelancer";
 	ViewData["Title"] = "Dashboard";
 }
 
-@model Freelancing.Models.AddProject
+@model Freelancing.Models.FreelancerDashboard
 
 <div class="p-4 sm:ml-64">
 	<div class="p-4 mt-21">
@@ -24,28 +24,30 @@
 
 			<div class="w-full max-w p-4 bg-white border border-gray-200 rounded-lg shadow-sm sm:p-8">
 				<div class="flex items-center justify-between mb-4">
-					<h5 class="text-xl font-bold leading-none text-gray-900">Biddings Sent</h5>
+					<h5 class="text-xl font-bold leading-none text-gray-900">Sent Biddings</h5>
 				</div>
 				<div class="flow-root">
 					<ul role="list" class="divide-y divide-gray-200">
-						<li class="py-3 sm:py-4">
-							<div class="flex items-center">
-								<div class="shrink-0">
-									<img class="w-8 h-8 rounded-full" src="/docs/images/people/profile-picture-1.jpg" alt="Neil image">
+						@foreach (var bid in Model.Biddings)
+						{
+							<li class="py-3 sm:py-4">
+								<div class="flex items-center">
+									<div class="flex-1 min-w-0">
+										<p class="text-md font-medium text-gray-900 truncate">
+											@bid.Project.ProjectName
+										</p>
+										<div class="flex items-center">
+											<h5 class="text-sm font-light tracking-tight text-gray-900 mr-2">Proposed Budget:</h5>
+											<span class="ms-2 text-sm font-light tracking-tight text-gray-900">₱@bid.Budget</span>
+										</div>
+										<div class="flex items-center mb-2">
+											<h5 class="text-sm font-light tracking-tight text-gray-900 mr-2">Proposed Delivery Time:</h5>
+											<span class="ms-2 text-sm font-light tracking-tight text-gray-900">₱@bid.Delivery</span>
+										</div>
+									</div>
 								</div>
-								<div class="flex-1 min-w-0 ms-4">
-									<p class="text-sm font-medium text-gray-900 truncate">
-										Neil Sims
-									</p>
-									<p class="text-sm text-gray-500 truncate">
-										email@windster.com
-									</p>
-								</div>
-								<div class="inline-flex items-center text-base font-semibold text-gray-900">
-									$320
-								</div>
-							</div>
-						</li>
+							</li>
+						}
 					</ul>
 				</div>
 			</div>
@@ -56,24 +58,21 @@
 				</div>
 				<div class="flow-root">
 					<ul role="list" class="divide-y divide-gray-200">
-						<li class="py-3 sm:py-4">
-							<div class="flex items-center">
-								<div class="shrink-0">
-									<img class="w-8 h-8 rounded-full" src="/docs/images/people/profile-picture-1.jpg" alt="Neil image">
+						@foreach (var bid in Model.Biddings)
+						{
+							<li class="py-3 sm:py-4">
+								<div class="flex items-center">
+									<div class="flex-1 min-w-0">
+										<p class="text-sm font-medium text-gray-900 truncate">
+											@bid.Project.ProjectName
+										</p>
+									</div>
+									<div class="inline-flex items-center text-base font-semibold text-gray-900">
+										<a class="btn btn-primary" asp-controller="Freelancer" asp-action="EditBid" asp-route-id="@bid.Id"> Edit </a>
+									</div>
 								</div>
-								<div class="flex-1 min-w-0 ms-4">
-									<p class="text-sm font-medium text-gray-900 truncate">
-										Neil Sims
-									</p>
-									<p class="text-sm text-gray-500 truncate">
-										email@windster.com
-									</p>
-								</div>
-								<div class="inline-flex items-center text-base font-semibold text-gray-900">
-									$320
-								</div>
-							</div>
-						</li>
+							</li>
+						}
 					</ul>
 				</div>
 			</div>

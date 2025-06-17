@@ -22,6 +22,39 @@ namespace Freelancing.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("Freelancing.Models.Entities.Bidding", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Budget")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Delivery")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("ProjectId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Proposal")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProjectId");
+
+                    b.HasIndex("UserId", "ProjectId")
+                        .IsUnique();
+
+                    b.ToTable("Biddings");
+                });
+
             modelBuilder.Entity("Freelancing.Models.Entities.Project", b =>
                 {
                     b.Property<Guid>("Id")
@@ -95,6 +128,25 @@ namespace Freelancing.Migrations
                     b.ToTable("UserAccounts");
                 });
 
+            modelBuilder.Entity("Freelancing.Models.Entities.Bidding", b =>
+                {
+                    b.HasOne("Freelancing.Models.Entities.Project", "Project")
+                        .WithMany("Biddings")
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Freelancing.Models.Entities.UserAccount", "User")
+                        .WithMany("Biddings")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("Project");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("Freelancing.Models.Entities.Project", b =>
                 {
                     b.HasOne("Freelancing.Models.Entities.UserAccount", "User")
@@ -106,8 +158,15 @@ namespace Freelancing.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("Freelancing.Models.Entities.Project", b =>
+                {
+                    b.Navigation("Biddings");
+                });
+
             modelBuilder.Entity("Freelancing.Models.Entities.UserAccount", b =>
                 {
+                    b.Navigation("Biddings");
+
                     b.Navigation("Projects");
                 });
 #pragma warning restore 612, 618
