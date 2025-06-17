@@ -8,6 +8,7 @@ namespace Freelancing.Models.Entities
     public class UserAccount
     {
         public Guid Id { get; set; }
+        public ICollection<Project> Projects { get; set; }
         [Required(ErrorMessage = "First name is required.")]
         public string FirstName { get; set; }
         [Required(ErrorMessage = "Last name is required.")]

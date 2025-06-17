@@ -2,7 +2,9 @@
 {
     public class Project
     {
-        public Guid ProjectId { get; set; }
+        public Guid Id { get; set; }
+        public Guid UserId { get; set; }
+        public UserAccount User { get; set; }
         public string ProjectName { get; set; }
         public string ProjectDescription { get; set; }
         public string Budget { get; set; }

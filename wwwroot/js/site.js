@@ -13,20 +13,6 @@ document.addEventListener('DOMContentLoaded', function () {
 	}
 });
 
-//ProjectPosting
-document.addEventListener('DOMContentLoaded', function () {
-    var form = document.getElementById('projectForm');
-    var countElem = document.getElementById('totalProject');
-
-    if (form && countElem) {
-        form.addEventListener('submit', function (e) {
-            // Increment the count
-            var current = parseInt(countElem.textContent, 10) || 0;
-            countElem.textContent = current + 1;
-        });
-    }
-});
-
 //Select Role
 document.addEventListener('DOMContentLoaded', function () {
 	const urlParams = new URLSearchParams(window.location.search);
