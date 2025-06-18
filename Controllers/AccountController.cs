@@ -83,7 +83,6 @@ namespace Freelancing.Controllers
                     var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
                     HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(claimsIdentity));
 
-                    // Redirect based on user role
                     if (user.Role?.ToLower() == "client")
                     {
                         return RedirectToAction("Dashboard", "Client");
@@ -94,7 +93,6 @@ namespace Freelancing.Controllers
                     }
                     else
                     {
-                        // Default fallback
                         return RedirectToAction("Index", "Home");
                     }
                 }

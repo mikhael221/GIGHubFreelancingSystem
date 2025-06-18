@@ -1,0 +1,47 @@
+﻿@{
+	Layout = "_LayoutClient";
+	ViewData["Title"] = "Manage Biddings";
+}
+
+@model Freelancing.Models.Entities.Project
+
+<div class="p-4 sm:ml-64">
+	<div class="p-4 mt-21">
+		<div class="mt-4">
+			<div class="block w-full p-6">
+				<h2 class="mb-4 text-3xl font-bold text-gray-900">@Model.ProjectName</h2>
+				<div class="flex items-center mb-2">
+					<h5 class="text-xl font-bold tracking-tight text-gray-900 mr-2">Category:</h5>
+					<span class="ms-2 text-xl font-light tracking-tight text-gray-900">@Model.Category</span>
+				</div>
+				<div class="flex items-center mb-2">
+					<h5 class="text-xl font-bold tracking-tight text-gray-900 mr-2">Budget:</h5>
+					<span class="ms-2 text-xl font-light tracking-tight text-gray-900">₱@Model.Budget</span>
+				</div>
+				<h5 class="mt-6 text-xl font-bold tracking-tight text-gray-900 mr-2">Project Description:</h5>
+				<h5 class="mb-2 text-xl font-normal tracking-tight text-gray-900">@Model.ProjectDescription</h5>
+			</div>
+		</div>
+		<div class="mt-4">
+			<div class="block w-full p-6">
+				<h2 class="mb-4 text-3xl font-bold text-gray-900">Biddings</h2>
+				@foreach (var bid in Model.Biddings)
+				{
+					<div class="mb-5 p-6 border border-gray-200 rounded-lg shadow-sm">
+						<h5 class="mb-2 text-xl font-bold tracking-tight text-gray-900">@bid.User?.FirstName @bid.User?.LastName</h5>
+						<div class="flex items-center mb-2">
+							<h5 class="text-md font-bold tracking-tight text-gray-900 mr-2">Budget Proposal:</h5>
+							<span class="ms-2 text-md font-light tracking-tight text-gray-900">₱@bid.Budget</span>
+						</div>
+						<div class="flex items-center mb-2">
+							<h5 class="text-md font-bold tracking-tight text-gray-900 mr-2">Delivery Time Proposal:</h5>
+							<span class="ms-2 text-md font-light tracking-tight text-gray-900">@bid.Delivery</span>
+						</div>
+						<p class="text-md font-light tracking-tight text-gray-900 mr-2">@bid.Proposal</p>
+						<button type="button" class="mt-3 focus:outline-none text-white bg-green-700 hover:bg-green-800 focus:ring-4 focus:ring-green-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2">Accept</button>
+					</div>
+				}
+			</div>
+		</div>
+	</div>
+</div>

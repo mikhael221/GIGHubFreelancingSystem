@@ -53,7 +53,16 @@ function initializeForm() {
 
 nextBtn.addEventListener('click', function () {
 	if (currentPart < totalParts) {
-		if (validateCurrentPart()) {
+		const inputs = firstPart.querySelectorAll('input, select, textarea');
+		let valid = true;
+		for (const input of inputs) {
+			if (!input.checkValidity()) {
+				input.reportValidity();
+				valid = false;
+				break;
+			}
+		}
+		if (valid) {
 			currentPart++;
 			updateForm();
 		}
@@ -66,21 +75,6 @@ backBtn.addEventListener('click', function () {
 		updateForm();
 	}
 });
-
-function validateCurrentPart() {
-	if (currentPart === 1) {
-		const role = document.getElementById('role-address-icon').value;
-		const firstName = document.getElementById('firstname-address-icon').value;
-		const lastName = document.getElementById('lastname-address-icon').value;
-		const userName = document.getElementById('username-address-icon').value;
-
-		if (!role || role === 'Select a Role' || !firstName || !lastName || !userName) {
-			alert('Please fill in all required fields.');
-			return false;
-		}
-	}
-	return true;
-}
 
 function updateForm() {
 	firstPart.classList.add('hidden');

@@ -38,16 +38,11 @@
 						</div>
 						<div class="w-full">
 							<form asp-action="Registration" id="signupForm">
-								<div asp-validation-summary="ModelOnly" class="text-danger"></div>
-								@if (ViewBag.Message != null)
-								{
-									<div class="form-group" style="color: green;">@ViewBag.Message</div>
-								}
 								<div id="firstPart" class="signup-content">
 									<label asp-for="Role" id="role-address" class="control-label block mb-2 text-sm font-medium text-gray-900">Role</label>
 									<div class="relative">
-										<select asp-for="Role" id="role-address-icon" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5">
-											<option selected="">Select a Role</option>
+										<select asp-for="Role" id="role-address-icon" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5" required>
+											<option value="">Select a Role</option>
 											<option value="Freelancer">Freelancer</option>
 											<option value="Client">Client</option>
 										</select>
@@ -59,8 +54,7 @@
 												<path fill-rule="evenodd" d="M12 4a4 4 0 1 0 0 8 4 4 0 0 0 0-8Zm-2 9a4 4 0 0 0-4 4v1a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-1a4 4 0 0 0-4-4h-4Z" clip-rule="evenodd" />
 											</svg>
 										</div>
-										<input asp-for="FirstName" id="firstname-address-icon" class="form-control bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full ps-10 p-2.5" placeholder="">
-										<span asp-validation-for="FirstName" class="text-danger"></span>
+										<input asp-for="FirstName" id="firstname-address-icon" class="form-control bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full ps-10 p-2.5" placeholder="" required>
 									</div>
 									<label asp-for="LastName" id="lastname-address" class="control-label block mt-4 mb-2 text-sm font-medium text-gray-900">Last Name</label>
 									<div class="relative">
@@ -69,18 +63,7 @@
 												<path fill-rule="evenodd" d="M12 4a4 4 0 1 0 0 8 4 4 0 0 0 0-8Zm-2 9a4 4 0 0 0-4 4v1a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-1a4 4 0 0 0-4-4h-4Z" clip-rule="evenodd" />
 											</svg>
 										</div>
-										<input asp-for="LastName" id="lastname-address-icon" class="form-control bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full ps-10 p-2.5" placeholder="">
-										<span asp-validation-for="LastName" class="text-danger"></span>
-									</div>
-									<label asp-for="UserName" id="username-address" class="control-label block mt-4 mb-2 text-sm font-medium text-gray-900">Username</label>
-									<div class="relative">
-										<div class="absolute inset-y-0 start-0 flex items-center ps-3.5 pointer-events-none">
-											<svg class="w-6 h-6 text-gray-800" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
-												<path fill-rule="evenodd" d="M12 4a4 4 0 1 0 0 8 4 4 0 0 0 0-8Zm-2 9a4 4 0 0 0-4 4v1a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-1a4 4 0 0 0-4-4h-4Z" clip-rule="evenodd" />
-											</svg>
-										</div>
-										<input asp-for="UserName" id="username-address-icon" class="form-control bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full ps-10 p-2.5" placeholder="">
-										<span asp-validation-for="UserName" class="text-danger"></span>
+										<input asp-for="LastName" id="lastname-address-icon" class="form-control bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full ps-10 p-2.5" placeholder="" required>
 									</div>
 									<div class="mt-4">
 										<p class="text-sm font-light text-gray-900 text-center">Already have an account?</p>
@@ -88,6 +71,15 @@
 									</div>
 								</div>
 								<div id="secondPart" class="signup-content hidden">
+									<label asp-for="UserName" id="username-address" class="control-label block mt-4 mb-2 text-sm font-medium text-gray-900">Username</label>
+									<div class="relative">
+										<div class="absolute inset-y-0 start-0 flex items-center ps-3.5 pointer-events-none">
+											<svg class="w-6 h-6 text-gray-800" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+												<path fill-rule="evenodd" d="M12 4a4 4 0 1 0 0 8 4 4 0 0 0 0-8Zm-2 9a4 4 0 0 0-4 4v1a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-1a4 4 0 0 0-4-4h-4Z" clip-rule="evenodd" />
+											</svg>
+										</div>
+										<input asp-for="UserName" id="username-address-icon" class="form-control bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full ps-10 p-2.5" placeholder="" required>
+									</div>
 									<label asp-for="Email" id="email-address" class="control-label block mt-4 mb-2 text-sm font-medium text-gray-900">Email</label>
 									<div class="relative">
 										<div class="absolute inset-y-0 start-0 flex items-center ps-3.5 pointer-events-none">
@@ -96,8 +88,7 @@
 												<path d="M11.241 9.817c-.36.275-.801.425-1.255.427-.428 0-.845-.138-1.187-.395L0 2.6V14a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V2.5l-8.759 7.317Z" />
 											</svg>
 										</div>
-										<input asp-for="Email" id="email-address-icon" class="form-control bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full ps-10 p-2.5" placeholder="name@gmail.com">
-										<span asp-validation-for="Email" class="text-danger"></span>
+										<input asp-for="Email" id="email-address-icon" class="form-control bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full ps-10 p-2.5" placeholder="" required>
 									</div>
 									<label asp-for="Password" id="password-address" class="control-label block mt-4 mb-2 text-sm font-medium text-gray-900">Password</label>
 									<div class="relative">
@@ -106,8 +97,7 @@
 												<path fill-rule="evenodd" d="M8 10V7a4 4 0 1 1 8 0v3h1a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h1Zm2-3a2 2 0 1 1 4 0v3h-4V7Zm2 6a1 1 0 0 1 1 1v3a1 1 0 1 1-2 0v-3a1 1 0 0 1 1-1Z" clip-rule="evenodd" />
 											</svg>
 										</div>
-										<input asp-for="Password" id="password-icon" class="form-control bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full ps-10 p-2.5" placeholder="">
-										<span asp-validation-for="Password" class="text-danger"></span>
+										<input asp-for="Password" id="password-icon" class="form-control bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full ps-10 p-2.5" placeholder="" required>
 									</div>
 									<label asp-for="ConfirmPassword" id="confirm-password" class="control-label block mt-4 mb-2 text-sm font-medium text-gray-900">Confirm Password</label>
 									<div class="relative">
@@ -116,8 +106,7 @@
 												<path fill-rule="evenodd" d="M8 10V7a4 4 0 1 1 8 0v3h1a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h1Zm2-3a2 2 0 1 1 4 0v3h-4V7Zm2 6a1 1 0 0 1 1 1v3a1 1 0 1 1-2 0v-3a1 1 0 0 1 1-1Z" clip-rule="evenodd" />
 											</svg>
 										</div>
-										<input asp-for="ConfirmPassword" id="confirm-password-icon" class="form-control bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full ps-10 p-2.5" placeholder="">
-										<span asp-validation-for="ConfirmPassword" class="text-danger"></span>
+										<input asp-for="ConfirmPassword" id="confirm-password-icon" class="form-control bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full ps-10 p-2.5" placeholder="" required>
 									</div>
 								</div>
 								<div class="flex justify-between">

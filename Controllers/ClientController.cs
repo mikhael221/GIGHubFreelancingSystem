@@ -46,6 +46,18 @@ namespace Freelancing.Controllers
             return View(project);
         }
         [HttpGet]
+        public async Task<IActionResult> Project(Guid Id)
+        {
+            var projects = await dbContext.Projects
+                .Include(p => p.Biddings)
+                .ThenInclude(b => b.User)
+                .FirstOrDefaultAsync(p => p.Id == Id);
+
+            if (projects == null)
+                return NotFound();
+            return View(projects);
+        }
+        [HttpGet]
         public IActionResult Post()
         {
             return View();
@@ -112,6 +124,18 @@ namespace Freelancing.Controllers
             }
 
             return RedirectToAction("Dashboard", "Client");
+        }
+        [HttpGet]
+        public async Task<IActionResult> ManageBid(Guid Id)
+        {
+            var projects = await dbContext.Projects
+                .Include(p => p.Biddings)
+                .ThenInclude(b => b.User)
+                .FirstOrDefaultAsync(p => p.Id == Id);
+
+            if (projects == null)
+                return NotFound();
+            return View(projects);
         }
     }
 }
