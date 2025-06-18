@@ -137,5 +137,21 @@ namespace Freelancing.Controllers
                 return NotFound();
             return View(projects);
         }
+        [HttpPost]
+        public async Task <IActionResult> AcceptBid(Guid projectId, Guid bidId)
+        {
+            var project = await dbContext.Projects
+                .Include(p => p.Biddings)
+                .FirstOrDefaultAsync(p => p.Id == projectId);
+            if (project == null) return NotFound();
+
+            project.AcceptedBidId = bidId;
+            foreach (var bid in project.Biddings)
+                bid.IsAccepted = (bid.Id == bidId);
+
+            await dbContext.SaveChangesAsync();
+            return RedirectToAction("ManageBid", new { id = projectId });
+        }
+
     }
 }

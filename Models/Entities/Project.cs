@@ -10,5 +10,7 @@
         public string ProjectDescription { get; set; }
         public string Budget { get; set; }
         public string Category { get; set; }
+        public Guid? AcceptedBidId { get; set; }
+        public Bidding? AcceptedBid { get; set; }
     }
 }
