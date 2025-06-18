@@ -143,11 +143,19 @@ namespace Freelancing.Controllers
             var project = await dbContext.Projects
                 .Include(p => p.Biddings)
                 .FirstOrDefaultAsync(p => p.Id == projectId);
-            if (project == null) return NotFound();
+            if (project == null) 
+                return NotFound();
+
+            var bidToAccept = project.Biddings.FirstOrDefault(b => b.Id == bidId);
+            if (bidToAccept == null)
+                return BadRequest("Invalid bid ID");
+
+            foreach (var bid in project.Biddings)
+            {
+                bid.IsAccepted = (bid.Id == bidId);
+            }
 
             project.AcceptedBidId = bidId;
-            foreach (var bid in project.Biddings)
-                bid.IsAccepted = (bid.Id == bidId);
 
             await dbContext.SaveChangesAsync();
             return RedirectToAction("ManageBid", new { id = projectId });
