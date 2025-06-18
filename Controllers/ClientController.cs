@@ -19,28 +19,29 @@ namespace Freelancing.Controllers
             this.dbContext = context;
         }
 
-        public IActionResult Dashboard()
+        public async Task<IActionResult> Dashboard()
         {
             var userIdString = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-            if (Guid.TryParse(userIdString, out Guid userId))
+            if (!Guid.TryParse(userIdString, out Guid userId))
+                return Unauthorized();
+
+            var projects = await dbContext.Projects
+                .Include(p => p.AcceptedBid)
+                .Where(p => p.UserId == userId)
+                .ToListAsync();
+
+            var viewModel = new ClientDashboard
             {
-                int totalProjects = dbContext.Projects.Count(p => p.UserId == userId);
-                ViewBag.TotalProjects = totalProjects;
+                Projects = projects,
+                TotalProjects = projects.Count,
+                OpenProjects = projects.Count(p => !p.AcceptedBidId.HasValue),
+                ClosedProjects = projects.Count(p => p.AcceptedBidId.HasValue)
+            };
 
-                var projects = dbContext.Projects
-                    .Where(p => p.UserId == userId)
-                    .ToList();
-
-                var model = new AddProject
-                {
-                    Projects = projects
-                };
-                return View(model);
-            }
-            return View(new AddProject());
+            return View(viewModel);
         }
         [HttpGet]
-        public async Task <IActionResult> Feed()
+        public async Task<IActionResult> Feed()
         {
             var project = await dbContext.Projects.ToListAsync();
             return View(project);
@@ -116,6 +117,9 @@ namespace Freelancing.Controllers
                 project.Category = viewModel.Category;
 
                 await dbContext.SaveChangesAsync();
+
+                ModelState.Clear();
+                ViewBag.Message = "Project edited successfully!";
             }
             else if (action == "delete")
             {
@@ -123,7 +127,7 @@ namespace Freelancing.Controllers
                 await dbContext.SaveChangesAsync();
             }
 
-            return RedirectToAction("Dashboard", "Client");
+            return View(new Project());
         }
         [HttpGet]
         public async Task<IActionResult> ManageBid(Guid Id)
@@ -138,12 +142,12 @@ namespace Freelancing.Controllers
             return View(projects);
         }
         [HttpPost]
-        public async Task <IActionResult> AcceptBid(Guid projectId, Guid bidId)
+        public async Task<IActionResult> AcceptBid(Guid projectId, Guid bidId)
         {
             var project = await dbContext.Projects
                 .Include(p => p.Biddings)
                 .FirstOrDefaultAsync(p => p.Id == projectId);
-            if (project == null) 
+            if (project == null)
                 return NotFound();
 
             var bidToAccept = project.Biddings.FirstOrDefault(b => b.Id == bidId);

@@ -48,18 +48,6 @@ namespace Freelancing.Data
                 .HasForeignKey(p => p.AcceptedBidId)
                 .OnDelete(DeleteBehavior.NoAction);
 
-            modelBuilder.Entity<Project>()
-                .HasOne(p => p.User)
-                .WithMany()
-                .HasForeignKey(p => p.UserId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            modelBuilder.Entity<Bidding>()
-                .HasOne(b => b.User)
-                .WithMany()
-                .HasForeignKey(b => b.UserId)
-                .OnDelete(DeleteBehavior.NoAction);
-
             base.OnModelCreating(modelBuilder);
         }
     }

@@ -3,7 +3,7 @@
 	ViewData["Title"] = "Dashboard";
 }
 
-@model Freelancing.Models.AddProject
+@model Freelancing.Models.ClientDashboard
 
 <div class="p-4 sm:ml-64">
 	<div class="p-4 mt-21">
@@ -16,7 +16,7 @@
 		<div class="w-full p-4 mb-4 text-left bg-white border border-gray-200 rounded-lg shadow-sm sm:p-8 dark:bg-gray-800 dark:border-gray-700">
 			<h5 class="mb-2 text-3xl font-bold text-gray-900 dark:text-white">Total Posted Projects</h5>
 			<div class="flex items-center justify-between">
-				<h5 id="totalPostedProject" class="mb-2 text-3xl font-bold text-gray-900 dark:text-white">@ViewBag.TotalProjects</h5>
+				<h5 id="totalPostedProject" class="mb-2 text-3xl font-bold text-gray-900 dark:text-white">@Model.TotalProjects</h5>
 				<a asp-controller="Client" asp-action="Post" type="button" class="text-gray-900 bg-white border border-gray-300 focus:outline-none hover:bg-gray-100 focus:ring-4 focus:ring-gray-100 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:bg-gray-700 dark:hover:border-gray-600 dark:focus:ring-gray-700">
 					Post Project
 				</a>
@@ -35,14 +35,35 @@
 						{
 							<li class="py-3 sm:py-4">
 								<div class="flex items-center">
-									<div class="flex-1 min-w-0">
-										<p class="text-sm font-medium text-gray-900 truncate">
-											@project.ProjectName
-										</p>
-									</div>
-									<div class="inline-flex items-center text-base font-semibold text-gray-900">
-										<a class="text-white bg-gray-800 hover:bg-gray-900 focus:outline-none focus:ring-4 focus:ring-gray-300 font-medium rounded-lg text-sm px-3 py-2 me-2 mb-2" asp-controller="Client" asp-action="ManageBid" asp-route-id="@project.Id"> Manage </a>
-									</div>
+									@if (project.AcceptedBidId.HasValue)
+									{
+										<div class="flex-1 min-w-0">
+											<div class="flex items-center">
+												<p class="me-1 text-sm font-medium text-gray-900 truncate">
+													@project.ProjectName
+												</p>
+												<span>
+													<svg class="w-6 h-6 text-gray-800" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+														<path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 11.917 9.724 16.5 19 7.5" />
+													</svg>
+												</span>
+											</div>
+										</div>
+										<div class="inline-flex items-center text-base font-semibold text-gray-900">
+											<a class="text-gray-900 bg-gray-200 border border-gray-300 focus:outline-none hover:bg-gray-100 focus:ring-4 focus:ring-gray-100 font-medium rounded-lg text-sm px-3 py-2 me-2 mb-2" asp-controller="Client" asp-action="ManageBid" asp-route-id="@project.Id"> Manage </a>
+										</div>
+									}
+									else
+									{
+										<div class="flex-1 min-w-0">
+											<p class="me-1 text-sm font-medium text-gray-900 truncate">
+												@project.ProjectName
+											</p>
+										</div>
+										<div class="inline-flex items-center text-base font-semibold text-gray-900">
+											<a class="text-white bg-gray-800 hover:bg-gray-900 focus:outline-none focus:ring-4 focus:ring-gray-300 font-medium rounded-lg text-sm px-3 py-2 me-2 mb-2" asp-controller="Client" asp-action="ManageBid" asp-route-id="@project.Id"> Manage </a>
+										</div>
+									}
 								</div>
 							</li>
 						}
@@ -60,14 +81,35 @@
 						{
 							<li class="py-3 sm:py-4">
 								<div class="flex items-center">
-									<div class="flex-1 min-w-0">
-										<p class="text-sm font-medium text-gray-900 truncate">
-											@project.ProjectName
-										</p>
-									</div>
-									<div class="inline-flex items-center text-base font-semibold text-gray-900">
-										<a class="text-white bg-gray-800 hover:bg-gray-900 focus:outline-none focus:ring-4 focus:ring-gray-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2" asp-controller="Client" asp-action="EditPost" asp-route-id="@project.Id"> Edit </a>
-									</div>
+									@if (project.AcceptedBidId.HasValue)
+									{
+										<div class="flex-1 min-w-0">
+											<div class="flex items-center">
+												<p class="me-1 text-sm font-medium text-gray-900 truncate">
+													@project.ProjectName
+												</p>
+												<span>
+													<svg class="w-6 h-6 text-gray-800" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+														<path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 11.917 9.724 16.5 19 7.5" />
+													</svg>
+												</span>
+											</div>
+										</div>
+										<div class="inline-flex items-center text-base font-semibold text-gray-900">
+											<a class="text-gray-900 bg-gray-200 border border-gray-300 focus:outline-none hover:bg-gray-100 focus:ring-4 focus:ring-gray-100 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2" asp-controller="Client" asp-action="EditPost" asp-route-id="@project.Id"> View </a>
+										</div>
+									}
+									else
+									{
+										<div class="flex-1 min-w-0">
+											<p class="text-sm font-medium text-gray-900 truncate">
+												@project.ProjectName
+											</p>
+										</div>
+										<div class="inline-flex items-center text-base font-semibold text-gray-900">
+											<a class="text-white bg-gray-800 hover:bg-gray-900 focus:outline-none focus:ring-4 focus:ring-gray-300 font-medium rounded-lg text-sm px-6 py-2 me-2 mb-2" asp-controller="Client" asp-action="EditPost" asp-route-id="@project.Id"> Edit </a>
+										</div>
+									}
 								</div>
 							</li>
 						}

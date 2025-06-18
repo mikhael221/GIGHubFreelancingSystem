@@ -7,6 +7,7 @@ using Freelancing.Data;
 using Freelancing.Models;
 using Freelancing.Models.Entities;
 using System;
+using Microsoft.CodeAnalysis;
 
 namespace Freelancing.Controllers
 {
@@ -22,23 +23,34 @@ namespace Freelancing.Controllers
         {
             return View();
         }
-        public async Task<IActionResult> Dashboard()
+        public async Task<IActionResult> Dashboard(Guid projectId)
         {
             var userIdString = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
             if (!Guid.TryParse(userIdString, out Guid userId))
                 return Unauthorized();
 
+            int totalAccepted = dbContext.Biddings.Count(p => p.UserId == userId && p.IsAccepted != false);
+            ViewBag.TotalAccepted = totalAccepted;
+
             var biddings = await dbContext.Biddings
                 .Include(b => b.Project)
+                .ThenInclude(p => p.User)
                 .Where(b => b.UserId == userId)
                 .ToListAsync();
 
-            var model = new FreelancerDashboard
+            var projects = await dbContext.Projects
+                .Include(p => p.Biddings)
+                .ThenInclude(b => b.User)
+                .FirstOrDefaultAsync(p => p.Id == projectId);
+
+
+            var viewModel = new FreelancerDashboard
             {
-                Biddings = biddings
+                Biddings = biddings,
+                Project = projects
             };
 
-            return View(model);
+            return View(viewModel);
         }
 
         [HttpGet]
@@ -115,6 +127,9 @@ namespace Freelancing.Controllers
 
             dbContext.Biddings.Add(bidding);
             await dbContext.SaveChangesAsync();
+
+            ModelState.Clear();
+            ViewBag.Message = "Bidded successfully!";
 
             return RedirectToAction("Project", new { id = project.Id });
         }
