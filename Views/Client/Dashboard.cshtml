@@ -6,7 +6,7 @@
 @model Freelancing.Models.ClientDashboard
 
 <div class="p-4 sm:ml-64">
-	<div class="p-4 mt-21">
+	<div class="p-4 mt-20">
 		<div class="mb-4">
 			<h4 class="text-2xl text-dark font-medium">
 				Hello, @User.FindFirst("FullName")?.Value
@@ -25,12 +25,12 @@
 
 		<div class="grid grid-cols-2 gap-4 mb-4">
 
-			<div class="w-full max-w p-4 bg-white border border-gray-200 rounded-lg shadow-sm sm:p-8">
+			<div class="w-full max-w p-4 bg-white border border-gray-300 rounded-lg shadow-sm sm:p-8">
 				<div class="flex items-center justify-between mb-4">
 					<h5 class="text-xl font-bold leading-none text-gray-900">Manage Biddings</h5>
 				</div>
 				<div class="flow-root">
-					<ul role="list" class="divide-y divide-gray-200">
+					<ul role="list" class="divide-y divide-gray-300">
 						@foreach (var project in Model.Projects)
 						{
 							<li class="py-3 sm:py-4">
@@ -71,12 +71,12 @@
 				</div>
 			</div>
 
-			<div class="w-full max-w p-4 bg-white border border-gray-200 rounded-lg shadow-sm sm:p-8">
+			<div class="w-full max-w p-4 bg-white border border-gray-300 rounded-lg shadow-sm sm:p-8">
 				<div class="flex items-center justify-between mb-4">
 					<h5 class="text-xl font-bold leading-none text-gray-900">Manage Postings</h5>
 				</div>
 				<div class="flow-root">
-					<ul role="list" class="divide-y divide-gray-200">
+					<ul role="list" class="divide-y divide-gray-300">
 						@foreach (var project in Model.Projects)
 						{
 							<li class="py-3 sm:py-4">

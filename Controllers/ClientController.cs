@@ -83,7 +83,7 @@ namespace Freelancing.Controllers
                     await dbContext.SaveChangesAsync();
 
                     ModelState.Clear();
-                    ViewBag.Message = "Project added successfully!";
+                    ViewBag.Message = "Project posted successfully!";
 
                     return View(new AddProject());
                 }
@@ -125,9 +125,11 @@ namespace Freelancing.Controllers
             {
                 dbContext.Projects.Remove(project);
                 await dbContext.SaveChangesAsync();
+
+                return RedirectToAction("Dashboard", "Client");
             }
 
-            return View(new Project());
+            return View(project);
         }
         [HttpGet]
         public async Task<IActionResult> ManageBid(Guid Id)

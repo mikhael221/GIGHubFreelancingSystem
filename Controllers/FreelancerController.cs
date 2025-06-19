@@ -87,7 +87,7 @@ namespace Freelancing.Controllers
             bool alreadyBid = await dbContext.Biddings.AnyAsync(b => b.UserId == userId && b.ProjectId == project.Id);
             if (alreadyBid)
             {
-                TempData["BidError"] = "You have already placed a bid on this project.";
+                TempData["Message"] = "You have already placed a bid on this project.";
                 return RedirectToAction("Project", new { id = project.Id });
             }
 
@@ -175,6 +175,14 @@ namespace Freelancing.Controllers
                 bidding.Proposal = viewModel.Bidding.Proposal;
 
                 await dbContext.SaveChangesAsync();
+                ViewBag.Message = "Bid edited successfully!";
+
+                var updatedBidding = await dbContext.Biddings
+                    .Include(b => b.Project)
+                    .FirstOrDefaultAsync(b => b.Id == id);
+
+                viewModel.Project = updatedBidding.Project;
+                return View(viewModel);
             }
             else if (action == "delete")
             {
@@ -182,7 +190,7 @@ namespace Freelancing.Controllers
                 await dbContext.SaveChangesAsync();
             }
 
-            return RedirectToAction("Dashboard");
+            return RedirectToAction("Dashboard", "Freelancer");
         }
     }
 }
