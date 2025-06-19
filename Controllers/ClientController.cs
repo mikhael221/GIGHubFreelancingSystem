@@ -10,6 +10,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Freelancing.Controllers
 {
+    // Handles client-specific functionalities such as managing projects, viewing bids, and accepting bids.
     [Authorize(Roles = "Client")]
     public class ClientController : Controller
     {
@@ -19,17 +20,19 @@ namespace Freelancing.Controllers
             this.dbContext = context;
         }
 
+        // Displays the client dashboard with project statistics and a list of projects.
         public async Task<IActionResult> Dashboard()
         {
+            // Get the user ID from the claims to filter projects by the logged-in user.
             var userIdString = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
             if (!Guid.TryParse(userIdString, out Guid userId))
                 return Unauthorized();
-
+            // Fetch projects associated with the logged-in user, including accepted bids.
             var projects = await dbContext.Projects
                 .Include(p => p.AcceptedBid)
                 .Where(p => p.UserId == userId)
                 .ToListAsync();
-
+            // Create a view model to hold project statistics and the list of projects.
             var viewModel = new ClientDashboard
             {
                 Projects = projects,
@@ -40,6 +43,8 @@ namespace Freelancing.Controllers
 
             return View(viewModel);
         }
+
+        // Displays the feed of all projects available for bidding.
         [HttpGet]
         public async Task<IActionResult> Feed()
         {
@@ -58,11 +63,13 @@ namespace Freelancing.Controllers
                 return NotFound();
             return View(projects);
         }
+        // Displays the form to create a new project.
         [HttpGet]
         public IActionResult Post()
         {
             return View();
         }
+        // Handles the submission of the project creation form, validating the input and saving the project to the database.
         [HttpPost]
         public async Task<IActionResult> Post(AddProject viewModel)
         {
@@ -94,6 +101,7 @@ namespace Freelancing.Controllers
             }
             return View(viewModel);
         }
+        // Displays the form to edit an existing project.
         [HttpGet]
         public async Task<IActionResult> EditPost(Guid Id)
         {
@@ -101,6 +109,7 @@ namespace Freelancing.Controllers
 
             return View(project);
         }
+        // Handles the submission of the project editing form, allowing users to save changes or delete the project.
         [HttpPost]
         public async Task<IActionResult> EditPost(Project viewModel, string action)
         {
@@ -131,6 +140,7 @@ namespace Freelancing.Controllers
 
             return View(project);
         }
+        // Displays the bids for a specific project and allows the client to manage them.
         [HttpGet]
         public async Task<IActionResult> ManageBid(Guid Id)
         {
@@ -143,6 +153,7 @@ namespace Freelancing.Controllers
                 return NotFound();
             return View(projects);
         }
+        // Accepts a bid for a specific project, marking it as the accepted bid and updating the project accordingly.
         [HttpPost]
         public async Task<IActionResult> AcceptBid(Guid projectId, Guid bidId)
         {

@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Freelancing.Controllers
 {
+    // Handles the home page and redirects users based on their roles.
     public class HomeController : Controller
     {
 
@@ -15,7 +16,7 @@ namespace Freelancing.Controllers
         {
             _context = context;
         }
-
+        // Displays the home page and redirects users based on their roles.
         public IActionResult Index()
         {
             var role = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value?.ToLower();
