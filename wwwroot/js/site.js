@@ -94,3 +94,50 @@ function updateForm() {
 }
 
 document.addEventListener('DOMContentLoaded', initializeForm);
+
+
+//Delete Post
+function deletePost() {
+	const form = document.getElementById('editPostForm');
+	const actionInput = document.createElement('input');
+	actionInput.type = 'hidden';
+	actionInput.name = 'action';
+	actionInput.value = 'delete';
+	form.appendChild(actionInput);
+
+	form.submit();
+}
+
+//Delete Bid
+function deleteBid() {
+	const form = document.getElementById('editBidForm');
+	const actionInput = document.createElement('input');
+	actionInput.type = 'hidden';
+	actionInput.name = 'action';
+	actionInput.value = 'delete';
+	form.appendChild(actionInput);
+
+	form.submit();
+}
+
+//Accept Bid
+function acceptBid() {
+	let form = document.querySelector('form[asp-action="AcceptBid"]');
+
+	if (!form) {
+		form = document.querySelector('form');
+	}
+
+	if (!form) {
+		const projectInput = document.querySelector('input[name="projectId"]');
+		const bidInput = document.querySelector('input[name="bidId"]');
+
+		if (projectInput && bidInput) {
+			form = projectInput.closest('form');
+		}
+	}
+
+	if (form) {
+		form.submit();
+	}
+}

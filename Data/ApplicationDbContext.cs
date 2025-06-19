@@ -36,6 +36,18 @@ namespace Freelancing.Data
                 .HasIndex(b => new { b.UserId, b.ProjectId })
                 .IsUnique();
 
+            modelBuilder.Entity<Project>()
+                .HasMany(p => p.Biddings)
+                .WithOne(b => b.Project)
+                .HasForeignKey(b => b.ProjectId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Project>()
+                .HasOne(p => p.AcceptedBid)
+                .WithMany() 
+                .HasForeignKey(p => p.AcceptedBidId)
+                .OnDelete(DeleteBehavior.NoAction);
+
             base.OnModelCreating(modelBuilder);
         }
     }

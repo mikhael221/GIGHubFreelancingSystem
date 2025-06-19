@@ -10,5 +10,6 @@
         public int Budget { get; set; }
         public string Delivery { get; set; }
         public string Proposal { get; set; }
+        public bool IsAccepted { get; set; }
     }
 }

@@ -4,6 +4,7 @@ using Freelancing.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Freelancing.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250618152439_Manage Biddings")]
+    partial class ManageBiddings
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -45,12 +48,17 @@ namespace Freelancing.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<Guid?>("UserAccountId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<Guid>("UserId")
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
 
                     b.HasIndex("ProjectId");
+
+                    b.HasIndex("UserAccountId");
 
                     b.HasIndex("UserId", "ProjectId")
                         .IsUnique();
@@ -83,12 +91,17 @@ namespace Freelancing.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<Guid?>("UserAccountId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<Guid>("UserId")
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
 
                     b.HasIndex("AcceptedBidId");
+
+                    b.HasIndex("UserAccountId");
 
                     b.HasIndex("UserId");
 
@@ -144,8 +157,12 @@ namespace Freelancing.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Freelancing.Models.Entities.UserAccount", "User")
+                    b.HasOne("Freelancing.Models.Entities.UserAccount", null)
                         .WithMany("Biddings")
+                        .HasForeignKey("UserAccountId");
+
+                    b.HasOne("Freelancing.Models.Entities.UserAccount", "User")
+                        .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
@@ -162,8 +179,12 @@ namespace Freelancing.Migrations
                         .HasForeignKey("AcceptedBidId")
                         .OnDelete(DeleteBehavior.NoAction);
 
-                    b.HasOne("Freelancing.Models.Entities.UserAccount", "User")
+                    b.HasOne("Freelancing.Models.Entities.UserAccount", null)
                         .WithMany("Projects")
+                        .HasForeignKey("UserAccountId");
+
+                    b.HasOne("Freelancing.Models.Entities.UserAccount", "User")
+                        .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();

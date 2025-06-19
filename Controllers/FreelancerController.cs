@@ -7,9 +7,11 @@ using Freelancing.Data;
 using Freelancing.Models;
 using Freelancing.Models.Entities;
 using System;
+using Microsoft.CodeAnalysis;
 
 namespace Freelancing.Controllers
 {
+    // Handles freelancer-specific functionalities such as viewing projects, bidding on projects, and managing bids.
     [Authorize(Roles = "Freelancer")]
     public class FreelancerController : Controller
     {
@@ -22,31 +24,44 @@ namespace Freelancing.Controllers
         {
             return View();
         }
-        public async Task<IActionResult> Dashboard()
+        // Displays the freelancer dashboard with statistics and a list of biddings for the logged-in user.
+        public async Task<IActionResult> Dashboard(Guid projectId)
         {
             var userIdString = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
             if (!Guid.TryParse(userIdString, out Guid userId))
                 return Unauthorized();
 
+            int totalAccepted = dbContext.Biddings.Count(p => p.UserId == userId && p.IsAccepted != false);
+            ViewBag.TotalAccepted = totalAccepted;
+
             var biddings = await dbContext.Biddings
                 .Include(b => b.Project)
+                .ThenInclude(p => p.User)
                 .Where(b => b.UserId == userId)
                 .ToListAsync();
 
-            var model = new FreelancerDashboard
+            var projects = await dbContext.Projects
+                .Include(p => p.Biddings)
+                .ThenInclude(b => b.User)
+                .FirstOrDefaultAsync(p => p.Id == projectId);
+
+
+            var viewModel = new FreelancerDashboard
             {
-                Biddings = biddings
+                Biddings = biddings,
+                Project = projects
             };
 
-            return View(model);
+            return View(viewModel);
         }
-
+        // Displays the feed of all projects available for bidding.
         [HttpGet]
         public async Task<IActionResult> Feed()
         {
             var project = await dbContext.Projects.ToListAsync();
             return View(project);
         }
+        // Displays the details of a specific project, including its bids and the user who posted it.
         [HttpGet]
         public async Task<IActionResult> Project(Guid Id)
         {
@@ -59,6 +74,7 @@ namespace Freelancing.Controllers
                 return NotFound();
             return View(projects);
         }
+        // Allows a freelancer to place a bid on a project. If the freelancer has already placed a bid, it redirects them with a message.
         [HttpGet]
         public async Task<IActionResult> Bid(Guid Id)
         {
@@ -75,7 +91,7 @@ namespace Freelancing.Controllers
             bool alreadyBid = await dbContext.Biddings.AnyAsync(b => b.UserId == userId && b.ProjectId == project.Id);
             if (alreadyBid)
             {
-                TempData["BidError"] = "You have already placed a bid on this project.";
+                TempData["Message"] = "You have already placed a bid on this project.";
                 return RedirectToAction("Project", new { id = project.Id });
             }
 
@@ -86,6 +102,7 @@ namespace Freelancing.Controllers
             };
             return View(viewModel);
         }
+        // Handles the submission of a bid on a project.
         [HttpPost]
         public async Task<IActionResult> Bid(ViewProjectandBidding viewModel)
         {
@@ -116,8 +133,12 @@ namespace Freelancing.Controllers
             dbContext.Biddings.Add(bidding);
             await dbContext.SaveChangesAsync();
 
+            ModelState.Clear();
+            ViewBag.Message = "Bidded successfully!";
+
             return RedirectToAction("Project", new { id = project.Id });
         }
+        // Allows a freelancer to edit an existing bid on a project.
         [HttpGet]
         public async Task<IActionResult> EditBid(Guid id)
         {
@@ -142,6 +163,7 @@ namespace Freelancing.Controllers
             };
             return View(viewModel);
         }
+        // Handles the submission of an edited bid on a project. It allows saving changes or deleting the bid.
         [HttpPost]
         public async Task<IActionResult> EditBid(Guid id, ViewProjectandBidding viewModel, string action)
         {
@@ -160,6 +182,14 @@ namespace Freelancing.Controllers
                 bidding.Proposal = viewModel.Bidding.Proposal;
 
                 await dbContext.SaveChangesAsync();
+                ViewBag.Message = "Bid edited successfully!";
+
+                var updatedBidding = await dbContext.Biddings
+                    .Include(b => b.Project)
+                    .FirstOrDefaultAsync(b => b.Id == id);
+
+                viewModel.Project = updatedBidding.Project;
+                return View(viewModel);
             }
             else if (action == "delete")
             {
@@ -167,7 +197,7 @@ namespace Freelancing.Controllers
                 await dbContext.SaveChangesAsync();
             }
 
-            return RedirectToAction("Dashboard");
+            return RedirectToAction("Dashboard", "Freelancer");
         }
     }
 }
