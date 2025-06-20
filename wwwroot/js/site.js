@@ -121,23 +121,9 @@ function deleteBid() {
 }
 
 //Accept Bid
-function acceptBid() {
-	let form = document.querySelector('form[asp-action="AcceptBid"]');
-
-	if (!form) {
-		form = document.querySelector('form');
-	}
-
-	if (!form) {
-		const projectInput = document.querySelector('input[name="projectId"]');
-		const bidInput = document.querySelector('input[name="bidId"]');
-
-		if (projectInput && bidInput) {
-			form = projectInput.closest('form');
-		}
-	}
-
-	if (form) {
-		form.submit();
-	}
+function acceptBid(bidId) {
+    const form = document.getElementById('acceptBidForm_' + bidId);
+    if (form) {
+        form.submit();
+    }
 }
