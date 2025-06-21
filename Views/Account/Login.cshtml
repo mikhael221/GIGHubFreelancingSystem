@@ -12,9 +12,6 @@
 	<title>@ViewData["Title"]Login</title>
 	<link rel="stylesheet" href="~/css/output.css" />
 	<link rel="stylesheet" href="https://rsms.me/inter/inter.css" />
-	<script src="https://cdn.tailwindcss.com"></script>
-	<link href="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.2.1/flowbite.min.css" rel="stylesheet" />
-	<link href="~/css/site.css" rel="stylesheet" />
 </head>
 <body>
 	<header class="absolute inset-x-0 top-0 z-50">
@@ -100,5 +97,7 @@
 			await Html.RenderPartialAsync("_ValidationScriptsPartial");
 		}
 	}
+	<script src="~/node_modules/flowbite/dist/flowbite.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.2.1/flowbite.min.js"></script>
 </body>
 </html>
