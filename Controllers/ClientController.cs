@@ -48,7 +48,9 @@ namespace Freelancing.Controllers
         [HttpGet]
         public async Task<IActionResult> Feed()
         {
-            var project = await dbContext.Projects.ToListAsync();
+            var project = await dbContext.Projects
+                .Include(p => p.User)
+                .ToListAsync();
             return View(project);
         }
         [HttpGet]

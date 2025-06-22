@@ -11,6 +11,11 @@
 		{
 			<div class="mb-4">
 				<a asp-controller="Client" asp-action="Project" asp-route-id="@project.Id" class="block max-w p-6 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-100">
+					<div class="flex items-center mb-4">
+						<img class="w-8 h-8 rounded-full" src="https://ik.imagekit.io/6txj3mofs/GIGHub%20(11).png?updatedAt=1750552804497" alt="user photo">
+						<h5 class="ms-2 text-md font-bold tracking-tight text-gray-900">@project.User.FirstName @project.User.LastName</h5>
+					</div>
+					<hr class="border-gray-300 mb-4">
 					<h5 class="mb-2 text-2xl font-bold tracking-tight text-gray-900">@project.ProjectName</h5>
 					<h5 class="mb-2 text-md font-light tracking-tight text-gray-900">@project.Category || ₱@project.Budget</h5>
 					<h5 class="mb-2 text-md font-normal tracking-tight text-gray-900">@project.ProjectDescription</h5>

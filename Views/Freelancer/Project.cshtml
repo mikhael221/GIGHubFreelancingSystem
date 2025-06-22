@@ -40,7 +40,11 @@
 				@foreach (var bid in Model.Biddings)
 				{
 					<div class="mb-5 p-6 border border-gray-200 rounded-lg shadow-sm">
-						<h5 class="mb-2 text-xl font-bold tracking-tight text-gray-900">@bid.User?.FirstName @bid.User?.LastName</h5>
+						<div class="flex items-center mb-3">
+							<img class="w-8 h-8 rounded-full" src="https://ik.imagekit.io/6txj3mofs/GIGHub%20(11).png?updatedAt=1750552804497" alt="user photo">
+							<h5 class="ms-2 text-xl font-bold tracking-tight text-gray-900">@bid.User?.FirstName @bid.User?.LastName</h5>
+						</div>
+						<hr class="border-gray-300 mb-4">
 						<div class="flex items-center mb-2">
 							<h5 class="text-md font-bold tracking-tight text-gray-900 mr-2">Budget Proposal:</h5>
 							<span class="ms-2 text-md font-light tracking-tight text-gray-900">₱@bid.Budget</span>
