@@ -21,5 +21,6 @@ namespace Freelancing.Models.Entities
         [Required(ErrorMessage = "Password is required.")]
         public string Password { get; set; }
         public string Role { get; set; }
+        public string? Photo { get; set; }
     }
 }

@@ -11,6 +11,29 @@ document.addEventListener('DOMContentLoaded', function () {
 			mobileMenu.classList.add('hidden');
 		});
 	}
+	const photoFileInput = document.getElementById('photoFile');
+	const fileNameSpan = document.getElementById('fileName1');
+	const currentPhotoImg = document.getElementById('currentPhoto');
+
+	if (photoFileInput && fileNameSpan && currentPhotoImg) {
+
+		photoFileInput.addEventListener('change', function (e) {
+
+			const file = e.target.files[0];
+			const fileName = file?.name || '';
+
+			fileNameSpan.textContent = fileName;
+
+			if (file) {
+				const reader = new FileReader();
+				reader.onload = function (e) {
+					currentPhotoImg.src = e.target.result;
+				};
+				reader.readAsDataURL(file);
+			}
+		});
+	} else {
+	}
 });
 
 //Select Role

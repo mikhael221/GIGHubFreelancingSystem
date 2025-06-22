@@ -28,7 +28,14 @@
 						<div>
 							<button type="button" class="flex text-sm bg-gray-800 rounded-full focus:ring-4 focus:ring-gray-300" aria-expanded="false" data-dropdown-toggle="dropdown-user">
 								<span class="sr-only">Open user menu</span>
-								<img class="w-8 h-8 rounded-full" src="https://ik.imagekit.io/6txj3mofs/GIGHub%20(11).png?updatedAt=1750552804497" alt="user photo">
+								@if (!string.IsNullOrEmpty(@User.FindFirst("Photo")?.Value))
+								{
+									<img class="w-8 h-8 rounded-full" src="@User.FindFirst("Photo")?.Value" alt="user photo">
+								}
+								else
+								{
+									<img class="w-8 h-8 rounded-full" src="https://ik.imagekit.io/6txj3mofs/GIGHub%20(11).png?updatedAt=1750552804497" alt="user photo">
+								}
 							</button>
 						</div>
 						<div class="z-50 hidden my-4 text-base list-none bg-white divide-y divide-gray-100 rounded-sm shadow-sm" id="dropdown-user">
@@ -82,6 +89,14 @@
 						<span class="flex-1 ms-3 whitespace-nowrap">Post</span>
 					</a>
 				</li>
+				<li>
+					<a class="flex items-center p-2 text-gray-900 rounded-lg hover:bg-gray-100 group" asp-area="" asp-controller="Client" asp-action="EditAccount">
+						<svg class="shrink-0 w-5 h-5 text-gray-500 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 18">
+							<path d="M14 2a3.963 3.963 0 0 0-1.4.267 6.439 6.439 0 0 1-1.331 6.638A4 4 0 1 0 14 2Zm1 9h-1.264A6.957 6.957 0 0 1 15 15v2a2.97 2.97 0 0 1-.184 1H19a1 1 0 0 0 1-1v-1a5.006 5.006 0 0 0-5-5ZM6.5 9a4.5 4.5 0 1 0 0-9 4.5 4.5 0 0 0 0 9ZM8 10H5a5.006 5.006 0 0 0-5 5v2a1 1 0 0 0 1 1h11a1 1 0 0 0 1-1v-2a5.006 5.006 0 0 0-5-5Z" />
+						</svg>
+						<span class="flex-1 ms-3 whitespace-nowrap">Account</span>
+					</a>
+				</li>
 			</ul>
 		</div>
 	</aside>
@@ -91,11 +106,12 @@
 			@RenderBody()
 		</main>
 	</div>
-	<script src="~/lib/jquery/dist/jquery.min.js"></script>
-	<script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-	<script src="~/js/site.js" asp-append-version="true"></script>
-	<script src="~/node_modules/flowbite/dist/flowbite.min.js"></script>
+	@section Scripts {
+		@{
+			await Html.RenderPartialAsync("_ValidationScriptsPartial");
+		}
+	}
+	<script src="~/js/site.js" asp-append-version="true"></script>s
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.2.1/flowbite.min.js"></script>
-	@await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

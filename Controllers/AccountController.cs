@@ -137,7 +137,8 @@ namespace Freelancing.Controllers
                             new Claim(ClaimTypes.Name, user.UserName),
                             new Claim(ClaimTypes.Email, user.Email),
                             new Claim("FullName", $"{user.FirstName} {user.LastName}"),
-                            new Claim(ClaimTypes.Role, user.Role ?? string.Empty)
+                            new Claim(ClaimTypes.Role, user.Role ?? string.Empty),
+                            new Claim("Photo", user.Photo ?? string.Empty)
                         };
                         // Create a ClaimsIdentity with the claims and the authentication scheme for cookie-based authentication.
                         var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);

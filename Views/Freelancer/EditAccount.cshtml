@@ -1,0 +1,97 @@
+﻿@{
+    Layout = "_LayoutFreelancer";
+    ViewData["Title"] = "Account Details";
+}
+@model Freelancing.Models.EditAccount
+
+<div class="p-4 sm:ml-64">
+    <div class="p-4 mt-20">
+        <div class="mt-4">
+            <div class="block w-full p-6">
+                <h2 class="mb-4 text-2xl font-bold text-gray-900">Manage Account</h2>
+                <form id="EditAccount" asp-action="EditAccount" method="post" class="p-4 md:p-5" enctype="multipart/form-data">
+                    @if (!string.IsNullOrEmpty(ViewBag.Message as string))
+                    {
+                        <div class="mt-2 flex items-center p-4 mb-4 text-sm text-green-800 border border-green-300 rounded-lg bg-green-50" role="alert">
+                            <svg class="shrink-0 inline w-4 h-4 me-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5Zm3.707 8.207-4 4a1 1 0 0 1-1.414 0l-2-2a1 1 0 0 1 1.414-1.414L9 10.586l3.293-3.293a1 1 0 0 1 1.414 1.414Z" />
+                            </svg>
+                            <span class="sr-only">Success</span>
+                            <div>
+                                @ViewBag.Message
+                            </div>
+                        </div>
+                    }
+                    @if (!ViewData.ModelState.IsValid)
+                    {
+                        <div class="mt-2 p-4 mb-4 text-sm text-red-800 border border-red-300 rounded-lg bg-red-50" role="alert">
+                            <div class="flex items-center mb-2">
+                                <svg class="shrink-0 inline w-4 h-4 me-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5ZM9.5 4a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM12 15H8a1 1 0 0 1 0-2h1v-3H8a1 1 0 0 1 0-2h2a1 1 0 0 1 1 1v4h1a1 1 0 0 1 0 2Z" />
+                                </svg>
+                                <span class="font-medium">Edit failed!</span>
+                            </div>
+
+                            <ul class="list-disc list-inside space-y-1">
+                                @foreach (var modelError in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                                {
+                                    <li>@modelError.ErrorMessage</li>
+                                }
+                            </ul>
+                        </div>
+                    }
+                    <input type="hidden" asp-for="Photo" />
+                    <div class="grid gap-4 mb-4 grid-cols-2">
+                        <div class="col-span-2 mb-2">
+                            <label for="PhotoFile" class="block mb-2 text-sm font-medium text-gray-900">Profile Photo</label>
+                            <div class="flex items-center">
+                                @if (!string.IsNullOrEmpty(Model.Photo))
+                                {
+                                    <img id="currentPhoto" class="w-25 h-25 rounded-full" src="@Model.Photo" alt="user photo">
+                                }
+                                else
+                                {
+                                    <img id="currentPhoto" class="w-25 h-25 rounded-full" src="https://ik.imagekit.io/6txj3mofs/GIGHub%20(11).png?updatedAt=1750552804497" alt="user photo">
+                                }
+                                <div>
+                                    <input type="file" id="photoFile" name="PhotoFile" accept="image/*" class="form-control hidden">
+                                    <button type="button" onclick="document.getElementById('photoFile').click()"
+                                            class="inline-flex items-center text-gray-900 bg-white border border-gray-300 focus:outline-none hover:bg-gray-100 focus:ring-4 focus:ring-gray-100 font-medium rounded-lg text-sm px-3 py-2.5 ms-3 me-2">
+                                        Choose Photo
+                                    </button>
+                                    <span id="fileName1" class="ml-3 text-sm text-gray-600"></span>
+                                </div>
+                            </div>
+                            <p class="mt-1 text-sm text-gray-500">Upload a new profile photo (optional)</p>
+                        </div>
+
+                        <div class="col-span-2 sm:col-span-1">
+                            <label asp-for="FirstName" class="block mb-2 text-sm font-medium text-gray-900">First Name</label>
+                            <input asp-for="FirstName" class="form-control bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5" required>
+                        </div>
+
+                        <div class="col-span-2 sm:col-span-1">
+                            <label asp-for="LastName" class="block mb-2 text-sm font-medium text-gray-900">Last Name</label>
+                            <input asp-for="LastName" class="form-control bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5" required>
+                        </div>
+
+                        <div class="col-span-2 sm:col-span-1">
+                            <label asp-for="Email" class="block mb-2 text-sm font-medium text-gray-900">Email</label>
+                            <input asp-for="Email" type="email" class="form-control bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5" required>
+                        </div>
+
+                        <div class="col-span-2 sm:col-span-1">
+                            <label asp-for="UserName" class="block mb-2 text-sm font-medium text-gray-900">Username</label>
+                            <input asp-for="UserName" class="form-control bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5" required>
+                        </div>
+                    </div>
+
+                    <button type="submit"
+                            class="text-white inline-flex items-center bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center">
+                        Save Changes
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
