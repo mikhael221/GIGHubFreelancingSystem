@@ -13,6 +13,7 @@ namespace Freelancing.Data
         public DbSet<Project> Projects { get; set; }
         public DbSet<UserAccount> UserAccounts { get; set; }
         public DbSet<Bidding> Biddings { get; set; }
+        public DbSet<PeerMentorship> PeerMentorships { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<Project>()
@@ -44,9 +45,15 @@ namespace Freelancing.Data
 
             modelBuilder.Entity<Project>()
                 .HasOne(p => p.AcceptedBid)
-                .WithMany() 
+                .WithMany()
                 .HasForeignKey(p => p.AcceptedBidId)
                 .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<UserAccount>()
+                .HasOne(u => u.Mentorship)
+                .WithOne(p => p.User)
+                .HasForeignKey<UserAccount>(u => u.MentorshipId)
+                .OnDelete(DeleteBehavior.SetNull);
 
             base.OnModelCreating(modelBuilder);
         }

@@ -1,0 +1,23 @@
+﻿@{
+	Layout = "_LayoutFreelancer";
+	ViewData["Title"] = "Choose Role";
+}
+
+<div class="p-4 sm:ml-64">
+	<div class="p-4 mt-20">
+		<div class="mt-4">
+			<div class="text-center block w-full p-6">
+				<h2 class="mb-4 text-3xl font-bold text-gray-900">Get Started by Choosing a Role</h2>
+			</div>
+			<div class="text-center block w-full">
+				<h5 class="text-xl font-light tracking-tight text-gray-900 mr-2">Description</h5>
+			</div>
+			<div class="items-center block w-full p-6">
+				<a asp-controller="PeerMentorship" asp-action="Registration" asp-route-role="Mentor" type="button" class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800">Mentor</a>
+			</div>
+			<div class="items-center block w-full p-6">
+				<a asp-controller="PeerMentorship" asp-action="Registration" asp-route-role="Mentee" type="button" class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800">Mentee</a>
+			</div>
+		</div>
+	</div>
+</div>

@@ -22,5 +22,7 @@ namespace Freelancing.Models.Entities
         public string Password { get; set; }
         public string Role { get; set; }
         public string? Photo { get; set; }
+        public Guid? MentorshipId { get; set; }
+        public PeerMentorship? Mentorship { get; set; }
     }
 }

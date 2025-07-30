@@ -1,0 +1,56 @@
+﻿@{
+	Layout = "_LayoutFreelancer";
+	ViewData["Title"] = "Registration";
+}
+
+@model Freelancing.Models.MentorshipRegistration
+
+<div class="flex items-center justify-center w-full">
+	<div class="w-1/2 flex flex-col items-center justify-center p-6 bg-white border border-gray-200 rounded-lg shadow">
+		<div class="mb-5">
+			<h5 class="mb-2 text-2xl font-bold text-gray-900">Sign Up</h5>
+		</div>
+		<div class="w-full">
+			<form asp-action="Registration">
+				<label asp-for="Role" id="role-address" class="control-label block mb-2 text-sm font-medium text-gray-900">Role</label>
+				<div class="relative">
+					<select asp-for="Role" id="role-address-icon" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5" required>
+						<option value="">Select a Role</option>
+						<option value="Mentor">Mentor</option>
+						<option value="Mentee">Mentee</option>
+					</select>
+				</div>
+				<label asp-for="FirstName" id="firstname-address" class="control-label block mt-4 mb-2 text-sm font-medium text-gray-900">First Name</label>
+				<div class="relative">
+					<div class="absolute inset-y-0 start-0 flex items-center ps-3.5 pointer-events-none">
+						<svg class="w-6 h-6 text-gray-800" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+							<path fill-rule="evenodd" d="M12 4a4 4 0 1 0 0 8 4 4 0 0 0 0-8Zm-2 9a4 4 0 0 0-4 4v1a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-1a4 4 0 0 0-4-4h-4Z" clip-rule="evenodd" />
+						</svg>
+					</div>
+					<input asp-for="FirstName" value="@User.FindFirst(System.Security.Claims.ClaimTypes.GivenName)?.Value" id="firstname-address-icon" class="form-control bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full ps-10 p-2.5" placeholder="" required>
+				</div>
+				<label asp-for="LastName" id="lastname-address" class="control-label block mt-4 mb-2 text-sm font-medium text-gray-900">Last Name</label>
+				<div class="relative">
+					<div class="absolute inset-y-0 start-0 flex items-center ps-3.5 pointer-events-none">
+						<svg class="w-6 h-6 text-gray-800" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+							<path fill-rule="evenodd" d="M12 4a4 4 0 1 0 0 8 4 4 0 0 0 0-8Zm-2 9a4 4 0 0 0-4 4v1a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-1a4 4 0 0 0-4-4h-4Z" clip-rule="evenodd" />
+						</svg>
+					</div>
+					<input asp-for="LastName" value="@User.FindFirst(System.Security.Claims.ClaimTypes.Surname)?.Value" id="lastname-address-icon" class="form-control bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full ps-10 p-2.5" placeholder="" required>
+				</div>
+				<label asp-for="Email" id="email-address" class="control-label block mt-4 mb-2 text-sm font-medium text-gray-900">Email</label>
+				<div class="relative">
+					<div class="absolute inset-y-0 start-0 flex items-center ps-3.5 pointer-events-none">
+						<svg class="w-6 h-6 text-gray-800" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+							<path fill-rule="evenodd" d="M12 4a4 4 0 1 0 0 8 4 4 0 0 0 0-8Zm-2 9a4 4 0 0 0-4 4v1a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-1a4 4 0 0 0-4-4h-4Z" clip-rule="evenodd" />
+						</svg>
+					</div>
+					<input asp-for="Email" value="@User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value" id="email-address-icon" class="form-control bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full ps-10 p-2.5" placeholder="" required>
+				</div>
+				<button type="submit" class="mt-4 ml-auto px-6 py-2 text-white bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm transition-all duration-200 transform hover:scale-105">
+					Register
+				</button>
+			</form>
+		</div>
+	</div>
+</div>
