@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Freelancing.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250719233956_Initial")]
-    partial class Initial
+    [Migration("20250731065106_addskillrs_update")]
+    partial class addskillrs_update
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -59,6 +59,33 @@ namespace Freelancing.Migrations
                         .IsUnique();
 
                     b.ToTable("Biddings");
+                });
+
+            modelBuilder.Entity("Freelancing.Models.Entities.PeerMentorship", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FirstName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("LastName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("PeerMentorships");
                 });
 
             modelBuilder.Entity("Freelancing.Models.Entities.Project", b =>
@@ -116,8 +143,8 @@ namespace Freelancing.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("MentorshipRole")
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<Guid?>("MentorshipId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Password")
                         .IsRequired()
@@ -139,10 +166,47 @@ namespace Freelancing.Migrations
                     b.HasIndex("Email")
                         .IsUnique();
 
+                    b.HasIndex("MentorshipId")
+                        .IsUnique()
+                        .HasFilter("[MentorshipId] IS NOT NULL");
+
                     b.HasIndex("UserName")
                         .IsUnique();
 
                     b.ToTable("UserAccounts");
+                });
+
+            modelBuilder.Entity("Freelancing.Models.Entities.UserSkill", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("IsSelected")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("UserSkills");
+                });
+
+            modelBuilder.Entity("UserAccountUserSkill", b =>
+                {
+                    b.Property<Guid>("UserAccountsId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("UserSkillsId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("UserAccountsId", "UserSkillsId");
+
+                    b.HasIndex("UserSkillsId");
+
+                    b.ToTable("UserAccountUserSkill");
                 });
 
             modelBuilder.Entity("Freelancing.Models.Entities.Bidding", b =>
@@ -180,6 +244,37 @@ namespace Freelancing.Migrations
                     b.Navigation("AcceptedBid");
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Freelancing.Models.Entities.UserAccount", b =>
+                {
+                    b.HasOne("Freelancing.Models.Entities.PeerMentorship", "Mentorship")
+                        .WithOne("User")
+                        .HasForeignKey("Freelancing.Models.Entities.UserAccount", "MentorshipId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Mentorship");
+                });
+
+            modelBuilder.Entity("UserAccountUserSkill", b =>
+                {
+                    b.HasOne("Freelancing.Models.Entities.UserAccount", null)
+                        .WithMany()
+                        .HasForeignKey("UserAccountsId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Freelancing.Models.Entities.UserSkill", null)
+                        .WithMany()
+                        .HasForeignKey("UserSkillsId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Freelancing.Models.Entities.PeerMentorship", b =>
+                {
+                    b.Navigation("User")
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Freelancing.Models.Entities.Project", b =>

@@ -14,6 +14,8 @@ namespace Freelancing.Data
         public DbSet<UserAccount> UserAccounts { get; set; }
         public DbSet<Bidding> Biddings { get; set; }
         public DbSet<PeerMentorship> PeerMentorships { get; set; }
+        public DbSet<UserSkill> UserSkills { get; set; }
+        public DbSet<UserAccountSkill> UserAccountSkills { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<Project>()
@@ -54,6 +56,19 @@ namespace Freelancing.Data
                 .WithOne(p => p.User)
                 .HasForeignKey<UserAccount>(u => u.MentorshipId)
                 .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<UserAccountSkill>()
+                .HasKey(uas => new { uas.UserAccountId, uas.UserSkillId });
+
+            modelBuilder.Entity<UserAccountSkill>()
+                .HasOne(uas => uas.UserAccount)
+                .WithMany(ua => ua.UserAccountSkills)
+                .HasForeignKey(uas => uas.UserAccountId);
+
+            modelBuilder.Entity<UserAccountSkill>()
+                .HasOne(uas => uas.UserSkill)
+                .WithMany()
+                .HasForeignKey(uas => uas.UserSkillId);
 
             base.OnModelCreating(modelBuilder);
         }

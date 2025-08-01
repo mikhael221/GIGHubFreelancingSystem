@@ -1,0 +1,191 @@
+﻿@{
+	Layout = "_LayoutFreelancer";
+	ViewData["Title"] = "Edit Skills";
+}
+
+@model Freelancing.Models.EditSkills
+
+<div class="p-4 sm:ml-64">
+	<div class="p-4 mt-20">
+		<div class="mt-4">
+			<div class="block w-full p-6">
+				<h2 class="mb-4 text-2xl font-bold text-gray-900">Manage Your Skills</h2>
+
+				<!-- Success/Error Messages -->
+				@if (TempData["SuccessMessage"] != null)
+				{
+					<div class="mb-4 p-4 text-green-700 bg-green-100 border border-green-300 rounded-lg">
+						@TempData["SuccessMessage"]
+					</div>
+				}
+				@if (TempData["ErrorMessage"] != null)
+				{
+					<div class="mb-4 p-4 text-red-700 bg-red-100 border border-red-300 rounded-lg">
+						@TempData["ErrorMessage"]
+					</div>
+				}
+
+				<!-- Search Form -->
+				<form asp-action="EditSkills" method="get" class="max-w-lg mx-auto mb-6">
+					<div class="flex">
+						<label for="search-dropdown" class="mb-2 text-sm font-medium text-gray-900 sr-only">Search Skills</label>
+						<div class="relative w-full">
+							<input type="search" id="search-dropdown" name="searchTerm" value="@Model.SearchTerm"
+								   class="block p-2.5 w-full z-20 text-sm text-gray-900 bg-gray-50 rounded-e-lg border-s-gray-50 border-s-2 border border-gray-300 focus:ring-blue-500 focus:border-blue-500"
+								   placeholder="Search skills..." />
+							<button type="submit" class="absolute top-0 end-0 p-2.5 text-sm font-medium h-full text-white bg-blue-700 rounded-e-lg border border-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300">
+								<svg class="w-4 h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20">
+									<path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z" />
+								</svg>
+								<span class="sr-only">Search</span>
+							</button>
+						</div>
+					</div>
+				</form>
+
+				<!-- Skills Selection Form -->
+				<form asp-action="EditSkills" method="post" class="max-w-4xl mx-auto" id="skillsForm">
+					<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+						<!-- Available Skills -->
+						<div>
+							@foreach (var skill in Model.UserSkills.Take(22))
+							{
+								<div class="mt-4 inline-flex items-center">
+									<button type="button"
+											class="skill-btn text-gray-900 bg-white border border-gray-300 focus:outline-none hover:bg-gray-100 focus:ring-4 focus:ring-gray-100 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2" @(Model.SelectedSkillIds.Contains(skill.Id) ? "hidden" : "")
+											data-skill-id="@skill.Id"
+											data-skill-name="@skill.Name">
+										@skill.Name
+									</button>
+								</div>
+							}
+						</div>
+
+						<!-- Selected Skills -->
+						<div>
+							<h2 class="mt-6 text-xl font-bold text-gray-900">Selected Skills</h2>
+							<div id="selected-skills-container" class="mt-4">
+								<!-- Selected skills will be populated here -->
+							</div>
+						</div>
+					</div>
+
+					<!-- Hidden inputs for selected skill IDs -->
+					<div id="hidden-inputs"></div>
+
+					<!-- Save Button -->
+					<div class="mt-6 text-center">
+						<button type="submit" class="px-6 py-3 text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm">
+							Save Selected Skills
+						</button>
+					</div>
+				</form>
+			</div>
+		</div>
+	</div>
+</div>
+
+<script>
+	document.addEventListener('DOMContentLoaded', function() {
+		const selectedSkills = new Set(@Html.Raw(Json.Serialize(Model.SelectedSkillIds)));
+		const selectedSkillsContainer = document.getElementById('selected-skills-container');
+		const hiddenInputsContainer = document.getElementById('hidden-inputs');
+
+		// Initialize selected skills display
+		initializeSelectedSkills();
+
+		// Add event listeners to skill buttons
+		document.querySelectorAll('.skill-btn').forEach(button => {
+			button.addEventListener('click', function() {
+				const skillId = this.dataset.skillId; // Keep as string for Guid
+				const skillName = this.dataset.skillName;
+
+				if (selectedSkills.has(skillId)) {
+					removeSkill(skillId);
+				} else {
+					addSkill(skillId, skillName);
+				}
+
+				updateUI();
+			});
+		});
+
+		function addSkill(skillId, skillName) {
+			selectedSkills.add(skillId);
+		}
+
+		function removeSkill(skillId) {
+			selectedSkills.delete(skillId);
+		}
+
+		function updateUI() {
+			updateSelectedSkillsDisplay();
+			updateHiddenInputs();
+			updateAvailableSkillsDisplay();
+		}
+
+		function updateSelectedSkillsDisplay() {
+			selectedSkillsContainer.innerHTML = '';
+
+			if (selectedSkills.size === 0) {
+				selectedSkillsContainer.innerHTML = '<p class="text-gray-500 text-sm">No skills selected yet.</p>';
+				return;
+			}
+
+			selectedSkills.forEach(skillId => {
+				const skillButton = document.querySelector(`[data-skill-id="${skillId}"]`);
+				if (skillButton) {
+					const skillName = skillButton.dataset.skillName;
+					const skillElement = createSelectedSkillElement(skillId, skillName);
+					selectedSkillsContainer.appendChild(skillElement);
+				}
+			});
+		}
+
+		function createSelectedSkillElement(skillId, skillName) {
+			const div = document.createElement('div');
+			div.className = 'mb-2 flex items-center justify-between bg-white border border-blue-300 rounded-lg px-3 py-2';
+			div.innerHTML = `
+				<span class="text-sm font-medium text-gray-900">${skillName}</span>
+				<button type="button" class="text-red-500 hover:text-red-700 focus:outline-none" onclick="removeSkillFromSelected(${skillId})">
+					<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+					</svg>
+				</button>
+			`;
+			return div;
+		}
+
+		function updateHiddenInputs() {
+			hiddenInputsContainer.innerHTML = '';
+			selectedSkills.forEach(skillId => {
+				const input = document.createElement('input');
+				input.type = 'hidden';
+				input.name = 'SelectedSkillIds';
+				input.value = skillId;
+				hiddenInputsContainer.appendChild(input);
+			});
+		}
+
+		function updateAvailableSkillsDisplay() {
+			document.querySelectorAll('.skill-btn').forEach(button => {
+				const skillId = button.dataset.skillId; // Keep as string for Guid
+				if (selectedSkills.has(skillId)) {
+					button.classList.add('hidden');
+				} else {
+					button.classList.remove('hidden');
+				}
+			});
+		}
+
+		function initializeSelectedSkills() {
+			updateUI();
+		}
+
+		// Global function for removing skills (called from dynamically created buttons)
+		window.removeSkillFromSelected = function(skillId) {
+			removeSkill(skillId);
+			updateUI();
+		};
+	});
+</script>

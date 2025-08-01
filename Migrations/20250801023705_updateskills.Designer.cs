@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Freelancing.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250720001933_UpdateMentorship")]
-    partial class UpdateMentorship
+    [Migration("20250801023705_updateskills")]
+    partial class updateskills
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -143,6 +143,9 @@ namespace Freelancing.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<Guid?>("MentorshipId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<string>("Password")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -163,10 +166,44 @@ namespace Freelancing.Migrations
                     b.HasIndex("Email")
                         .IsUnique();
 
+                    b.HasIndex("MentorshipId")
+                        .IsUnique()
+                        .HasFilter("[MentorshipId] IS NOT NULL");
+
                     b.HasIndex("UserName")
                         .IsUnique();
 
                     b.ToTable("UserAccounts");
+                });
+
+            modelBuilder.Entity("Freelancing.Models.Entities.UserAccountSkill", b =>
+                {
+                    b.Property<Guid>("UserAccountId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("UserSkillId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("UserAccountId", "UserSkillId");
+
+                    b.HasIndex("UserSkillId");
+
+                    b.ToTable("UserAccountSkills");
+                });
+
+            modelBuilder.Entity("Freelancing.Models.Entities.UserSkill", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("UserSkills");
                 });
 
             modelBuilder.Entity("Freelancing.Models.Entities.Bidding", b =>
@@ -206,6 +243,41 @@ namespace Freelancing.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("Freelancing.Models.Entities.UserAccount", b =>
+                {
+                    b.HasOne("Freelancing.Models.Entities.PeerMentorship", "Mentorship")
+                        .WithOne("User")
+                        .HasForeignKey("Freelancing.Models.Entities.UserAccount", "MentorshipId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Mentorship");
+                });
+
+            modelBuilder.Entity("Freelancing.Models.Entities.UserAccountSkill", b =>
+                {
+                    b.HasOne("Freelancing.Models.Entities.UserAccount", "UserAccount")
+                        .WithMany("UserAccountSkills")
+                        .HasForeignKey("UserAccountId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Freelancing.Models.Entities.UserSkill", "UserSkill")
+                        .WithMany()
+                        .HasForeignKey("UserSkillId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("UserAccount");
+
+                    b.Navigation("UserSkill");
+                });
+
+            modelBuilder.Entity("Freelancing.Models.Entities.PeerMentorship", b =>
+                {
+                    b.Navigation("User")
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Freelancing.Models.Entities.Project", b =>
                 {
                     b.Navigation("Biddings");
@@ -216,6 +288,8 @@ namespace Freelancing.Migrations
                     b.Navigation("Biddings");
 
                     b.Navigation("Projects");
+
+                    b.Navigation("UserAccountSkills");
                 });
 #pragma warning restore 612, 618
         }

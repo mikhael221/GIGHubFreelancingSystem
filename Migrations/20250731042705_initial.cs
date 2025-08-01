@@ -6,11 +6,38 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Freelancing.Migrations
 {
     /// <inheritdoc />
-    public partial class Initial : Migration
+    public partial class initial : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.CreateTable(
+                name: "PeerMentorships",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    FirstName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    LastName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Email = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Role = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PeerMentorships", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "UserSkills",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_UserSkills", x => x.Id);
+                });
+
             migrationBuilder.CreateTable(
                 name: "UserAccounts",
                 columns: table => new
@@ -23,11 +50,17 @@ namespace Freelancing.Migrations
                     Password = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Role = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Photo = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    MentorshipRole = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                    MentorshipId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_UserAccounts", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_UserAccounts_PeerMentorships_MentorshipId",
+                        column: x => x.MentorshipId,
+                        principalTable: "PeerMentorships",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.SetNull);
                 });
 
             migrationBuilder.CreateTable(
@@ -108,6 +141,13 @@ namespace Freelancing.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
+                name: "IX_UserAccounts_MentorshipId",
+                table: "UserAccounts",
+                column: "MentorshipId",
+                unique: true,
+                filter: "[MentorshipId] IS NOT NULL");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_UserAccounts_UserName",
                 table: "UserAccounts",
                 column: "UserName",
@@ -130,6 +170,9 @@ namespace Freelancing.Migrations
                 table: "Biddings");
 
             migrationBuilder.DropTable(
+                name: "UserSkills");
+
+            migrationBuilder.DropTable(
                 name: "Projects");
 
             migrationBuilder.DropTable(
@@ -137,6 +180,9 @@ namespace Freelancing.Migrations
 
             migrationBuilder.DropTable(
                 name: "UserAccounts");
+
+            migrationBuilder.DropTable(
+                name: "PeerMentorships");
         }
     }
 }

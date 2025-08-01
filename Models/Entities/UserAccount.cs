@@ -10,6 +10,7 @@ namespace Freelancing.Models.Entities
         public Guid Id { get; set; }
         public ICollection<Project> Projects { get; set; }
         public ICollection<Bidding> Biddings { get; set; }
+        public virtual ICollection<UserAccountSkill> UserAccountSkills { get; set; } = new List<UserAccountSkill>();
         [Required(ErrorMessage = "First name is required.")]
         public string FirstName { get; set; }
         [Required(ErrorMessage = "Last name is required.")]

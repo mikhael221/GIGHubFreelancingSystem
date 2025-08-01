@@ -173,6 +173,36 @@ namespace Freelancing.Migrations
                     b.ToTable("UserAccounts");
                 });
 
+            modelBuilder.Entity("Freelancing.Models.Entities.UserAccountSkill", b =>
+                {
+                    b.Property<Guid>("UserAccountId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("UserSkillId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("UserAccountId", "UserSkillId");
+
+                    b.HasIndex("UserSkillId");
+
+                    b.ToTable("UserAccountSkills");
+                });
+
+            modelBuilder.Entity("Freelancing.Models.Entities.UserSkill", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("UserSkills");
+                });
+
             modelBuilder.Entity("Freelancing.Models.Entities.Bidding", b =>
                 {
                     b.HasOne("Freelancing.Models.Entities.Project", "Project")
@@ -220,6 +250,25 @@ namespace Freelancing.Migrations
                     b.Navigation("Mentorship");
                 });
 
+            modelBuilder.Entity("Freelancing.Models.Entities.UserAccountSkill", b =>
+                {
+                    b.HasOne("Freelancing.Models.Entities.UserAccount", "UserAccount")
+                        .WithMany("UserAccountSkills")
+                        .HasForeignKey("UserAccountId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Freelancing.Models.Entities.UserSkill", "UserSkill")
+                        .WithMany()
+                        .HasForeignKey("UserSkillId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("UserAccount");
+
+                    b.Navigation("UserSkill");
+                });
+
             modelBuilder.Entity("Freelancing.Models.Entities.PeerMentorship", b =>
                 {
                     b.Navigation("User")
@@ -236,6 +285,8 @@ namespace Freelancing.Migrations
                     b.Navigation("Biddings");
 
                     b.Navigation("Projects");
+
+                    b.Navigation("UserAccountSkills");
                 });
 #pragma warning restore 612, 618
         }

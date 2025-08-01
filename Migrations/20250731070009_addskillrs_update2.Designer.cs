@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Freelancing.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250723034714_mentorship relation")]
-    partial class mentorshiprelation
+    [Migration("20250731070009_addskillrs_update2")]
+    partial class addskillrs_update2
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -176,6 +176,36 @@ namespace Freelancing.Migrations
                     b.ToTable("UserAccounts");
                 });
 
+            modelBuilder.Entity("Freelancing.Models.Entities.UserSkill", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("UserSkills");
+                });
+
+            modelBuilder.Entity("UserAccountUserSkill", b =>
+                {
+                    b.Property<Guid>("UserAccountsId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("UserSkillsId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("UserAccountsId", "UserSkillsId");
+
+                    b.HasIndex("UserSkillsId");
+
+                    b.ToTable("UserAccountUserSkill");
+                });
+
             modelBuilder.Entity("Freelancing.Models.Entities.Bidding", b =>
                 {
                     b.HasOne("Freelancing.Models.Entities.Project", "Project")
@@ -216,11 +246,32 @@ namespace Freelancing.Migrations
             modelBuilder.Entity("Freelancing.Models.Entities.UserAccount", b =>
                 {
                     b.HasOne("Freelancing.Models.Entities.PeerMentorship", "Mentorship")
-                        .WithOne()
+                        .WithOne("User")
                         .HasForeignKey("Freelancing.Models.Entities.UserAccount", "MentorshipId")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("Mentorship");
+                });
+
+            modelBuilder.Entity("UserAccountUserSkill", b =>
+                {
+                    b.HasOne("Freelancing.Models.Entities.UserAccount", null)
+                        .WithMany()
+                        .HasForeignKey("UserAccountsId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Freelancing.Models.Entities.UserSkill", null)
+                        .WithMany()
+                        .HasForeignKey("UserSkillsId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Freelancing.Models.Entities.PeerMentorship", b =>
+                {
+                    b.Navigation("User")
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Freelancing.Models.Entities.Project", b =>

@@ -60,7 +60,7 @@ namespace Freelancing.Controllers
         public async Task<IActionResult> Feed()
         {
             var project = await dbContext.Projects
-                .Include(p=> p.User)
+                .Include(p => p.User)
                 .ToListAsync();
             return View(project);
         }
@@ -215,6 +215,16 @@ namespace Freelancing.Controllers
             if (userAccount == null)
                 return NotFound();
 
+            var savedSkills = await dbContext.UserAccountSkills
+                .Where(uas => uas.UserAccountId == userId)
+                .Include(uas => uas.UserSkill)
+                .Select(uas => uas.UserSkill)
+                .OrderBy(s => s.Name)
+                .ToListAsync();
+
+            var user = await dbContext.UserAccounts
+                .FirstOrDefaultAsync(u => u.Id == userId);
+
             // Create view model
             var viewModel = new EditAccount
             {
@@ -222,7 +232,9 @@ namespace Freelancing.Controllers
                 LastName = userAccount.LastName,
                 Email = userAccount.Email,
                 UserName = userAccount.UserName,
-                Photo = userAccount.Photo
+                Photo = userAccount.Photo,
+                SavedSkills = savedSkills,
+                TotalSkillsCount = savedSkills.Count
             };
 
             return View(viewModel);

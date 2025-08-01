@@ -56,7 +56,7 @@
                                 <div>
                                     <input type="file" id="photoFile" name="PhotoFile" accept="image/*" class="form-control hidden">
                                     <button type="button" onclick="document.getElementById('photoFile').click()"
-                                            class="inline-flex items-center text-gray-900 bg-white border border-gray-300 focus:outline-none hover:bg-gray-100 focus:ring-4 focus:ring-gray-100 font-medium rounded-lg text-sm px-3 py-2.5 ms-3 me-2">
+                                    class="inline-flex items-center text-gray-900 bg-white border border-gray-300 focus:outline-none hover:bg-gray-100 focus:ring-4 focus:ring-gray-100 font-medium rounded-lg text-sm px-3 py-2.5 ms-3 me-2">
                                         Choose Photo
                                     </button>
                                     <span id="fileName1" class="ml-3 text-sm text-gray-600"></span>
@@ -84,6 +84,21 @@
                             <label asp-for="UserName" class="block mb-2 text-sm font-medium text-gray-900">Username</label>
                             <input asp-for="UserName" class="form-control bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5" required>
                         </div>
+                    </div>
+                    <label asp-for="UserName" class="block mb-2 text-sm font-medium text-gray-900">Skills</label>
+					@foreach (var skill in Model.SavedSkills)
+					{
+						<div class="mt-4 inline-flex items-center">
+							<button type="button"
+									class="text-white bg-blue-700 border border-gray-300 focus:outline-none hover:bg-blue-800 focus:ring-4 focus:ring-blue-100 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2">
+								@skill.Name
+							</button>
+						</div>
+					}
+                    <div class="mb-5">
+                    <a class="text-white inline-flex items-center bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center" asp-area="" asp-controller="Skill" asp-action="EditSkills">
+                        Add Skills
+                    </a>
                     </div>
 
                     <button type="submit"
