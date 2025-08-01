@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Freelancing.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250731070009_addskillrs_update2")]
-    partial class addskillrs_update2
+    [Migration("20250801112053_initialwithupdates")]
+    partial class initialwithupdates
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -82,6 +82,9 @@ namespace Freelancing.Migrations
                     b.Property<string>("Role")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
 
@@ -176,6 +179,21 @@ namespace Freelancing.Migrations
                     b.ToTable("UserAccounts");
                 });
 
+            modelBuilder.Entity("Freelancing.Models.Entities.UserAccountSkill", b =>
+                {
+                    b.Property<Guid>("UserAccountId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("UserSkillId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("UserAccountId", "UserSkillId");
+
+                    b.HasIndex("UserSkillId");
+
+                    b.ToTable("UserAccountSkills");
+                });
+
             modelBuilder.Entity("Freelancing.Models.Entities.UserSkill", b =>
                 {
                     b.Property<Guid>("Id")
@@ -189,21 +207,6 @@ namespace Freelancing.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("UserSkills");
-                });
-
-            modelBuilder.Entity("UserAccountUserSkill", b =>
-                {
-                    b.Property<Guid>("UserAccountsId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("UserSkillsId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.HasKey("UserAccountsId", "UserSkillsId");
-
-                    b.HasIndex("UserSkillsId");
-
-                    b.ToTable("UserAccountUserSkill");
                 });
 
             modelBuilder.Entity("Freelancing.Models.Entities.Bidding", b =>
@@ -253,19 +256,23 @@ namespace Freelancing.Migrations
                     b.Navigation("Mentorship");
                 });
 
-            modelBuilder.Entity("UserAccountUserSkill", b =>
+            modelBuilder.Entity("Freelancing.Models.Entities.UserAccountSkill", b =>
                 {
-                    b.HasOne("Freelancing.Models.Entities.UserAccount", null)
-                        .WithMany()
-                        .HasForeignKey("UserAccountsId")
+                    b.HasOne("Freelancing.Models.Entities.UserAccount", "UserAccount")
+                        .WithMany("UserAccountSkills")
+                        .HasForeignKey("UserAccountId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Freelancing.Models.Entities.UserSkill", null)
+                    b.HasOne("Freelancing.Models.Entities.UserSkill", "UserSkill")
                         .WithMany()
-                        .HasForeignKey("UserSkillsId")
+                        .HasForeignKey("UserSkillId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("UserAccount");
+
+                    b.Navigation("UserSkill");
                 });
 
             modelBuilder.Entity("Freelancing.Models.Entities.PeerMentorship", b =>
@@ -284,6 +291,8 @@ namespace Freelancing.Migrations
                     b.Navigation("Biddings");
 
                     b.Navigation("Projects");
+
+                    b.Navigation("UserAccountSkills");
                 });
 #pragma warning restore 612, 618
         }

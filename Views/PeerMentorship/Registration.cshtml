@@ -20,6 +20,15 @@
 						<option value="Mentee">Mentee</option>
 					</select>
 				</div>
+				<label asp-for="UserId" id="userid-address" class="control-label block mt-4 mb-2 text-sm font-medium text-gray-900 hidden">User Id</label>
+				<div class="relative hidden">
+					<div class="absolute inset-y-0 start-0 flex items-center ps-3.5 pointer-events-none">
+						<svg class="w-6 h-6 text-gray-800" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+							<path fill-rule="evenodd" d="M12 4a4 4 0 1 0 0 8 4 4 0 0 0 0-8Zm-2 9a4 4 0 0 0-4 4v1a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-1a4 4 0 0 0-4-4h-4Z" clip-rule="evenodd" />
+						</svg>
+					</div>
+					<input asp-for="UserId" value="@User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value" id="firstname-address-icon" class="form-control bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full ps-10 p-2.5" placeholder="" required>
+				</div>
 				<label asp-for="FirstName" id="firstname-address" class="control-label block mt-4 mb-2 text-sm font-medium text-gray-900">First Name</label>
 				<div class="relative">
 					<div class="absolute inset-y-0 start-0 flex items-center ps-3.5 pointer-events-none">

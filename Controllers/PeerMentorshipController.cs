@@ -55,6 +55,7 @@ namespace Freelancing.Controllers
 
                 // Create a new user account with the provided details.
                 PeerMentorship account = new PeerMentorship();
+                account.UserId = model.UserId;
                 account.FirstName = model.FirstName;
                 account.LastName = model.LastName;
                 account.Email = model.Email;

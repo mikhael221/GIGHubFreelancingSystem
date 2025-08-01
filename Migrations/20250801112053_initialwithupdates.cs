@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Freelancing.Migrations
 {
     /// <inheritdoc />
-    public partial class initial : Migration
+    public partial class initialwithupdates : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -16,6 +16,7 @@ namespace Freelancing.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     FirstName = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     LastName = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Email = table.Column<string>(type: "nvarchar(max)", nullable: false),
@@ -61,6 +62,30 @@ namespace Freelancing.Migrations
                         principalTable: "PeerMentorships",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.SetNull);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "UserAccountSkills",
+                columns: table => new
+                {
+                    UserAccountId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    UserSkillId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_UserAccountSkills", x => new { x.UserAccountId, x.UserSkillId });
+                    table.ForeignKey(
+                        name: "FK_UserAccountSkills_UserAccounts_UserAccountId",
+                        column: x => x.UserAccountId,
+                        principalTable: "UserAccounts",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_UserAccountSkills_UserSkills_UserSkillId",
+                        column: x => x.UserSkillId,
+                        principalTable: "UserSkills",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -153,6 +178,11 @@ namespace Freelancing.Migrations
                 column: "UserName",
                 unique: true);
 
+            migrationBuilder.CreateIndex(
+                name: "IX_UserAccountSkills_UserSkillId",
+                table: "UserAccountSkills",
+                column: "UserSkillId");
+
             migrationBuilder.AddForeignKey(
                 name: "FK_Biddings_Projects_ProjectId",
                 table: "Biddings",
@@ -168,6 +198,9 @@ namespace Freelancing.Migrations
             migrationBuilder.DropForeignKey(
                 name: "FK_Biddings_Projects_ProjectId",
                 table: "Biddings");
+
+            migrationBuilder.DropTable(
+                name: "UserAccountSkills");
 
             migrationBuilder.DropTable(
                 name: "UserSkills");
