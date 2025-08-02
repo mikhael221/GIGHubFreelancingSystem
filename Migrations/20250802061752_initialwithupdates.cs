@@ -12,34 +12,6 @@ namespace Freelancing.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
-                name: "PeerMentorships",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    FirstName = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    LastName = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Email = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Role = table.Column<string>(type: "nvarchar(max)", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_PeerMentorships", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "UserSkills",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_UserSkills", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "UserAccounts",
                 columns: table => new
                 {
@@ -56,12 +28,40 @@ namespace Freelancing.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_UserAccounts", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "UserSkills",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_UserSkills", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "PeerMentorships",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    FirstName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    LastName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Email = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Role = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PeerMentorships", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_UserAccounts_PeerMentorships_MentorshipId",
-                        column: x => x.MentorshipId,
-                        principalTable: "PeerMentorships",
+                        name: "FK_PeerMentorships_UserAccounts_UserId",
+                        column: x => x.UserId,
+                        principalTable: "UserAccounts",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.SetNull);
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -86,6 +86,46 @@ namespace Freelancing.Migrations
                         principalTable: "UserSkills",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "MentorshipMatches",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    MentorId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    MenteeId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    MentorMentorshipId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    MenteeMentorshipId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    MatchedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    Status = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    StartDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    EndDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    Notes = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_MentorshipMatches", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_MentorshipMatches_PeerMentorships_MenteeMentorshipId",
+                        column: x => x.MenteeMentorshipId,
+                        principalTable: "PeerMentorships",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_MentorshipMatches_PeerMentorships_MentorMentorshipId",
+                        column: x => x.MentorMentorshipId,
+                        principalTable: "PeerMentorships",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_MentorshipMatches_UserAccounts_MenteeId",
+                        column: x => x.MenteeId,
+                        principalTable: "UserAccounts",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_MentorshipMatches_UserAccounts_MentorId",
+                        column: x => x.MentorId,
+                        principalTable: "UserAccounts",
+                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -150,6 +190,43 @@ namespace Freelancing.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
+                name: "IX_MentorshipMatches_MatchedDate",
+                table: "MentorshipMatches",
+                column: "MatchedDate");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_MentorshipMatches_MenteeId",
+                table: "MentorshipMatches",
+                column: "MenteeId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_MentorshipMatches_MenteeMentorshipId",
+                table: "MentorshipMatches",
+                column: "MenteeMentorshipId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_MentorshipMatches_MentorId_MenteeId",
+                table: "MentorshipMatches",
+                columns: new[] { "MentorId", "MenteeId" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_MentorshipMatches_MentorMentorshipId",
+                table: "MentorshipMatches",
+                column: "MentorMentorshipId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_MentorshipMatches_Status",
+                table: "MentorshipMatches",
+                column: "Status");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PeerMentorships_UserId",
+                table: "PeerMentorships",
+                column: "UserId",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Projects_AcceptedBidId",
                 table: "Projects",
                 column: "AcceptedBidId");
@@ -164,13 +241,6 @@ namespace Freelancing.Migrations
                 table: "UserAccounts",
                 column: "Email",
                 unique: true);
-
-            migrationBuilder.CreateIndex(
-                name: "IX_UserAccounts_MentorshipId",
-                table: "UserAccounts",
-                column: "MentorshipId",
-                unique: true,
-                filter: "[MentorshipId] IS NOT NULL");
 
             migrationBuilder.CreateIndex(
                 name: "IX_UserAccounts_UserName",
@@ -200,7 +270,13 @@ namespace Freelancing.Migrations
                 table: "Biddings");
 
             migrationBuilder.DropTable(
+                name: "MentorshipMatches");
+
+            migrationBuilder.DropTable(
                 name: "UserAccountSkills");
+
+            migrationBuilder.DropTable(
+                name: "PeerMentorships");
 
             migrationBuilder.DropTable(
                 name: "UserSkills");
@@ -213,9 +289,6 @@ namespace Freelancing.Migrations
 
             migrationBuilder.DropTable(
                 name: "UserAccounts");
-
-            migrationBuilder.DropTable(
-                name: "PeerMentorships");
         }
     }
 }

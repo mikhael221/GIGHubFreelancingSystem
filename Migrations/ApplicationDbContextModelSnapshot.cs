@@ -58,6 +58,60 @@ namespace Freelancing.Migrations
                     b.ToTable("Biddings");
                 });
 
+            modelBuilder.Entity("Freelancing.Models.Entities.MentorshipMatch", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("EndDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("MatchedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("MenteeId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("MenteeMentorshipId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("MentorId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("MentorMentorshipId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<DateTime?>("StartDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MatchedDate");
+
+                    b.HasIndex("MenteeId");
+
+                    b.HasIndex("MenteeMentorshipId");
+
+                    b.HasIndex("MentorMentorshipId");
+
+                    b.HasIndex("Status");
+
+                    b.HasIndex("MentorId", "MenteeId")
+                        .IsUnique();
+
+                    b.ToTable("MentorshipMatches");
+                });
+
             modelBuilder.Entity("Freelancing.Models.Entities.PeerMentorship", b =>
                 {
                     b.Property<Guid>("Id")
@@ -84,6 +138,9 @@ namespace Freelancing.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("UserId")
+                        .IsUnique();
 
                     b.ToTable("PeerMentorships");
                 });
@@ -166,10 +223,6 @@ namespace Freelancing.Migrations
                     b.HasIndex("Email")
                         .IsUnique();
 
-                    b.HasIndex("MentorshipId")
-                        .IsUnique()
-                        .HasFilter("[MentorshipId] IS NOT NULL");
-
                     b.HasIndex("UserName")
                         .IsUnique();
 
@@ -225,6 +278,52 @@ namespace Freelancing.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("Freelancing.Models.Entities.MentorshipMatch", b =>
+                {
+                    b.HasOne("Freelancing.Models.Entities.UserAccount", "Mentee")
+                        .WithMany()
+                        .HasForeignKey("MenteeId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("Freelancing.Models.Entities.PeerMentorship", "MenteeMentorship")
+                        .WithMany()
+                        .HasForeignKey("MenteeMentorshipId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("Freelancing.Models.Entities.UserAccount", "Mentor")
+                        .WithMany()
+                        .HasForeignKey("MentorId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("Freelancing.Models.Entities.PeerMentorship", "MentorMentorship")
+                        .WithMany()
+                        .HasForeignKey("MentorMentorshipId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("Mentee");
+
+                    b.Navigation("MenteeMentorship");
+
+                    b.Navigation("Mentor");
+
+                    b.Navigation("MentorMentorship");
+                });
+
+            modelBuilder.Entity("Freelancing.Models.Entities.PeerMentorship", b =>
+                {
+                    b.HasOne("Freelancing.Models.Entities.UserAccount", "User")
+                        .WithOne("Mentorship")
+                        .HasForeignKey("Freelancing.Models.Entities.PeerMentorship", "UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("Freelancing.Models.Entities.Project", b =>
                 {
                     b.HasOne("Freelancing.Models.Entities.Bidding", "AcceptedBid")
@@ -241,16 +340,6 @@ namespace Freelancing.Migrations
                     b.Navigation("AcceptedBid");
 
                     b.Navigation("User");
-                });
-
-            modelBuilder.Entity("Freelancing.Models.Entities.UserAccount", b =>
-                {
-                    b.HasOne("Freelancing.Models.Entities.PeerMentorship", "Mentorship")
-                        .WithOne("User")
-                        .HasForeignKey("Freelancing.Models.Entities.UserAccount", "MentorshipId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.Navigation("Mentorship");
                 });
 
             modelBuilder.Entity("Freelancing.Models.Entities.UserAccountSkill", b =>
@@ -272,12 +361,6 @@ namespace Freelancing.Migrations
                     b.Navigation("UserSkill");
                 });
 
-            modelBuilder.Entity("Freelancing.Models.Entities.PeerMentorship", b =>
-                {
-                    b.Navigation("User")
-                        .IsRequired();
-                });
-
             modelBuilder.Entity("Freelancing.Models.Entities.Project", b =>
                 {
                     b.Navigation("Biddings");
@@ -286,6 +369,8 @@ namespace Freelancing.Migrations
             modelBuilder.Entity("Freelancing.Models.Entities.UserAccount", b =>
                 {
                     b.Navigation("Biddings");
+
+                    b.Navigation("Mentorship");
 
                     b.Navigation("Projects");
 

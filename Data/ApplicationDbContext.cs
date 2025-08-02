@@ -16,6 +16,7 @@ namespace Freelancing.Data
         public DbSet<PeerMentorship> PeerMentorships { get; set; }
         public DbSet<UserSkill> UserSkills { get; set; }
         public DbSet<UserAccountSkill> UserAccountSkills { get; set; }
+        public DbSet<MentorshipMatch> MentorshipMatches { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<Project>()
@@ -51,11 +52,11 @@ namespace Freelancing.Data
                 .HasForeignKey(p => p.AcceptedBidId)
                 .OnDelete(DeleteBehavior.NoAction);
 
-            modelBuilder.Entity<UserAccount>()
-                .HasOne(u => u.Mentorship)
-                .WithOne(p => p.User)
-                .HasForeignKey<UserAccount>(u => u.MentorshipId)
-                .OnDelete(DeleteBehavior.SetNull);
+            modelBuilder.Entity<PeerMentorship>()
+                .HasOne(u => u.User)
+                .WithOne(p => p.Mentorship)
+                .HasForeignKey<PeerMentorship>(u => u.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<UserAccountSkill>()
                 .HasKey(uas => new { uas.UserAccountId, uas.UserSkillId });
@@ -69,6 +70,44 @@ namespace Freelancing.Data
                 .HasOne(uas => uas.UserSkill)
                 .WithMany()
                 .HasForeignKey(uas => uas.UserSkillId);
+
+            // New MentorshipMatch relationships
+            modelBuilder.Entity<MentorshipMatch>()
+                .HasOne(mm => mm.Mentor)
+                .WithMany()
+                .HasForeignKey(mm => mm.MentorId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<MentorshipMatch>()
+                .HasOne(mm => mm.Mentee)
+                .WithMany()
+                .HasForeignKey(mm => mm.MenteeId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<MentorshipMatch>()
+                .HasOne(mm => mm.MentorMentorship)
+                .WithMany()
+                .HasForeignKey(mm => mm.MentorMentorshipId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<MentorshipMatch>()
+                .HasOne(mm => mm.MenteeMentorship)
+                .WithMany()
+                .HasForeignKey(mm => mm.MenteeMentorshipId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            // Ensure unique mentor-mentee pairs
+            modelBuilder.Entity<MentorshipMatch>()
+                .HasIndex(mm => new { mm.MentorId, mm.MenteeId })
+                .IsUnique();
+
+            // Add indexes for better performance
+            modelBuilder.Entity<MentorshipMatch>()
+                .HasIndex(mm => mm.Status);
+
+            modelBuilder.Entity<MentorshipMatch>()
+                .HasIndex(mm => mm.MatchedDate);
+
 
             base.OnModelCreating(modelBuilder);
         }

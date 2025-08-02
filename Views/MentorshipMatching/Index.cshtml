@@ -1,0 +1,109 @@
+﻿@{
+	Layout = "_LayoutFreelancer";
+	ViewData["Title"] = "Mentorship Matching";
+}
+
+@model Freelancing.Models.MentorshipMatchingViewModel
+
+<div class="p-4 sm:ml-64">
+	<div class="p-4 mt-20">
+		<div class="mt-4">
+			<div class="text-center block w-full p-6">
+				<h2 class="mb-4 text-3xl font-bold text-gray-900">Mentorship Matching</h2>
+			</div>
+			@if (TempData["SuccessMessage"] != null)
+			{
+				<div class="alert alert-success alert-dismissible fade show" role="alert">
+					@TempData["SuccessMessage"]
+					<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+				</div>
+			}
+
+			@if (TempData["ErrorMessage"] != null)
+			{
+				<div class="alert alert-danger alert-dismissible fade show" role="alert">
+					@TempData["ErrorMessage"]
+					<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+				</div>
+			}
+
+			<div class="row mb-4">
+				<div class="col-md-12">
+					<div class="card">
+						<div class="card-header">
+						</div>
+						<div class="card-body">
+							@if (!Model.HasSkills)
+							{
+								<div class="alert alert-warning">
+									<i class="fas fa-exclamation-triangle"></i>
+									You haven't added any skills to your profile yet.
+									<a href="@Url.Action("EditAccount", "Freelancer")" class="alert-link">Add skills</a> to find matches.
+								</div>
+							}
+						</div>
+					</div>
+				</div>
+			</div>
+
+			@if (Model.PotentialMatches.Any())
+			{
+				@foreach (var match in Model.PotentialMatches)
+				{
+					<div class="grid grid-cols-2 gap-3 mb-4">
+						<div class="max-w-sm bg-white border border-gray-200 rounded-lg shadow-sm">
+							<a href="#">
+								@if (!string.IsNullOrEmpty(match.Photo))
+								{
+									<img src="@match.Photo" alt="Profile" class="rounded-t-lg">
+								}
+								else
+								{
+									<img src="https://ik.imagekit.io/6txj3mofs/GIGHub%20(11).png?updatedAt=1750552804497" alt="Profile" class="rounded-t-lg">
+								}
+							</a>
+							<div class="p-5">
+								<a href="#">
+									<h5 class="mb-2 text-xl font-bold tracking-tight text-gray-900">@match.FirstName @match.LastName</h5>
+								</a>
+								<p class="mb-3 font-normal text-gray-700">
+									@foreach (var skill in match.UserAccountSkills.Take(3))
+									{
+										@skill.UserSkill.Name
+									}
+									@if (match.UserAccountSkills.Count > 3)
+									{
+										@(match.UserAccountSkills.Count - 3)
+									}
+								</p>
+							</div>
+						</div>
+					</div>
+				}
+			}
+			else if (!Model.HasSkills)
+			{
+				<div class="text-center py-4">
+					<i class="fas fa-cogs fa-3x text-muted mb-3"></i>
+					<h5 class="text-muted">No Skills Added</h5>
+					<p class="text-muted">Add skills to your profile to find potential matches.</p>
+					<a href="@Url.Action("EditSkills", "Skill")" class="btn btn-primary">
+						<i class="fas fa-plus"></i> Add Skills
+					</a>
+				</div>
+			}
+			else
+			{
+				<div class="text-center py-4">
+					<i class="fas fa-search fa-3x text-muted mb-3"></i>
+					<h5 class="text-muted">No Matches Found</h5>
+					<p class="text-muted">
+						No @(Model.UserRole == "Mentor" ? "mentees" : "mentors") found with exactly matching skills.
+						Try expanding your skill set or check back later.
+					</p>
+				</div>
+			}
+
+		</div>
+	</div>
+</div>

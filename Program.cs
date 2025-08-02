@@ -1,5 +1,6 @@
 using Freelancing.Data;
 using Freelancing.Models.Entities;
+using Freelancing.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -15,6 +16,8 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 builder.Services.AddScoped<IPasswordHasher<UserAccount>, PasswordHasher<UserAccount>>();
 
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme).AddCookie();
+
+builder.Services.AddScoped<IMentorshipMatchingService, MentorshipMatchingService>();
 
 var app = builder.Build();
 

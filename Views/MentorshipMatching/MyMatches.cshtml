@@ -1,0 +1,317 @@
+﻿@{
+    Layout = "_LayoutFreelancer";
+    ViewData["Title"] = "My Matches";
+}
+
+@model Freelancing.Models.MentorshipMatchListViewModel
+
+<div class="container-fluid p-4 sm:ml-64">
+    <div class="row">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="cancelled-tab" data-bs-toggle="tab" data-bs-target="#cancelled" type="button" role="tab">
+                            <i class="fas fa-times-circle"></i> Cancelled (@Model.CancelledMatches.Count)
+                        </button>
+                    </li>
+                    </ul>
+
+                    <div class="tab-content" id="matchTabContent">
+                        <!-- Active Matches -->
+                        <div class="tab-pane fade show active" id="active" role="tabpanel">
+                            <div class="card">
+                                <div class="card-body">
+                                    @if (Model.ActiveMatches.Any())
+                                    {
+                                        @foreach (var match in Model.ActiveMatches)
+                                        {
+                                            var partner = match.MentorId == Guid.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "") ? match.Mentee : match.Mentor;
+                                            var partnerRole = match.MentorId == Guid.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "") ? "Mentee" : "Mentor";
+                                            var isCurrentUserMentor = match.MentorId == Guid.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "");
+
+                                            <div class="row align-items-center p-3 border rounded mb-3">
+                                                <div class="col-md-2 text-center">
+                                                    @if (!string.IsNullOrEmpty(partner.Photo))
+                                                    {
+                                                        <img src="@partner.Photo" alt="Profile" class="rounded-circle" style="width: 60px; height: 60px; object-fit: cover;">
+                                                    }
+                                                    else
+                                                    {
+                                                        <div class="bg-secondary rounded-circle mx-auto d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                                                            <i class="fas fa-user text-white"></i>
+                                                        </div>
+                                                    }
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <h5 class="mb-1">@partner.FirstName @partner.LastName</h5>
+                                                    <p class="mb-1 text-muted">@partnerRole</p>
+                                                    <small class="text-muted">@partner.Email</small>
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <small class="text-muted">Matched: @match.MatchedDate.ToString("MMM dd, yyyy")</small><br>
+                                                    @if (match.StartDate.HasValue)
+                                                    {
+                                                        <small class="text-muted">Started: @match.StartDate.Value.ToString("MMM dd, yyyy")</small>
+
+                                                        <br>
+                                                        var duration = DateTime.UtcNow - match.StartDate.Value;
+                                                        <small class="text-success">Duration: @duration.Days days</small>
+                                                    }
+                                                    else
+                                                    {
+                                                        <small class="text-warning">Not started yet</small>
+                                                    }
+                                                </div>
+                                                <div class="col-md-2">
+                                                    <span class="badge bg-success">Active</span><br>
+                                                    <small class="text-muted">@partner.UserAccountSkills.Count skills</small>
+                                                </div>
+                                                <div class="col-md-1">
+                                                    <a href="@Url.Action("MatchDetails", new { id = match.Id })" class="btn btn-outline-primary btn-sm">
+                                                        <i class="fas fa-eye"></i>
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <div class="text-center py-5">
+                                            <i class="fas fa-handshake fa-3x text-muted mb-3"></i>
+                                            <h4 class="text-muted">No Active Matches</h4>
+                                            <p class="text-muted">You don't have any active mentorship matches at the moment.</p>
+                                            <a href="@Url.Action("Index")" class="btn btn-primary">
+                                                <i class="fas fa-search"></i> Find Matches
+                                            </a>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Completed Matches -->
+                        <div class="tab-pane fade" id="completed" role="tabpanel">
+                            <div class="card">
+                                <div class="card-body">
+                                    @if (Model.CompletedMatches.Any())
+                                    {
+                                        @foreach (var match in Model.CompletedMatches)
+                                        {
+                                            var partner = match.MentorId == Guid.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "") ? match.Mentee : match.Mentor;
+                                            var partnerRole = match.MentorId == Guid.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "") ? "Mentee" : "Mentor";
+
+                                            <div class="row align-items-center p-3 border rounded mb-3">
+                                                <div class="col-md-2 text-center">
+                                                    @if (!string.IsNullOrEmpty(partner.Photo))
+                                                    {
+                                                        <img src="@partner.Photo" alt="Profile" class="rounded-circle" style="width: 60px; height: 60px; object-fit: cover;">
+                                                    }
+                                                    else
+                                                    {
+                                                        <div class="bg-secondary rounded-circle mx-auto d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                                                            <i class="fas fa-user text-white"></i>
+                                                        </div>
+                                                    }
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <h5 class="mb-1">@partner.FirstName @partner.LastName</h5>
+                                                    <p class="mb-1 text-muted">@partnerRole</p>
+                                                    <small class="text-muted">@partner.Email</small>
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <small class="text-muted">Matched: @match.MatchedDate.ToString("MMM dd, yyyy")</small><br>
+                                                    @if (match.StartDate.HasValue && match.EndDate.HasValue)
+                                                    {
+                                                        <small class="text-muted">Duration: @((match.EndDate.Value - match.StartDate.Value).Days) days</small>
+
+                                                        <br>
+                                                        <small class="text-info">Completed: @match.EndDate.Value.ToString("MMM dd, yyyy")</small>
+                                                    }
+                                                    else if (match.EndDate.HasValue)
+                                                    {
+                                                        <small class="text-info">Completed: @match.EndDate.Value.ToString("MMM dd, yyyy")</small>
+                                                    }
+                                                </div>
+                                                <div class="col-md-2">
+                                                    <span class="badge bg-info">Completed</span><br>
+                                                    <small class="text-muted">@partner.UserAccountSkills.Count skills</small>
+                                                </div>
+                                                <div class="col-md-1">
+                                                    <a href="@Url.Action("MatchDetails", new { id = match.Id })" class="btn btn-outline-primary btn-sm">
+                                                        <i class="fas fa-eye"></i>
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <div class="text-center py-5">
+                                            <i class="fas fa-check-circle fa-3x text-muted mb-3"></i>
+                                            <h4 class="text-muted">No Completed Matches</h4>
+                                            <p class="text-muted">You haven't completed any mentorship matches yet.</p>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Cancelled Matches -->
+                        <div class="tab-pane fade" id="cancelled" role="tabpanel">
+                            <div class="card">
+                                <div class="card-body">
+                                    @if (Model.CancelledMatches.Any())
+                                    {
+                                        @foreach (var match in Model.CancelledMatches)
+                                        {
+                                            var partner = match.MentorId == Guid.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "") ? match.Mentee : match.Mentor;
+                                            var partnerRole = match.MentorId == Guid.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "") ? "Mentee" : "Mentor";
+
+                                            <div class="row align-items-center p-3 border rounded mb-3">
+                                                <div class="col-md-2 text-center">
+                                                    @if (!string.IsNullOrEmpty(partner.Photo))
+                                                    {
+                                                        <img src="@partner.Photo" alt="Profile" class="rounded-circle" style="width: 60px; height: 60px; object-fit: cover;">
+                                                    }
+                                                    else
+                                                    {
+                                                        <div class="bg-secondary rounded-circle mx-auto d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                                                            <i class="fas fa-user text-white"></i>
+                                                        </div>
+                                                    }
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <h5 class="mb-1">@partner.FirstName @partner.LastName</h5>
+                                                    <p class="mb-1 text-muted">@partnerRole</p>
+                                                    <small class="text-muted">@partner.Email</small>
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <small class="text-muted">Matched: @match.MatchedDate.ToString("MMM dd, yyyy")</small><br>
+                                                    @if (match.EndDate.HasValue)
+                                                    {
+                                                        <small class="text-warning">Cancelled: @match.EndDate.Value.ToString("MMM dd, yyyy")</small>
+                                                    }
+                                                    @if (match.StartDate.HasValue && match.EndDate.HasValue)
+                                                    {
+                                                        <br>
+
+                                                        <small class="text-muted">Duration: @((match.EndDate.Value - match.StartDate.Value).Days) days</small>
+                                                    }
+                                                </div>
+                                                <div class="col-md-2">
+                                                    <span class="badge bg-secondary">Cancelled</span><br>
+                                                    <small class="text-muted">@partner.UserAccountSkills.Count skills</small>
+                                                </div>
+                                                <div class="col-md-1">
+                                                    <a href="@Url.Action("MatchDetails", new { id = match.Id })" class="btn btn-outline-secondary btn-sm">
+                                                        <i class="fas fa-eye"></i>
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <div class="text-center py-5">
+                                            <i class="fas fa-times-circle fa-3x text-muted mb-3"></i>
+                                            <h4 class="text-muted">No Cancelled Matches</h4>
+                                            <p class="text-muted">You haven't cancelled any mentorship matches.</p>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Initialize Bootstrap tabs
+        var triggerTabList = [].slice.call(document.querySelectorAll('#matchTabs button'))
+        triggerTabList.forEach(function (triggerEl) {
+            var tabTrigger = new bootstrap.Tab(triggerEl)
+
+            triggerEl.addEventListener('click', function (event) {
+                event.preventDefault()
+                tabTrigger.show()
+            })
+        })
+    </script>
+}="breadcrumb-item"><a href="@Url.Action("Index", "PeerMentorship")">Mentorship</a></li>
+<li class="breadcrumb-item"><a href="@Url.Action("Index")">Matching</a></li>
+<li class="breadcrumb-item active">My Matches</li>
+                </ol>
+            </nav>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-users"></i> My Matches <small class="text-muted">(@Model.UserRole)</small></h2>
+    <a href="@Url.Action("Index")" class="btn btn-primary">
+        <i class="fas fa-search"></i> Find New Matches
+    </a>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card text-white bg-success">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h3 class="mb-0">@Model.ActiveMatches.Count</h3>
+                        <p class="mb-0">Active Matches</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-handshake fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-white bg-info">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h3 class="mb-0">@Model.CompletedMatches.Count</h3>
+                        <p class="mb-0">Completed</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-check-circle fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-white bg-secondary">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h3 class="mb-0">@Model.CancelledMatches.Count</h3>
+                        <p class="mb-0">Cancelled</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-times-circle fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tabs for different match statuses -->
+<ul class="nav nav-tabs" id="matchTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="active-tab" data-bs-toggle="tab" data-bs-target="#active" type="button" role="tab">
+            <i class="fas fa-handshake"></i> Active (@Model.ActiveMatches.Count)
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="completed-tab" data-bs-toggle="tab" data-bs-target="#completed" type="button" role="tab">
+            <i class="fas fa-check-circle"></i> Completed (@Model.CompletedMatches.Count)
+        </button>
+    </li>
+    <li class
