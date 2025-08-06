@@ -1,65 +1,153 @@
 ﻿@{
-	Layout = "_LayoutFreelancer";
+	Layout = null;
 	ViewData["Title"] = "Registration";
 }
 
 @model Freelancing.Models.MentorshipRegistration
 
-<div class="flex items-center justify-center w-full">
-	<div class="w-1/2 flex flex-col items-center justify-center p-6 bg-white border border-gray-200 rounded-lg shadow">
-		<div class="mb-5">
-			<h5 class="mb-2 text-2xl font-bold text-gray-900">Sign Up</h5>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<title>@ViewData["Title"]</title>
+	<link rel="stylesheet" href="~/css/output.css" />
+	<link rel="stylesheet" href="https://rsms.me/inter/inter.css" />
+</head>
+<body>
+	<nav class="fixed top-0 z-50 w-full bg-white border-b border-gray-200">
+		<div class="px-3 py-3 lg:px-5 lg:pl-3">
+			<div class="flex items-center justify-between">
+				<div class="flex items-center justify-start rtl:justify-end">
+					<button data-drawer-target="logo-sidebar" data-drawer-toggle="logo-sidebar" aria-controls="logo-sidebar" type="button" class="inline-flex items-center p-2 text-sm text-gray-500 rounded-lg sm:hidden hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200">
+						<span class="sr-only">Open sidebar</span>
+						<svg class="w-6 h-6" aria-hidden="true" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+							<path clip-rule="evenodd" fill-rule="evenodd" d="M2 4.75A.75.75 0 012.75 4h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 4.75zm0 10.5a.75.75 0 01.75-.75h7.5a.75.75 0 010 1.5h-7.5a.75.75 0 01-.75-.75zM2 10a.75.75 0 01.75-.75h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 10z"></path>
+						</svg>
+					</button>
+					<a class="-m-1.5 p-1.5 ms-5" asp-area="" asp-controller="Home" asp-action="Index">
+						<span class="sr-only">Your Company</span>
+						<img class="h-16 w-auto" src="https://ik.imagekit.io/6txj3mofs/GIGHub%20(2).png?updatedAt=1749718355580" alt="">
+					</a>
+				</div>
+				<div class="flex items-center">
+					<div class="flex items-center me-5">
+						<div>
+							<button type="button" class="flex text-sm bg-gray-800 rounded-full focus:ring-4 focus:ring-gray-300" aria-expanded="false" data-dropdown-toggle="dropdown-user">
+								<span class="sr-only">Open user menu</span>
+								@if (!string.IsNullOrEmpty(@User.FindFirst("Photo")?.Value))
+								{
+									<img class="w-8 h-8 rounded-full" src="@User.FindFirst("Photo")?.Value" alt="user photo">
+								}
+								else
+								{
+									<img class="w-8 h-8 rounded-full" src="https://ik.imagekit.io/6txj3mofs/GIGHub%20(11).png?updatedAt=1750552804497" alt="user photo">
+								}
+							</button>
+						</div>
+						<div class="z-50 hidden my-4 text-base list-none bg-white divide-y divide-gray-100 rounded-sm shadow-sm" id="dropdown-user">
+							<div class="px-4 py-3" role="none">
+								<p class="text-sm text-gray-900" role="none">
+									@User.FindFirst("FullName")?.Value
+								</p>
+								<p class="text-sm font-medium text-gray-900 truncate" role="none">
+									@User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value
+								</p>
+							</div>
+							<ul class="py-1" role="none">
+								<li>
+									<a asp-controller="Account" asp-action="LogOut" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem">Sign out</a>
+								</li>
+							</ul>
+						</div>
+					</div>
+				</div>
+			</div>
 		</div>
-		<div class="w-full">
-			<form asp-action="Registration">
-				<label asp-for="Role" id="role-address" class="control-label block mb-2 text-sm font-medium text-gray-900">Role</label>
-				<div class="relative">
-					<select asp-for="Role" id="role-address-icon" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5" required>
-						<option value="">Select a Role</option>
-						<option value="Mentor">Mentor</option>
-						<option value="Mentee">Mentee</option>
-					</select>
-				</div>
-				<label asp-for="UserId" id="userid-address" class="control-label block mt-4 mb-2 text-sm font-medium text-gray-900 hidden">User Id</label>
-				<div class="relative hidden">
-					<div class="absolute inset-y-0 start-0 flex items-center ps-3.5 pointer-events-none">
-						<svg class="w-6 h-6 text-gray-800" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
-							<path fill-rule="evenodd" d="M12 4a4 4 0 1 0 0 8 4 4 0 0 0 0-8Zm-2 9a4 4 0 0 0-4 4v1a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-1a4 4 0 0 0-4-4h-4Z" clip-rule="evenodd" />
-						</svg>
+	</nav>
+	<div class="p-4 grid grid-cols-1 lg:grid-cols-2 items-center">
+		<div class="p-4 mt-15">
+			<div class="mt-5" style="margin-left: 160px; margin-top: 70px">
+				<div class="w-3/4 flex flex-col items-center justify-center p-6 bg-white border border-gray-200 rounded-lg shadow">
+					<div class="mb-5">
+						<h5 class="mb-2 text-2xl font-bold text-gray-900">Review Your Information</h5>
 					</div>
-					<input asp-for="UserId" value="@User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value" id="firstname-address-icon" class="form-control bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full ps-10 p-2.5" placeholder="" required>
-				</div>
-				<label asp-for="FirstName" id="firstname-address" class="control-label block mt-4 mb-2 text-sm font-medium text-gray-900">First Name</label>
-				<div class="relative">
-					<div class="absolute inset-y-0 start-0 flex items-center ps-3.5 pointer-events-none">
-						<svg class="w-6 h-6 text-gray-800" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
-							<path fill-rule="evenodd" d="M12 4a4 4 0 1 0 0 8 4 4 0 0 0 0-8Zm-2 9a4 4 0 0 0-4 4v1a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-1a4 4 0 0 0-4-4h-4Z" clip-rule="evenodd" />
-						</svg>
+					<div class="w-full">
+						<form asp-action="Registration">
+							<label asp-for="Role" id="role-address" class="control-label block mb-2 text-sm font-medium text-gray-900">Role</label>
+							<div class="relative">
+								<select asp-for="Role" id="role-address-icon" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5" required>
+									<option value="">Select a Role</option>
+									<option value="Mentor">Mentor</option>
+									<option value="Mentee">Mentee</option>
+								</select>
+							</div>
+							<label asp-for="UserId" id="userid-address" class="control-label block mt-4 mb-2 text-sm font-medium text-gray-900 hidden">User Id</label>
+							<div class="relative hidden">
+								<div class="absolute inset-y-0 start-0 flex items-center ps-3.5 pointer-events-none">
+									<svg class="w-6 h-6 text-gray-800" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+										<path fill-rule="evenodd" d="M12 4a4 4 0 1 0 0 8 4 4 0 0 0 0-8Zm-2 9a4 4 0 0 0-4 4v1a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-1a4 4 0 0 0-4-4h-4Z" clip-rule="evenodd" />
+									</svg>
+								</div>
+								<input asp-for="UserId" value="@User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value" id="firstname-address-icon" class="form-control bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full ps-10 p-2.5" placeholder="" required>
+							</div>
+							<label asp-for="FirstName" id="firstname-address" class="control-label block mt-4 mb-2 text-sm font-medium text-gray-900">First Name</label>
+							<div class="relative">
+								<div class="absolute inset-y-0 start-0 flex items-center ps-3.5 pointer-events-none">
+									<svg class="w-6 h-6 text-gray-800" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+										<path fill-rule="evenodd" d="M12 4a4 4 0 1 0 0 8 4 4 0 0 0 0-8Zm-2 9a4 4 0 0 0-4 4v1a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-1a4 4 0 0 0-4-4h-4Z" clip-rule="evenodd" />
+									</svg>
+								</div>
+								<input asp-for="FirstName" value="@User.FindFirst(System.Security.Claims.ClaimTypes.GivenName)?.Value" id="firstname-address-icon" class="form-control bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full ps-10 p-2.5" placeholder="" required>
+							</div>
+							<label asp-for="LastName" id="lastname-address" class="control-label block mt-4 mb-2 text-sm font-medium text-gray-900">Last Name</label>
+							<div class="relative">
+								<div class="absolute inset-y-0 start-0 flex items-center ps-3.5 pointer-events-none">
+									<svg class="w-6 h-6 text-gray-800" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+										<path fill-rule="evenodd" d="M12 4a4 4 0 1 0 0 8 4 4 0 0 0 0-8Zm-2 9a4 4 0 0 0-4 4v1a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-1a4 4 0 0 0-4-4h-4Z" clip-rule="evenodd" />
+									</svg>
+								</div>
+								<input asp-for="LastName" value="@User.FindFirst(System.Security.Claims.ClaimTypes.Surname)?.Value" id="lastname-address-icon" class="form-control bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full ps-10 p-2.5" placeholder="" required>
+							</div>
+							<label asp-for="Email" id="email-address" class="control-label block mt-4 mb-2 text-sm font-medium text-gray-900">Email</label>
+							<div class="relative">
+								<div class="absolute inset-y-0 start-0 flex items-center ps-3.5 pointer-events-none">
+									<svg class="w-6 h-6 text-gray-800" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+										<path fill-rule="evenodd" d="M12 4a4 4 0 1 0 0 8 4 4 0 0 0 0-8Zm-2 9a4 4 0 0 0-4 4v1a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-1a4 4 0 0 0-4-4h-4Z" clip-rule="evenodd" />
+									</svg>
+								</div>
+								<input asp-for="Email" value="@User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value" id="email-address-icon" class="form-control bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full ps-10 p-2.5" placeholder="" required>
+							</div>
+							<button type="submit" class="mt-4 ml-auto px-6 py-2 text-white bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm transition-all duration-200 transform hover:scale-105">
+								Register
+							</button>
+						</form>
 					</div>
-					<input asp-for="FirstName" value="@User.FindFirst(System.Security.Claims.ClaimTypes.GivenName)?.Value" id="firstname-address-icon" class="form-control bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full ps-10 p-2.5" placeholder="" required>
 				</div>
-				<label asp-for="LastName" id="lastname-address" class="control-label block mt-4 mb-2 text-sm font-medium text-gray-900">Last Name</label>
-				<div class="relative">
-					<div class="absolute inset-y-0 start-0 flex items-center ps-3.5 pointer-events-none">
-						<svg class="w-6 h-6 text-gray-800" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
-							<path fill-rule="evenodd" d="M12 4a4 4 0 1 0 0 8 4 4 0 0 0 0-8Zm-2 9a4 4 0 0 0-4 4v1a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-1a4 4 0 0 0-4-4h-4Z" clip-rule="evenodd" />
-						</svg>
-					</div>
-					<input asp-for="LastName" value="@User.FindFirst(System.Security.Claims.ClaimTypes.Surname)?.Value" id="lastname-address-icon" class="form-control bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full ps-10 p-2.5" placeholder="" required>
-				</div>
-				<label asp-for="Email" id="email-address" class="control-label block mt-4 mb-2 text-sm font-medium text-gray-900">Email</label>
-				<div class="relative">
-					<div class="absolute inset-y-0 start-0 flex items-center ps-3.5 pointer-events-none">
-						<svg class="w-6 h-6 text-gray-800" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
-							<path fill-rule="evenodd" d="M12 4a4 4 0 1 0 0 8 4 4 0 0 0 0-8Zm-2 9a4 4 0 0 0-4 4v1a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-1a4 4 0 0 0-4-4h-4Z" clip-rule="evenodd" />
-						</svg>
-					</div>
-					<input asp-for="Email" value="@User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value" id="email-address-icon" class="form-control bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full ps-10 p-2.5" placeholder="" required>
-				</div>
-				<button type="submit" class="mt-4 ml-auto px-6 py-2 text-white bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm transition-all duration-200 transform hover:scale-105">
-					Register
-				</button>
-			</form>
+			</div>
+		</div>
+		<div class="p-4">
+			<div class="flex items-center justify-center w-full mt-5" style="margin-top: 75px">
+				<img class="w-3/4 h-3/4" src="https://ik.imagekit.io/6txj3mofs/PEERMENTOR.png?updatedAt=1754184399237" alt="">
+			</div>
 		</div>
 	</div>
-</div>
+
+	@section Scripts {
+		@{
+			await Html.RenderPartialAsync("_ValidationScriptsPartial");
+		}
+	}
+	<script src="~/js/site.js" asp-append-version="true"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.2.1/flowbite.min.js"></script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+

@@ -3,6 +3,7 @@ using Freelancing.Models;
 using Freelancing.Models.Entities;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -10,12 +11,17 @@ using System.Security.Claims;
 
 namespace Freelancing.Controllers
 {
+    [Authorize]
     public class PeerMentorshipController : Controller
     {
         private readonly ApplicationDbContext _context;
         public PeerMentorshipController(ApplicationDbContext context)
         {
             _context = context;
+        }
+        public IActionResult PseudoRegSuccess()
+        {
+            return View();
         }
         public IActionResult Index()
         {
@@ -25,16 +31,20 @@ namespace Freelancing.Controllers
         {
             return View();
         }
-        public IActionResult Role()
-        {
-            return View();
-        }
         public IActionResult Registration()
         {
             return View();
         }
+        public IActionResult RegistrationSuccess()
+        {
+            return View();
+        }
+        public IActionResult Dashboard()
+        {
+            return View();
+        }
         [HttpPost]
-        public async Task <IActionResult> Registration(MentorshipRegistration model)
+        public async Task<IActionResult> Registration(MentorshipRegistration model)
         {
             if (ModelState.IsValid)
             {
@@ -109,18 +119,63 @@ namespace Freelancing.Controllers
 
             return View(model);
         }
-        public IActionResult RegistrationSuccess()
+        [HttpGet]
+        public async Task<IActionResult> RegistrationSuccess(Guid? Id = null)
         {
-            if (TempData["SuccessMessage"] == null)
+            Guid mentorshipId;
+
+            // If no ID is provided, try to get it from the current user's claims
+            if (Id == null)
             {
-                return RedirectToAction("Registration");
+                var mentorshipIdClaim = User.FindFirst("MentorshipId")?.Value;
+                if (string.IsNullOrEmpty(mentorshipIdClaim) || !Guid.TryParse(mentorshipIdClaim, out mentorshipId))
+                {
+                    // Redirect to registration if no mentorship ID found
+                    return RedirectToAction("Registration");
+                }
+            }
+            else
+            {
+                mentorshipId = Id.Value;
             }
 
-            return View();
+            var mentorship = await _context.PeerMentorships
+                .Include(p => p.User)
+                .FirstOrDefaultAsync(p => p.Id == mentorshipId);
+
+            if (mentorship == null)
+                return NotFound();
+
+            return View(mentorship);
         }
-        public IActionResult Dashboard()
+        [HttpGet]
+        public async Task<IActionResult> Dashboard(Guid? Id = null)
         {
-            return View();
+            Guid mentorshipId;
+
+            // If no ID is provided, try to get it from the current user's claims
+            if (Id == null)
+            {
+                var mentorshipIdClaim = User.FindFirst("MentorshipId")?.Value;
+                if (string.IsNullOrEmpty(mentorshipIdClaim) || !Guid.TryParse(mentorshipIdClaim, out mentorshipId))
+                {
+                    // Redirect to registration if no mentorship ID found
+                    return RedirectToAction("Registration");
+                }
+            }
+            else
+            {
+                mentorshipId = Id.Value;
+            }
+
+            var mentorship = await _context.PeerMentorships
+                .Include(p => p.User)
+                .FirstOrDefaultAsync(p => p.Id == mentorshipId);
+
+            if (mentorship == null)
+                return NotFound();
+
+            return View(mentorship);
         }
     }
 }

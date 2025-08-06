@@ -29,6 +29,7 @@ namespace Freelancing.Models.Entities
 
         public DateTime? StartDate { get; set; }
         public DateTime? EndDate { get; set; }
+        public DateTime? DeclinedDate { get; set; }
 
         [StringLength(1000)]
         public string? Notes { get; set; }

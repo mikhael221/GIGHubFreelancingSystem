@@ -7,18 +7,21 @@ namespace Freelancing.Services
     public interface IMentorshipMatchingService
     {
         Task<List<UserAccount>> FindPotentialMentorsAsync(Guid menteeId);
-        Task<List<UserAccount>> FindPotentialMenteesAsync(Guid mentorId);
+        /*Task<List<UserAccount>> FindPotentialMenteesAsync(Guid mentorId);
         Task<bool> CreateMatchAsync(Guid mentorId, Guid menteeId);
-        Task<List<MentorshipMatch>> GetUserMatchesAsync(Guid userId);
+        Task<List<MentorshipMatch>> GetUserMatchesAsync(Guid userId);*/
     }
 
     public class MentorshipMatchingService : IMentorshipMatchingService
     {
         private readonly ApplicationDbContext _context;
+
         public MentorshipMatchingService(ApplicationDbContext context)
         {
             _context = context;
         }
+
+        // Find potential mentors for a mentee based on 100% skill match
         public async Task<List<UserAccount>> FindPotentialMentorsAsync(Guid menteeId)
         {
             // Get mentee's skills
@@ -32,7 +35,7 @@ namespace Freelancing.Services
 
             // Get mentee's mentorship info to ensure they're registered as mentee
             var menteeMentorship = await _context.PeerMentorships
-                .FirstOrDefaultAsync(pm => pm.UserId == menteeId && pm.Role.ToLower() == "Mentee");
+                .FirstOrDefaultAsync(pm => pm.UserId == menteeId && pm.Role.ToLower() == "mentee");
 
             if (menteeMentorship == null)
                 return new List<UserAccount>();
@@ -43,7 +46,7 @@ namespace Freelancing.Services
                 .ThenInclude(uas => uas.UserSkill)
                 .Include(ua => ua.Mentorship)
                 .Where(ua => ua.Mentorship != null &&
-                           ua.Mentorship.Role.ToLower() == "Mentor" &&
+                           ua.Mentorship.Role.ToLower() == "mentor" &&
                            ua.Id != menteeId && // Exclude the mentee themselves
                            ua.UserAccountSkills.Count > 0 && // Must have skills
                            ua.UserAccountSkills.Select(uas => uas.UserSkillId)
@@ -54,6 +57,8 @@ namespace Freelancing.Services
 
             return potentialMentors;
         }
+
+        /*// Find potential mentees for a mentor based on 100% skill match
         public async Task<List<UserAccount>> FindPotentialMenteesAsync(Guid mentorId)
         {
             // Get mentor's skills
@@ -67,7 +72,7 @@ namespace Freelancing.Services
 
             // Get mentor's mentorship info to ensure they're registered as mentor
             var mentorMentorship = await _context.PeerMentorships
-                .FirstOrDefaultAsync(pm => pm.UserId == mentorId && pm.Role.ToLower() == "Mentor");
+                .FirstOrDefaultAsync(pm => pm.UserId == mentorId && pm.Role.ToLower() == "mentor");
 
             if (mentorMentorship == null)
                 return new List<UserAccount>();
@@ -78,7 +83,7 @@ namespace Freelancing.Services
                 .ThenInclude(uas => uas.UserSkill)
                 .Include(ua => ua.Mentorship)
                 .Where(ua => ua.Mentorship != null &&
-                           ua.Mentorship.Role.ToLower() == "Mentee" &&
+                           ua.Mentorship.Role.ToLower() == "mentee" &&
                            ua.Id != mentorId && // Exclude the mentor themselves
                            ua.UserAccountSkills.Count > 0 && // Must have skills
                            ua.UserAccountSkills.Select(uas => uas.UserSkillId)
@@ -88,14 +93,16 @@ namespace Freelancing.Services
                 .ToListAsync();
 
             return potentialMentees;
-        }
+        }*/
+
+        // Create a mentorship match
         public async Task<bool> CreateMatchAsync(Guid mentorId, Guid menteeId)
         {
             // Verify both users are in mentorship program with correct roles
             var mentor = await _context.PeerMentorships
-                .FirstOrDefaultAsync(pm => pm.UserId == mentorId && pm.Role.ToLower() == "Mentor");
+                .FirstOrDefaultAsync(pm => pm.UserId == mentorId && pm.Role.ToLower() == "mentor");
             var mentee = await _context.PeerMentorships
-                .FirstOrDefaultAsync(pm => pm.UserId == menteeId && pm.Role.ToLower() == "Mentee");
+                .FirstOrDefaultAsync(pm => pm.UserId == menteeId && pm.Role.ToLower() == "mentee");
 
             if (mentor == null || mentee == null)
                 return false;
@@ -138,6 +145,8 @@ namespace Freelancing.Services
 
             return true;
         }
+
+        // Get all matches for a user (either as mentor or mentee)
         public async Task<List<MentorshipMatch>> GetUserMatchesAsync(Guid userId)
         {
             var matches = await _context.MentorshipMatches

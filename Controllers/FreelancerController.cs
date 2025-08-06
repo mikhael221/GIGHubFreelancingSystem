@@ -385,7 +385,28 @@ namespace Freelancing.Controllers
                 ViewBag.Message = "No changes were detected.";
             }
 
-            return View(viewModel);
+            var finalViewModel = await PopulateEditAccountViewModel(userId, userAccount);
+            return View(finalViewModel);
+        }
+        private async Task<EditAccount> PopulateEditAccountViewModel(Guid userId, UserAccount userAccount)
+        {
+            var savedSkills = await dbContext.UserAccountSkills
+                .Where(uas => uas.UserAccountId == userId)
+                .Include(uas => uas.UserSkill)
+                .Select(uas => uas.UserSkill)
+                .OrderBy(s => s.Name)
+                .ToListAsync();
+
+            return new EditAccount
+            {
+                FirstName = userAccount.FirstName,
+                LastName = userAccount.LastName,
+                Email = userAccount.Email,
+                UserName = userAccount.UserName,
+                Photo = userAccount.Photo,
+                SavedSkills = savedSkills,
+                TotalSkillsCount = savedSkills.Count
+            };
         }
 
         // Updated method to refresh claims

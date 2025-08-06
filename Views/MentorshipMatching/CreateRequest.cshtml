@@ -1,0 +1,294 @@
+﻿@{
+    Layout = "_LayoutFreelancer";
+    ViewData["Title"] = "Send Request";
+}
+
+@model Freelancing.Models.CreateMatchRequest
+
+<div class="p-4 sm:ml-64">
+    <div class="p-4 mt-20">
+        <div class="text-center block w-full p-6">
+            <h2 class="mb-4 text-3xl font-bold text-gray-900">
+                @if (ViewBag.RequestSent == true)
+                {
+                    @:Request Sent!
+                }
+                else if (ViewBag.ExistingRequest == true)
+                {
+                    @:Request Status
+                }
+                else
+                {
+                    @:Send Request
+                }
+            </h2>
+            <div class="grid grid-cols-1 lg:grid-cols-2 items-start gap-8">
+                <div class="flex flex-col items-center w-full">
+                    <!-- Profile Image -->
+                    <div class="mb-4">
+                        @if (!string.IsNullOrEmpty(Model.Partner.Photo))
+                        {
+                            <img src="@Model.Partner.Photo" alt="Profile" class="w-20 h-20 rounded-full object-cover">
+                        }
+                        else
+                        {
+                            <img src="https://ik.imagekit.io/6txj3mofs/GIGHub%20(11).png?updatedAt=1750552804497" alt="Profile" class="w-20 h-20 rounded-full object-cover">
+                        }
+                    </div>
+                    <div class="text-center">
+                        <h5 class="mb-2 text-xl font-bold tracking-tight text-gray-900">
+                            @Model.Partner.FirstName @Model.Partner.LastName
+                        </h5>
+                        <p class="mb-3 font-normal text-gray-700">
+                            @{
+                                var skillNames = Model.Partner.UserAccountSkills.Take(3).Select(s => s.UserSkill.Name);
+                                var skillsText = string.Join(", ", skillNames);
+
+                                if (Model.Partner.UserAccountSkills.Count > 3)
+                                {
+                                    skillsText += $" +{Model.Partner.UserAccountSkills.Count - 3} more";
+                                }
+                            }
+                            @skillsText
+                        </p>
+                    </div>
+                </div>
+                <div class="p-4" style="margin-right: 20px; margin-top: 40px">
+                    <div class="w-full">
+                        @if (ViewBag.RequestSent == true)
+                        {
+                            <!-- Confirmation Message -->
+                            <div class="text-center space-y-6">
+                                <div class="flex justify-center mb-4">
+                                    <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+                                        <div class="flex items-center justify-center w-full">
+                                            <img style="width: 80px; height: auto; margin-bottom: 20px" src="https://ik.imagekit.io/6txj3mofs/CHECK.png?updatedAt=1754207749128" alt="">
+                                        </div>
+                                    </div>
+                                </div>
+                                <h3 class="text-xl font-semibold text-gray-900 mb-4">Request Successfully Sent!</h3>
+                                <div class="mt-2 flex items-center p-4 mb-4 text-sm text-green-800 border border-green-300 rounded-lg bg-green-50" role="alert">
+                                    <p class="text-green-800 text-base">
+                                        Your mentorship request has been sent to <strong>@Model.Partner.FirstName @Model.Partner.LastName</strong>.
+                                        You'll receive a notification when they respond to your request.
+                                    </p>
+                                </div>
+
+                                @if (!string.IsNullOrEmpty(ViewBag.SentMessage as string))
+                                {
+                                    <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6">
+                                        <h4 class="font-medium text-gray-900 mb-2">Your Message:</h4>
+                                        <p class="text-gray-700 text-sm italic">"@ViewBag.SentMessage"</p>
+                                    </div>
+                                }
+                                <div class="flex gap-4 mt-6">
+                                    <a href="@Url.Action("MenteeDashboard", "MentorshipMatching")" type="submit"
+                                       class="flex-1 text-white inline-flex items-center justify-center bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-base px-6 py-3 text-center transition-colors">
+                                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                                        </svg>
+                                        Go Back
+                                    </a>
+                                    <a href="@Url.Action("MenteeDashboard", "MentorshipMatching")"
+                                       class="flex-1 text-gray-700 inline-flex items-center justify-center bg-gray-200 hover:bg-gray-300 focus:ring-4 focus:outline-none focus:ring-gray-300 font-medium rounded-lg text-base px-6 py-3 text-center transition-colors">
+                                        Go to Dashboard
+                                    </a>
+                                </div>
+                            </div>
+                        }
+                        else if (ViewBag.ExistingRequest == true)
+                        {
+                            <!-- Existing Request Status -->
+                            <div class="text-center space-y-6">
+                                <div class="flex justify-center mb-4">
+                                    <div class="w-16 h-16 @(ViewBag.RequestStatus == "Active" ? "bg-green-100" : ViewBag.RequestStatus == "Declined" ? "bg-red-100" : "bg-yellow-100") rounded-full flex items-center justify-center">
+                                        @if (ViewBag.RequestStatus == "Active")
+                                        {
+                                            <div class="flex items-center justify-center w-full">
+                                                <img style="width: 80px; height: auto; margin-bottom: 20px" src="https://ik.imagekit.io/6txj3mofs/CHECK.png?updatedAt=1754207749128" alt="">
+                                            </div>
+                                        }
+                                        else if (ViewBag.RequestStatus == "Declined")
+                                        {
+                                            <div class="flex items-center justify-center w-full">
+                                                <img style="width: 80px; height: auto; margin-bottom: 20px" src="https://ik.imagekit.io/6txj3mofs/DECLINED.png?updatedAt=1754266151184" alt="">
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <div class="flex items-center justify-center w-full">
+                                                <img style="width: 80px; height: auto; margin-bottom: 20px" src="https://ik.imagekit.io/6txj3mofs/PENDING.png" alt="">
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+
+                                <h3 class="text-xl font-semibold text-gray-900 mb-4">
+                                    @if (ViewBag.RequestStatus == "Active")
+                                    {
+                                        @:Active Mentorship
+                                    }
+                                    else if (ViewBag.RequestStatus == "Declined")
+                                    {
+                                        @:Request Declined
+                                    }
+                                    else
+                                    {
+                                        @:Request Pending
+                                    }
+                                </h3>
+
+                                <div class="@ViewBag.StatusClass mt-2 flex items-center p-4 mb-4 text-sm text-gray-800 border border-gray-300 rounded-lg bg-gray-50" role="alert">
+                                    <div class="flex">
+                                        @if (ViewBag.RequestStatus == "Declined" && ViewBag.DaysRemaining != null)
+                                        {
+                                        }
+                                        <div>
+                                            <p class="text-base">@ViewBag.StatusMessage</p>
+                                            @if (ViewBag.RequestStatus == "Declined" && ViewBag.NextRequestDate != null)
+                                            {
+                                                <p class="text-sm mt-2 font-medium">
+                                                    You can send a new request on: <span class="text-gray-900">@ViewBag.NextRequestDate</span>
+                                                </p>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Request Details -->
+                                <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6">
+                                    @if (!string.IsNullOrEmpty(ViewBag.RequestNotes as string))
+                                    {
+                                        <h4 class="font-medium text-gray-900 mb-2">Your Message:</h4>
+                                        <p class="text-gray-700 text-sm italic">"@ViewBag.RequestNotes"</p>
+
+                                    }
+                                </div>
+
+                                <!-- Action Buttons -->
+                                <div class="flex gap-4 mt-6">
+                                    <a href="@Url.Action("MenteeDashboard", "MentorshipMatching")"
+                                       class="flex-1 text-white inline-flex items-center justify-center bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-base px-6 py-3 text-center transition-colors">
+                                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                                        </svg>
+                                        Go to Dashboard
+                                    </a>
+                                    @if (ViewBag.RequestStatus == "Active")
+                                    {
+                                        <a href="@Url.Action("ViewMentorship", "MentorshipMatching", new { id = ViewBag.PartnerId })"
+                                           class="flex-1 text-gray-700 inline-flex items-center justify-center bg-gray-200 hover:bg-gray-300 focus:ring-4 focus:outline-none focus:ring-gray-300 font-medium rounded-lg text-base px-6 py-3 text-center transition-colors">
+                                            View Mentorship
+                                        </a>
+                                    }
+                                    else
+                                    {
+                                        <a href="@Url.Action("AvailableMentors", "MentorshipMatching")"
+                                           class="flex-1 text-gray-700 inline-flex items-center justify-center bg-gray-200 hover:bg-gray-300 focus:ring-4 focus:outline-none focus:ring-gray-300 font-medium rounded-lg text-base px-6 py-3 text-center transition-colors">
+                                            Find Other Mentors
+                                        </a>
+                                    }
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            <!-- Request Form (includes re-request scenario) -->
+                            @if (ViewBag.CanReRequest == true)
+                            {
+                                <!-- Show notification for re-request -->
+                                <div class="mb-6">
+                                    <div class="flex items-center p-4 mb-4 text-sm text-blue-800 border border-blue-300 rounded-lg bg-blue-50" role="alert">
+                                        <svg class="flex-shrink-0 inline w-4 h-4 mr-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
+                                            <path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5ZM9.5 4a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM12 15H8a1 1 0 0 1 0-2h1v-3H8a1 1 0 0 1 0-2h2a1 1 0 0 1 1 1v4h1a1 1 0 0 1 0 2Z" />
+                                        </svg>
+                                        <div>
+                                            <span class="font-medium">Re-request Available:</span> Your previous request was declined, but you can now send a new request to this mentor.
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+
+                            <form asp-action="CreateRequest" method="post" class="space-y-6">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" asp-for="PartnerId" />
+
+                                <div>
+                                    <label asp-for="Notes" class="block mb-3 text-lg font-medium text-gray-900">
+                                        @if (ViewBag.CanReRequest == true)
+                                        {
+                                            @:Your New Message
+                                        }
+                                        else
+                                        {
+                                            @:Your Message
+                                        }
+                                    </label>
+                                    <textarea asp-for="Notes"
+                                              rows="8"
+                                              class="block p-4 w-full text-base text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 resize-y min-h-[200px]"
+                                              placeholder="Tell your potential mentor about your goals, what you hope to learn, and why you'd like their guidance. Be specific about your experience level and what kind of support you're looking for..."
+                                              maxlength="500"></textarea>
+                                    <span asp-validation-for="Notes" class="text-red-600 text-sm"></span>
+                                    <div class="text-right text-sm text-gray-500 mt-1">
+                                        <span id="char-count">0</span>/500 characters
+                                    </div>
+                                </div>
+
+                                <!-- Action Buttons -->
+                                <div class="flex gap-4 mt-4">
+                                    <button type="submit"
+                                            class="flex-1 text-white inline-flex items-center justify-center bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-base px-6 py-3 text-center transition-colors">
+                                        @if (ViewBag.CanReRequest == true)
+                                        {
+                                            @:Send New Request
+                                        }
+                                        else
+                                        {
+                                            @:Submit Request
+                                        }
+                                    </button>
+                                    <a href="@Url.Action("MenteeDashboard", "MentorshipMatching")"
+                                       class="flex-1 text-gray-700 inline-flex items-center justify-center bg-gray-200 hover:bg-gray-300 focus:ring-4 focus:outline-none focus:ring-gray-300 font-medium rounded-lg text-base px-6 py-3 text-center transition-colors">
+                                        Cancel
+                                    </a>
+                                </div>
+                            </form>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        // Character counter for the textarea
+        document.addEventListener('DOMContentLoaded', function() {
+            const textarea = document.querySelector('textarea[name="Notes"]');
+            const charCount = document.getElementById('char-count');
+
+            if (textarea && charCount) {
+                // Update count on page load
+                charCount.textContent = textarea.value.length;
+
+                // Update count on input
+                textarea.addEventListener('input', function() {
+                    charCount.textContent = this.value.length;
+
+                    // Change color when approaching limit
+                    if (this.value.length > 450) {
+                        charCount.className = 'text-red-500 font-medium';
+                    } else if (this.value.length > 400) {
+                        charCount.className = 'text-yellow-500 font-medium';
+                    } else {
+                        charCount.className = 'text-gray-500';
+                    }
+                });
+            }
+        });
+    </script>
+}

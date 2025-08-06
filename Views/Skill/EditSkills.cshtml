@@ -11,22 +11,38 @@
 			<div class="block w-full p-6">
 				<h2 class="mb-4 text-2xl font-bold text-gray-900">Manage Your Skills</h2>
 
+				
 				<!-- Success/Error Messages -->
 				@if (TempData["SuccessMessage"] != null)
 				{
-					<div class="mb-4 p-4 text-green-700 bg-green-100 border border-green-300 rounded-lg">
-						@TempData["SuccessMessage"]
+					<div class="mt-2 flex items-center p-4 mb-4 text-sm text-green-800 border border-green-300 rounded-lg bg-green-50" role="alert">
+						<svg class="shrink-0 inline w-4 h-4 me-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
+							<path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5Zm3.707 8.207-4 4a1 1 0 0 1-1.414 0l-2-2a1 1 0 0 1 1.414-1.414L9 10.586l3.293-3.293a1 1 0 0 1 1.414 1.414Z" />
+						</svg>
+						<span class="sr-only">Success</span>
+						<div>
+							@TempData["SuccessMessage"]
+						</div>
 					</div>
 				}
 				@if (TempData["ErrorMessage"] != null)
 				{
-					<div class="mb-4 p-4 text-red-700 bg-red-100 border border-red-300 rounded-lg">
-						@TempData["ErrorMessage"]
+					<div class="mt-2 p-4 mb-4 text-sm text-red-800 border border-red-300 rounded-lg bg-red-50" role="alert">
+						<div class="flex items-center mb-2">
+							<svg class="shrink-0 inline w-4 h-4 me-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
+								<path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5ZM9.5 4a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM12 15H8a1 1 0 0 1 0-2h1v-3H8a1 1 0 0 1 0-2h2a1 1 0 0 1 1 1v4h1a1 1 0 0 1 0 2Z" />
+							</svg>
+							<span class="font-medium">Edit failed!</span>
+						</div>
+
+						<div>
+							@TempData["ErrorMessage"]
+						</div>
 					</div>
 				}
 
 				<!-- Search Form -->
-				<form asp-action="EditSkills" method="get" class="max-w-lg mx-auto mb-6">
+				<form asp-action="EditSkills" method="get" class="max-w-lg mx-auto mb-6" id="searchForm">
 					<div class="flex">
 						<label for="search-dropdown" class="mb-2 text-sm font-medium text-gray-900 sr-only">Search Skills</label>
 						<div class="relative w-full">
@@ -41,6 +57,8 @@
 							</button>
 						</div>
 					</div>
+					<!-- Hidden inputs to preserve selected skills during search -->
+					<div id="search-hidden-inputs"></div>
 				</form>
 
 				<!-- Skills Selection Form -->
@@ -74,9 +92,9 @@
 					<div id="hidden-inputs"></div>
 
 					<!-- Save Button -->
-					<div class="mt-6 text-center">
-						<button type="submit" class="px-6 py-3 text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm">
-							Save Selected Skills
+					<div class="mt-6">
+						<button type="submit" class="text-white bg-gray-800 hover:bg-gray-900 focus:outline-none focus:ring-4 focus:ring-gray-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2">
+							Save Skills
 						</button>
 					</div>
 				</form>
@@ -90,14 +108,26 @@
 		const selectedSkills = new Set(@Html.Raw(Json.Serialize(Model.SelectedSkillIds)));
 		const selectedSkillsContainer = document.getElementById('selected-skills-container');
 		const hiddenInputsContainer = document.getElementById('hidden-inputs');
+		const searchHiddenInputsContainer = document.getElementById('search-hidden-inputs');
+		const searchForm = document.getElementById('searchForm');
 
 		// Initialize selected skills display
 		initializeSelectedSkills();
 
+		// Add event listener to search form to preserve selected skills
+		searchForm.addEventListener('submit', function(e) {
+			e.preventDefault(); // Prevent default submission
+			updateSearchHiddenInputs();
+			// Submit the form after updating hidden inputs
+			setTimeout(() => {
+				searchForm.submit();
+			}, 10);
+		});
+
 		// Add event listeners to skill buttons
 		document.querySelectorAll('.skill-btn').forEach(button => {
 			button.addEventListener('click', function() {
-				const skillId = this.dataset.skillId; // Keep as string for Guid
+				const skillId = this.dataset.skillId;
 				const skillName = this.dataset.skillName;
 
 				if (selectedSkills.has(skillId)) {
@@ -132,10 +162,22 @@
 				return;
 			}
 
+			// Get all skill names from the server-side data
+			const allSkills = @Html.Raw(Json.Serialize(Model.AllUserSkills.ToDictionary(s => s.Id, s => s.Name)));
+
 			selectedSkills.forEach(skillId => {
+				let skillName;
+
+				// First try to get skill name from visible button
 				const skillButton = document.querySelector(`[data-skill-id="${skillId}"]`);
 				if (skillButton) {
-					const skillName = skillButton.dataset.skillName;
+					skillName = skillButton.dataset.skillName;
+				} else {
+					// If button is not visible (due to search filter), get name from server data
+					skillName = allSkills[skillId];
+				}
+
+				if (skillName) {
 					const skillElement = createSelectedSkillElement(skillId, skillName);
 					selectedSkillsContainer.appendChild(skillElement);
 				}
@@ -147,7 +189,7 @@
 			div.className = 'mb-2 flex items-center justify-between bg-white border border-blue-300 rounded-lg px-3 py-2';
 			div.innerHTML = `
 				<span class="text-sm font-medium text-gray-900">${skillName}</span>
-				<button type="button" class="text-red-500 hover:text-red-700 focus:outline-none" onclick="removeSkillFromSelected(${skillId})">
+				<button type="button" class="text-red-500 hover:text-red-700 focus:outline-none" onclick="removeSkillFromSelected('${skillId}')">
 					<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
 					</svg>
@@ -167,9 +209,20 @@
 			});
 		}
 
+		function updateSearchHiddenInputs() {
+			searchHiddenInputsContainer.innerHTML = '';
+			selectedSkills.forEach(skillId => {
+				const input = document.createElement('input');
+				input.type = 'hidden';
+				input.name = 'selectedSkillIds';
+				input.value = skillId;
+				searchHiddenInputsContainer.appendChild(input);
+			});
+		}
+
 		function updateAvailableSkillsDisplay() {
 			document.querySelectorAll('.skill-btn').forEach(button => {
-				const skillId = button.dataset.skillId; // Keep as string for Guid
+				const skillId = button.dataset.skillId;
 				if (selectedSkills.has(skillId)) {
 					button.classList.add('hidden');
 				} else {

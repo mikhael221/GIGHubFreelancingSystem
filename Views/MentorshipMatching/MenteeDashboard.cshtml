@@ -1,0 +1,106 @@
+﻿@{
+    Layout = "_LayoutFreelancer";
+    ViewData["Title"] = "Dashboard";
+}
+
+@model Freelancing.Models.MenteeDashboard
+
+<div class="p-4 sm:ml-64">
+    <div class="p-4 mt-20">
+        <div class="w-full p-4 mb-4 text-left bg-white border border-gray-200 rounded-lg shadow-sm sm:p-8 dark:bg-gray-800 dark:border-gray-700">
+            <h5 class="mb-2 text-3xl font-bold text-gray-900 dark:text-white">Total Posted Projects</h5>
+            <div class="flex items-center justify-between">
+                <h5 id="totalPostedProject" class="mb-2 text-3xl font-bold text-gray-900 dark:text-white"></h5>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4 mb-4">
+
+            <div class="w-full max-w p-4 bg-white border border-gray-300 rounded-lg shadow-sm sm:p-8">
+                <div class="flex items-center justify-between mb-4">
+                    <h5 class="text-xl font-bold leading-none text-gray-900">Manage Biddings</h5>
+                </div>
+                <div class="flow-root">
+                    <ul role="list" class="divide-y divide-gray-300">
+                    </ul>
+                </div>
+            </div>
+
+            <div class="w-full max-w p-4 bg-white border border-gray-300 rounded-lg shadow-sm sm:p-8">
+                <div class="flex items-center justify-between mb-4">
+                    <h5 class="text-xl font-bold leading-none text-gray-900">Requests Sent</h5>
+                </div>
+                <div class="flow-root">
+                    <ul role="list" class="divide-y divide-gray-300">
+                        @if (Model.RequestsSent.Any())
+                        {
+                            @foreach (var request in Model.RequestsSent)
+                            {
+                                <li class="py-3 sm:py-4">
+                                    <div class="flex items-center space-x-4">
+                                        <div class="flex-shrink-0">
+                                            <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                                                <span class="text-white text-sm font-medium">
+                                                    @{
+                                                        var nameParts = request.MentorName.Split(' ');
+                                                        var initials = nameParts[0].Substring(0, 1) + (nameParts.Length > 1 ? nameParts[1].Substring(0, 1) : "");
+                                                    }
+                                                    @initials
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div class="flex-1 min-w-0">
+                                            <p class="text-sm font-medium text-gray-900 truncate">
+                                                @request.MentorName
+                                            </p>
+                                            <p class="text-sm text-gray-500 truncate">
+                                                Requested: @request.RequestDate.ToString("MMM dd, yyyy")
+                                            </p>
+                                            @if (request.StartDate.HasValue)
+                                            {
+                                                <p class="text-sm text-green-600 truncate">
+                                                    Started: @request.StartDate.Value.ToString("MMM dd, yyyy")
+                                                </p>
+                                            }
+                                        </div>
+                                        <div class="inline-flex items-center text-base font-semibold text-gray-900">
+                                            @{
+                                                var statusClass = request.Status.ToLower() switch
+                                                {
+                                                    "pending" => "bg-yellow-100 text-yellow-800",
+                                                    "active" => "bg-green-100 text-green-800",
+                                                    "rejected" => "bg-red-100 text-red-800",
+                                                    "completed" => "bg-blue-100 text-blue-800",
+                                                    "cancelled" => "bg-gray-100 text-gray-800",
+                                                    _ => "bg-gray-100 text-gray-800"
+                                                };
+                                            }
+                                            <span class="@statusClass px-2 py-1 text-xs font-medium rounded-full">
+                                                @request.Status
+                                            </span>
+                                        </div>
+                                    </div>
+                                </li>
+                            }
+                        }
+                        else
+                        {
+                            <li class="py-3 sm:py-4">
+                                <div class="text-center">
+                                    <div class="text-sm text-gray-500">
+                                        No mentorship requests sent
+                                    </div>
+                                </div>
+                            </li>
+                        }
+                    </ul>
+                    <div class="text-center">
+                        <a asp-controller="MentorshipMatching" asp-action="AvailableMentors" type="button" class="text-gray-900 bg-white border border-gray-300 focus:outline-none hover:bg-gray-100 focus:ring-4 focus:ring-gray-100 font-medium rounded-lg text-sm px-5 py-2 me-2 mb-2 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:bg-gray-700 dark:hover:border-gray-600 dark:focus:ring-gray-700">
+                            Find Mentors
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
