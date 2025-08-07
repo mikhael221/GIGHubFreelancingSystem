@@ -7,9 +7,6 @@ namespace Freelancing.Services
     public interface IMentorshipMatchingService
     {
         Task<List<UserAccount>> FindPotentialMentorsAsync(Guid menteeId);
-        /*Task<List<UserAccount>> FindPotentialMenteesAsync(Guid mentorId);
-        Task<bool> CreateMatchAsync(Guid mentorId, Guid menteeId);
-        Task<List<MentorshipMatch>> GetUserMatchesAsync(Guid userId);*/
     }
 
     public class MentorshipMatchingService : IMentorshipMatchingService
@@ -57,44 +54,6 @@ namespace Freelancing.Services
 
             return potentialMentors;
         }
-
-        /*// Find potential mentees for a mentor based on 100% skill match
-        public async Task<List<UserAccount>> FindPotentialMenteesAsync(Guid mentorId)
-        {
-            // Get mentor's skills
-            var mentorSkills = await _context.UserAccountSkills
-                .Where(uas => uas.UserAccountId == mentorId)
-                .Select(uas => uas.UserSkillId)
-                .ToListAsync();
-
-            if (!mentorSkills.Any())
-                return new List<UserAccount>();
-
-            // Get mentor's mentorship info to ensure they're registered as mentor
-            var mentorMentorship = await _context.PeerMentorships
-                .FirstOrDefaultAsync(pm => pm.UserId == mentorId && pm.Role.ToLower() == "mentor");
-
-            if (mentorMentorship == null)
-                return new List<UserAccount>();
-
-            // Find users who are registered as mentees and have ALL the same skills as the mentor
-            var potentialMentees = await _context.UserAccounts
-                .Include(ua => ua.UserAccountSkills)
-                .ThenInclude(uas => uas.UserSkill)
-                .Include(ua => ua.Mentorship)
-                .Where(ua => ua.Mentorship != null &&
-                           ua.Mentorship.Role.ToLower() == "mentee" &&
-                           ua.Id != mentorId && // Exclude the mentor themselves
-                           ua.UserAccountSkills.Count > 0 && // Must have skills
-                           ua.UserAccountSkills.Select(uas => uas.UserSkillId)
-                               .Any(skillId => mentorSkills.Contains(skillId)) && // All mentee skills must be in mentor skills
-                           mentorSkills.Any(skillId => ua.UserAccountSkills
-                               .Select(uas => uas.UserSkillId).Contains(skillId))) // All mentor skills must be in mentee skills
-                .ToListAsync();
-
-            return potentialMentees;
-        }*/
-
         // Create a mentorship match
         public async Task<bool> CreateMatchAsync(Guid mentorId, Guid menteeId)
         {
