@@ -9,9 +9,8 @@
 	<div class="p-4 mt-20">
 		<div class="mt-4">
 			<div class="block w-full p-6">
-				<h2 class="mb-4 text-2xl font-bold text-gray-900">Manage Your Skills</h2>
+				<h2 class="mb-6 text-3xl font-bold text-gray-900">Manage Your Skills</h2>
 
-				
 				<!-- Success/Error Messages -->
 				@if (TempData["SuccessMessage"] != null)
 				{
@@ -34,7 +33,6 @@
 							</svg>
 							<span class="font-medium">Edit failed!</span>
 						</div>
-
 						<div>
 							@TempData["ErrorMessage"]
 						</div>
@@ -42,49 +40,65 @@
 				}
 
 				<!-- Search Form -->
-				<form asp-action="EditSkills" method="get" class="max-w-lg mx-auto mb-6" id="searchForm">
+				<div class="max-w-lg mx-auto mb-6">
 					<div class="flex">
-						<label for="search-dropdown" class="mb-2 text-sm font-medium text-gray-900 sr-only">Search Skills</label>
+						<label for="search-input" class="mb-2 text-sm font-medium text-gray-900 sr-only">Search Skills</label>
 						<div class="relative w-full">
-							<input type="search" id="search-dropdown" name="searchTerm" value="@Model.SearchTerm"
-								   class="block p-2.5 w-full z-20 text-sm text-gray-900 bg-gray-50 rounded-e-lg border-s-gray-50 border-s-2 border border-gray-300 focus:ring-blue-500 focus:border-blue-500"
-								   placeholder="Search skills..." />
-							<button type="submit" class="absolute top-0 end-0 p-2.5 text-sm font-medium h-full text-white bg-blue-700 rounded-e-lg border border-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300">
-								<svg class="w-4 h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20">
-									<path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z" />
+							<input type="search" id="search-input" name="searchTerm" value="@Model.SearchTerm"
+								   class="block p-2.5 w-full z-20 text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500"
+								   placeholder="Search skills to find more options..." />
+							<button type="button" id="clear-search" class="absolute top-0 end-0 p-2.5 text-sm font-medium h-full text-gray-400 hover:text-gray-600 focus:outline-none" style="display: none;">
+								<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
 								</svg>
-								<span class="sr-only">Search</span>
 							</button>
 						</div>
 					</div>
-					<!-- Hidden inputs to preserve selected skills during search -->
-					<div id="search-hidden-inputs"></div>
-				</form>
+				</div>
 
 				<!-- Skills Selection Form -->
-				<form asp-action="EditSkills" method="post" class="max-w-4xl mx-auto" id="skillsForm">
-					<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-						<!-- Available Skills -->
-						<div>
-							@foreach (var skill in Model.UserSkills.Take(22))
+				<form asp-action="EditSkills" method="post" class="max-w-6xl mx-auto" id="skillsForm">
+
+					<!-- Available Skills Section -->
+					<div class="mb-6">
+						<h3 class="text-xl font-bold text-gray-900 mb-4">Available Skills</h3>
+						<div id="skills-container" class="flex flex-wrap gap-2">
+							@{
+								var availableSkills = Model.AllUserSkills.Where(s => !Model.SelectedSkillIds.Contains(s.Id)).ToList();
+								var displaySkills = availableSkills.Take(20).ToList();
+							}
+							@foreach (var skill in displaySkills)
 							{
-								<div class="mt-4 inline-flex items-center">
-									<button type="button"
-											class="skill-btn text-gray-900 bg-white border border-gray-300 focus:outline-none hover:bg-gray-100 focus:ring-4 focus:ring-gray-100 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2" @(Model.SelectedSkillIds.Contains(skill.Id) ? "hidden" : "")
-											data-skill-id="@skill.Id"
-											data-skill-name="@skill.Name">
-										@skill.Name
-									</button>
-								</div>
+								<button type="button"
+										class="skill-btn initial-skill text-gray-900 bg-white border border-gray-300 focus:outline-none hover:bg-gray-100 focus:ring-4 focus:ring-gray-100 font-medium rounded-lg text-sm px-4 py-2 transition-all duration-200"
+										data-skill-id="@skill.Id"
+										data-skill-name="@skill.Name">
+									@skill.Name
+								</button>
 							}
 						</div>
 
-						<!-- Selected Skills -->
-						<div>
-							<h2 class="mt-6 text-xl font-bold text-gray-900">Selected Skills</h2>
-							<div id="selected-skills-container" class="mt-4">
-								<!-- Selected skills will be populated here -->
-							</div>
+
+
+						<div id="no-results" class="text-gray-500 text-center py-8" style="display: none;">
+							<svg class="mx-auto h-12 w-12 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+							</svg>
+							<p>No skills found matching your search.</p>
+							<p class="text-sm mt-1">Try different keywords or check your spelling.</p>
+						</div>
+					</div>
+
+					<!-- Selected Skills Section -->
+					<div class="mb-8 p-4 bg-blue-50 rounded-lg border border-blue-200">
+						<h3 class="text-xl font-bold text-gray-900 mb-4 flex items-center">
+							<svg class="w-5 h-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+							</svg>
+							Selected Skills (<span id="selected-count">0</span>)
+						</h3>
+						<div id="selected-skills-container" class="min-h-[50px]">
+							<p class="text-gray-500 text-sm">No skills selected yet.</p>
 						</div>
 					</div>
 
@@ -92,8 +106,11 @@
 					<div id="hidden-inputs"></div>
 
 					<!-- Save Button -->
-					<div class="mt-6">
-						<button type="submit" class="text-white bg-gray-800 hover:bg-gray-900 focus:outline-none focus:ring-4 focus:ring-gray-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2">
+					<div class="flex justify-center mt-8">
+						<button type="submit" class="text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-8 py-3 transition-colors duration-200 flex items-center">
+							<svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+							</svg>
 							Save Skills
 						</button>
 					</div>
@@ -108,27 +125,56 @@
 		const selectedSkills = new Set(@Html.Raw(Json.Serialize(Model.SelectedSkillIds)));
 		const selectedSkillsContainer = document.getElementById('selected-skills-container');
 		const hiddenInputsContainer = document.getElementById('hidden-inputs');
-		const searchHiddenInputsContainer = document.getElementById('search-hidden-inputs');
-		const searchForm = document.getElementById('searchForm');
+		const searchInput = document.getElementById('search-input');
+		const clearSearchBtn = document.getElementById('clear-search');
+		const selectedCountElement = document.getElementById('selected-count');
+		const noResultsDiv = document.getElementById('no-results');
+		const skillsContainer = document.getElementById('skills-container');
 
-		// Initialize selected skills display
+		// All skills data for searching
+		const allSkills = @Html.Raw(Json.Serialize(Model.AllUserSkills.ToDictionary(s => s.Id, s => s.Name)));
+		const totalSkillsCount = Object.keys(allSkills).length;
+		const selectedSkillsCount = selectedSkills.size;
+		const availableSkillsCount = totalSkillsCount - selectedSkillsCount;
+
+		// Track which skills are currently being searched vs initially displayed
+		let isSearchActive = false;
+
+		// Initialize
 		initializeSelectedSkills();
+		updateSelectedCount();
 
-		// Add event listener to search form to preserve selected skills
-		searchForm.addEventListener('submit', function(e) {
-			e.preventDefault(); // Prevent default submission
-			updateSearchHiddenInputs();
-			// Submit the form after updating hidden inputs
-			setTimeout(() => {
-				searchForm.submit();
-			}, 10);
+		// Search functionality
+		searchInput.addEventListener('input', function() {
+			const searchTerm = this.value.toLowerCase().trim();
+
+			if (searchTerm) {
+				isSearchActive = true;
+				performSearch(searchTerm);
+				clearSearchBtn.style.display = 'block';
+				if (moreSkillsHint) moreSkillsHint.style.display = 'none';
+			} else {
+				isSearchActive = false;
+				clearSearchBtn.style.display = 'none';
+				showInitialSkills();
+				noResultsDiv.style.display = 'none';
+			}
 		});
 
-		// Add event listeners to skill buttons
-		document.querySelectorAll('.skill-btn').forEach(button => {
-			button.addEventListener('click', function() {
-				const skillId = this.dataset.skillId;
-				const skillName = this.dataset.skillName;
+		// Clear search
+		clearSearchBtn.addEventListener('click', function() {
+			searchInput.value = '';
+			clearSearchBtn.style.display = 'none';
+			isSearchActive = false;
+			showInitialSkills();
+			noResultsDiv.style.display = 'none';
+		});
+
+		// Skill button event listeners (delegated for dynamically added buttons)
+		skillsContainer.addEventListener('click', function(e) {
+			if (e.target.classList.contains('skill-btn')) {
+				const skillId = e.target.dataset.skillId;
+				const skillName = e.target.dataset.skillName;
 
 				if (selectedSkills.has(skillId)) {
 					removeSkill(skillId);
@@ -137,8 +183,63 @@
 				}
 
 				updateUI();
-			});
+			}
 		});
+
+		function showInitialSkills() {
+			// Remove any search-added skills
+			const searchAddedSkills = skillsContainer.querySelectorAll('.skill-btn:not(.initial-skill)');
+			searchAddedSkills.forEach(skill => skill.remove());
+
+			// Show initial skills that aren't selected
+			const initialSkills = skillsContainer.querySelectorAll('.initial-skill');
+			initialSkills.forEach(skill => {
+				const skillId = skill.dataset.skillId;
+				if (!selectedSkills.has(skillId)) {
+					skill.style.display = 'inline-block';
+					skill.classList.remove('hidden');
+				} else {
+					skill.style.display = 'none';
+					skill.classList.add('hidden');
+				}
+			});
+		}
+
+		function performSearch(searchTerm) {
+			// Clear the container and rebuild with search results
+			skillsContainer.innerHTML = '';
+			let visibleCount = 0;
+
+			// Search through all available skills
+			Object.keys(allSkills).forEach(skillId => {
+				const skillName = allSkills[skillId];
+				const isSelected = selectedSkills.has(skillId);
+				const matchesSearch = skillName.toLowerCase().includes(searchTerm);
+
+				if (matchesSearch && !isSelected) {
+					const skillButton = createSkillButton(skillId, skillName, 'search-result');
+					skillsContainer.appendChild(skillButton);
+					visibleCount++;
+				}
+			});
+
+			// Show/hide no results message
+			if (visibleCount === 0) {
+				noResultsDiv.style.display = 'block';
+			} else {
+				noResultsDiv.style.display = 'none';
+			}
+		}
+
+		function createSkillButton(skillId, skillName, className = '') {
+			const button = document.createElement('button');
+			button.type = 'button';
+			button.className = `skill-btn ${className} text-gray-900 bg-white border border-gray-300 focus:outline-none hover:bg-gray-100 focus:ring-4 focus:ring-gray-100 font-medium rounded-lg text-sm px-4 py-2 transition-all duration-200`;
+			button.setAttribute('data-skill-id', skillId);
+			button.setAttribute('data-skill-name', skillName);
+			button.textContent = skillName;
+			return button;
+		}
 
 		function addSkill(skillId, skillName) {
 			selectedSkills.add(skillId);
@@ -151,7 +252,15 @@
 		function updateUI() {
 			updateSelectedSkillsDisplay();
 			updateHiddenInputs();
-			updateAvailableSkillsDisplay();
+			updateSelectedCount();
+
+			if (isSearchActive) {
+				// Re-apply current search filter
+				const currentSearch = searchInput.value.toLowerCase().trim();
+				performSearch(currentSearch);
+			} else {
+				showInitialSkills();
+			}
 		}
 
 		function updateSelectedSkillsDisplay() {
@@ -162,34 +271,26 @@
 				return;
 			}
 
-			// Get all skill names from the server-side data
-			const allSkills = @Html.Raw(Json.Serialize(Model.AllUserSkills.ToDictionary(s => s.Id, s => s.Name)));
+			const skillsGrid = document.createElement('div');
+			skillsGrid.className = 'flex flex-wrap gap-2';
 
 			selectedSkills.forEach(skillId => {
-				let skillName;
-
-				// First try to get skill name from visible button
-				const skillButton = document.querySelector(`[data-skill-id="${skillId}"]`);
-				if (skillButton) {
-					skillName = skillButton.dataset.skillName;
-				} else {
-					// If button is not visible (due to search filter), get name from server data
-					skillName = allSkills[skillId];
-				}
-
+				const skillName = allSkills[skillId];
 				if (skillName) {
 					const skillElement = createSelectedSkillElement(skillId, skillName);
-					selectedSkillsContainer.appendChild(skillElement);
+					skillsGrid.appendChild(skillElement);
 				}
 			});
+
+			selectedSkillsContainer.appendChild(skillsGrid);
 		}
 
 		function createSelectedSkillElement(skillId, skillName) {
 			const div = document.createElement('div');
-			div.className = 'mb-2 flex items-center justify-between bg-white border border-blue-300 rounded-lg px-3 py-2';
+			div.className = 'inline-flex items-center bg-blue-100 text-blue-800 text-sm font-medium px-3 py-1 rounded-full border border-blue-300';
 			div.innerHTML = `
-				<span class="text-sm font-medium text-gray-900">${skillName}</span>
-				<button type="button" class="text-red-500 hover:text-red-700 focus:outline-none" onclick="removeSkillFromSelected('${skillId}')">
+				<span class="mr-2">${skillName}</span>
+				<button type="button" class="text-blue-600 hover:text-blue-800 focus:outline-none transition-colors duration-200" onclick="removeSkillFromSelected('${skillId}')">
 					<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
 					</svg>
@@ -209,36 +310,25 @@
 			});
 		}
 
-		function updateSearchHiddenInputs() {
-			searchHiddenInputsContainer.innerHTML = '';
-			selectedSkills.forEach(skillId => {
-				const input = document.createElement('input');
-				input.type = 'hidden';
-				input.name = 'selectedSkillIds';
-				input.value = skillId;
-				searchHiddenInputsContainer.appendChild(input);
-			});
-		}
-
-		function updateAvailableSkillsDisplay() {
-			document.querySelectorAll('.skill-btn').forEach(button => {
-				const skillId = button.dataset.skillId;
-				if (selectedSkills.has(skillId)) {
-					button.classList.add('hidden');
-				} else {
-					button.classList.remove('hidden');
-				}
-			});
+		function updateSelectedCount() {
+			selectedCountElement.textContent = selectedSkills.size;
 		}
 
 		function initializeSelectedSkills() {
 			updateUI();
 		}
 
-		// Global function for removing skills (called from dynamically created buttons)
+		// Global function for removing skills
 		window.removeSkillFromSelected = function(skillId) {
 			removeSkill(skillId);
 			updateUI();
 		};
+
+		// Initialize search on page load if there's a search term
+		if (searchInput.value) {
+			isSearchActive = true;
+			performSearch(searchInput.value.toLowerCase().trim());
+			clearSearchBtn.style.display = 'block';
+		}
 	});
 </script>

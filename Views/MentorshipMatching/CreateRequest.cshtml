@@ -25,14 +25,14 @@
             <div class="grid grid-cols-1 lg:grid-cols-2 items-start gap-8">
                 <div class="flex flex-col items-center w-full">
                     <!-- Profile Image -->
-                    <div class="mb-4">
+                    <div class="mt-10 mb-9">
                         @if (!string.IsNullOrEmpty(Model.Partner.Photo))
                         {
-                            <img src="@Model.Partner.Photo" alt="Profile" class="w-20 h-20 rounded-full object-cover">
+                            <img src="@Model.Partner.Photo" alt="Profile" class="w-75 h-75 rounded-full object-cover">
                         }
                         else
                         {
-                            <img src="https://ik.imagekit.io/6txj3mofs/GIGHub%20(11).png?updatedAt=1750552804497" alt="Profile" class="w-20 h-20 rounded-full object-cover">
+                            <img src="https://ik.imagekit.io/6txj3mofs/GIGHub%20(11).png?updatedAt=1750552804497" alt="Profile" class="w-64 h-64 rounded-full object-cover">
                         }
                     </div>
                     <div class="text-center">
@@ -60,10 +60,8 @@
                             <!-- Confirmation Message -->
                             <div class="text-center space-y-6">
                                 <div class="flex justify-center mb-4">
-                                    <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
-                                        <div class="flex items-center justify-center w-full">
-                                            <img style="width: 80px; height: auto; margin-bottom: 20px" src="https://ik.imagekit.io/6txj3mofs/CHECK.png?updatedAt=1754207749128" alt="">
-                                        </div>
+                                    <div class="flex items-center justify-center w-full">
+                                        <img style="width: 80px; height: auto; margin-bottom: 20px" src="https://ik.imagekit.io/6txj3mofs/CHECK.png?updatedAt=1754207749128" alt="">
                                     </div>
                                 </div>
                                 <h3 class="text-xl font-semibold text-gray-900 mb-4">Request Successfully Sent!</h3>
@@ -101,7 +99,7 @@
                             <!-- Existing Request Status -->
                             <div class="text-center space-y-6">
                                 <div class="flex justify-center mb-4">
-                                    <div class="w-16 h-16 @(ViewBag.RequestStatus == "Active" ? "bg-green-100" : ViewBag.RequestStatus == "Declined" ? "bg-red-100" : "bg-yellow-100") rounded-full flex items-center justify-center">
+                                    <div class="w-16 h-16 rounded-full flex items-center justify-center">
                                         @if (ViewBag.RequestStatus == "Active")
                                         {
                                             <div class="flex items-center justify-center w-full">

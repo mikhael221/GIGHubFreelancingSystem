@@ -55,7 +55,7 @@ namespace Freelancing.Migrations
                     b.HasIndex("UserId", "ProjectId")
                         .IsUnique();
 
-                    b.ToTable("Biddings");
+                    b.ToTable("Biddings", (string)null);
                 });
 
             modelBuilder.Entity("Freelancing.Models.Entities.MentorshipChatFile", b =>
@@ -99,7 +99,7 @@ namespace Freelancing.Migrations
 
                     b.HasIndex("MessageId");
 
-                    b.ToTable("MentorshipChatFiles");
+                    b.ToTable("MentorshipChatFiles", (string)null);
                 });
 
             modelBuilder.Entity("Freelancing.Models.Entities.MentorshipChatMessage", b =>
@@ -164,7 +164,7 @@ namespace Freelancing.Migrations
 
                     b.HasIndex("MentorshipMatchId", "SentAt");
 
-                    b.ToTable("MentorshipChatMessages");
+                    b.ToTable("MentorshipChatMessages", (string)null);
                 });
 
             modelBuilder.Entity("Freelancing.Models.Entities.MentorshipMatch", b =>
@@ -221,7 +221,7 @@ namespace Freelancing.Migrations
                     b.HasIndex("MentorId", "MenteeId")
                         .IsUnique();
 
-                    b.ToTable("MentorshipMatches");
+                    b.ToTable("MentorshipMatches", (string)null);
                 });
 
             modelBuilder.Entity("Freelancing.Models.Entities.PeerMentorship", b =>
@@ -254,7 +254,7 @@ namespace Freelancing.Migrations
                     b.HasIndex("UserId")
                         .IsUnique();
 
-                    b.ToTable("PeerMentorships");
+                    b.ToTable("PeerMentorships", (string)null);
                 });
 
             modelBuilder.Entity("Freelancing.Models.Entities.Project", b =>
@@ -291,7 +291,7 @@ namespace Freelancing.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Projects");
+                    b.ToTable("Projects", (string)null);
                 });
 
             modelBuilder.Entity("Freelancing.Models.Entities.UserAccount", b =>
@@ -338,7 +338,7 @@ namespace Freelancing.Migrations
                     b.HasIndex("UserName")
                         .IsUnique();
 
-                    b.ToTable("UserAccounts");
+                    b.ToTable("UserAccounts", (string)null);
                 });
 
             modelBuilder.Entity("Freelancing.Models.Entities.UserAccountSkill", b =>
@@ -353,7 +353,7 @@ namespace Freelancing.Migrations
 
                     b.HasIndex("UserSkillId");
 
-                    b.ToTable("UserAccountSkills");
+                    b.ToTable("UserAccountSkills", (string)null);
                 });
 
             modelBuilder.Entity("Freelancing.Models.Entities.UserSkill", b =>
@@ -368,7 +368,7 @@ namespace Freelancing.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("UserSkills");
+                    b.ToTable("UserSkills", (string)null);
                 });
 
             modelBuilder.Entity("Freelancing.Models.Entities.Bidding", b =>
