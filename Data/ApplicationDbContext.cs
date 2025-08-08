@@ -17,6 +17,11 @@ namespace Freelancing.Data
         public DbSet<UserSkill> UserSkills { get; set; }
         public DbSet<UserAccountSkill> UserAccountSkills { get; set; }
         public DbSet<MentorshipMatch> MentorshipMatches { get; set; }
+
+
+        // New chat-related entities
+        public DbSet<MentorshipChatMessage> MentorshipChatMessages { get; set; }
+        public DbSet<MentorshipChatFile> MentorshipChatFiles { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<Project>()
@@ -108,6 +113,56 @@ namespace Freelancing.Data
             modelBuilder.Entity<MentorshipMatch>()
                 .HasIndex(mm => mm.MatchedDate);
 
+
+            // MentorshipChatMessage relationships and configurations
+            modelBuilder.Entity<MentorshipChatMessage>()
+                .HasOne(mcm => mcm.MentorshipMatch)
+                .WithMany()
+                .HasForeignKey(mcm => mcm.MentorshipMatchId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<MentorshipChatMessage>()
+                .HasOne(mcm => mcm.Sender)
+                .WithMany()
+                .HasForeignKey(mcm => mcm.SenderId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            // Add indexes for chat messages
+            modelBuilder.Entity<MentorshipChatMessage>()
+                .HasIndex(mcm => mcm.MentorshipMatchId);
+
+            modelBuilder.Entity<MentorshipChatMessage>()
+                .HasIndex(mcm => mcm.SenderId);
+
+            modelBuilder.Entity<MentorshipChatMessage>()
+                .HasIndex(mcm => mcm.SentAt);
+
+            modelBuilder.Entity<MentorshipChatMessage>()
+                .HasIndex(mcm => new { mcm.MentorshipMatchId, mcm.SentAt });
+
+            // MentorshipChatFile relationships
+            modelBuilder.Entity<MentorshipChatFile>()
+                .HasOne(mcf => mcf.Message)
+                .WithMany()
+                .HasForeignKey(mcf => mcf.MessageId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Configure default values
+            modelBuilder.Entity<MentorshipChatMessage>()
+                .Property(mcm => mcm.SentAt)
+                .HasDefaultValueSql("GETUTCDATE()");
+
+            modelBuilder.Entity<MentorshipChatMessage>()
+                .Property(mcm => mcm.IsRead)
+                .HasDefaultValue(false);
+
+            modelBuilder.Entity<MentorshipChatMessage>()
+                .Property(mcm => mcm.IsDeleted)
+                .HasDefaultValue(false);
+
+            modelBuilder.Entity<MentorshipChatFile>()
+                .Property(mcf => mcf.UploadedAt)
+                .HasDefaultValueSql("GETUTCDATE()");
 
             base.OnModelCreating(modelBuilder);
         }

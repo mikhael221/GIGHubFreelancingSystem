@@ -1,4 +1,5 @@
 using Freelancing.Data;
+using Freelancing.Hubs;
 using Freelancing.Models.Entities;
 using Freelancing.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -19,6 +20,13 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
 
 builder.Services.AddScoped<IMentorshipMatchingService, MentorshipMatchingService>();
 
+// Add SignalR
+builder.Services.AddSignalR(options =>
+{
+    options.EnableDetailedErrors = true; // Enable for development
+    options.MaximumReceiveMessageSize = 10 * 1024 * 1024; // 10MB for file uploads
+});
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -37,6 +45,9 @@ app.UseRouting();
 app.UseAuthentication();
 
 app.UseAuthorization();
+
+// Map SignalR Hub
+app.MapHub<MentorshipChatHub>("/mentorshipChatHub");
 
 app.MapControllerRoute(
     name: "default",

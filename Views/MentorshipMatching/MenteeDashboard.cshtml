@@ -7,28 +7,17 @@
 
 <div class="p-4 sm:ml-64">
     <div class="p-4 mt-20">
-        <div class="w-full p-4 mb-4 text-left bg-white border border-gray-200 rounded-lg shadow-sm sm:p-8 dark:bg-gray-800 dark:border-gray-700">
-            <h5 class="mb-2 text-3xl font-bold text-gray-900 dark:text-white">Total Posted Projects</h5>
-            <div class="flex items-center justify-between">
-                <h5 id="totalPostedProject" class="mb-2 text-3xl font-bold text-gray-900 dark:text-white"></h5>
-            </div>
+        <div class="mb-4">
+            <h4 class="text-2xl font-bold text-dark font-medium">
+                Hello, @User.FindFirst("FullName")?.Value
+            </h4>
         </div>
 
         <div class="grid grid-cols-2 gap-4 mb-4">
 
             <div class="w-full max-w p-4 bg-white border border-gray-300 rounded-lg shadow-sm sm:p-8">
                 <div class="flex items-center justify-between mb-4">
-                    <h5 class="text-xl font-bold leading-none text-gray-900">Manage Biddings</h5>
-                </div>
-                <div class="flow-root">
-                    <ul role="list" class="divide-y divide-gray-300">
-                    </ul>
-                </div>
-            </div>
-
-            <div class="w-full max-w p-4 bg-white border border-gray-300 rounded-lg shadow-sm sm:p-8">
-                <div class="flex items-center justify-between mb-4">
-                    <h5 class="text-xl font-bold leading-none text-gray-900">Requests Sent</h5>
+                    <h5 class="text-xl font-bold leading-none text-gray-900">My Mentor</h5>
                 </div>
                 <div class="flow-root">
                     <ul role="list" class="divide-y divide-gray-300">
@@ -79,6 +68,15 @@
                                                 @request.Status
                                             </span>
                                         </div>
+                                        @if (request.Status == "Active")
+                                        {
+                                            <a asp-controller="MentorshipChat"
+                                               asp-action="Index"
+                                               asp-route-matchId="@request.Id"
+                                               class="btn btn-primary">
+                                                💬 Chat
+                                            </a>
+                                        }
                                     </div>
                                 </li>
                             }
@@ -99,6 +97,33 @@
                             Find Mentors
                         </a>
                     </div>
+                </div>
+            </div>
+            <div class="w-full max-w p-4 bg-white border border-gray-300 rounded-lg shadow-sm sm:p-8">
+                <div class="flex items-center justify-between mb-4">
+                    <h5 class="text-xl font-bold leading-none text-gray-900">Upcoming Sessions</h5>
+                </div>
+                <div class="flow-root">
+                    <ul role="list" class="divide-y divide-gray-300">
+                    </ul>
+                </div>
+            </div>
+            <div class="w-full max-w p-4 bg-white border border-gray-300 rounded-lg shadow-sm sm:p-8">
+                <div class="flex items-center justify-between mb-4">
+                    <h5 class="text-xl font-bold leading-none text-gray-900">Learning Goals</h5>
+                </div>
+                <div class="flow-root">
+                    <ul role="list" class="divide-y divide-gray-300">
+                    </ul>
+                </div>
+            </div>
+            <div class="w-full max-w p-4 bg-white border border-gray-300 rounded-lg shadow-sm sm:p-8">
+                <div class="flex items-center justify-between mb-4">
+                    <h5 class="text-xl font-bold leading-none text-gray-900">Session History</h5>
+                </div>
+                <div class="flow-root">
+                    <ul role="list" class="divide-y divide-gray-300">
+                    </ul>
                 </div>
             </div>
         </div>

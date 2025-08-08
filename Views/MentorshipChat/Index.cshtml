@@ -1,0 +1,720 @@
+﻿@{
+    Layout = null;
+    ViewData["Title"] = $"Chat with {Model.Partner.FirstName} {Model.Partner.LastName}";
+}
+
+@model Freelancing.Models.MentorshipChatViewModel
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"]</title>
+    <link rel="stylesheet" href="~/css/output.css" />
+    <link rel="stylesheet" href="https://rsms.me/inter/inter.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.0/signalr.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.0/jquery.min.js"></script>
+</head>
+<body>
+    <nav class="fixed top-0 z-50 w-full bg-white border-b border-gray-200">
+        <div class="px-3 py-3 lg:px-5 lg:pl-3">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center justify-start rtl:justify-end">
+                    <button data-drawer-target="logo-sidebar" data-drawer-toggle="logo-sidebar" aria-controls="logo-sidebar" type="button" class="inline-flex items-center p-2 text-sm text-gray-500 rounded-lg sm:hidden hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200">
+                        <span class="sr-only">Open sidebar</span>
+                        <svg class="w-6 h-6" aria-hidden="true" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                            <path clip-rule="evenodd" fill-rule="evenodd" d="M2 4.75A.75.75 0 012.75 4h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 4.75zm0 10.5a.75.75 0 01.75-.75h7.5a.75.75 0 010 1.5h-7.5a.75.75 0 01-.75-.75zM2 10a.75.75 0 01.75-.75h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 10z"></path>
+                        </svg>
+                    </button>
+                    <a class="-m-1.5 p-1.5 ms-5" asp-area="" asp-controller="Home" asp-action="Index">
+                        <span class="sr-only">Your Company</span>
+                        <img class="h-16 w-auto" src="https://ik.imagekit.io/6txj3mofs/GIGHub%20(2).png?updatedAt=1749718355580" alt="">
+                    </a>
+                </div>
+                <div class="flex items-center">
+                    <div class="flex items-center me-5">
+                        <div>
+                            <button type="button" class="flex text-sm bg-gray-800 rounded-full focus:ring-4 focus:ring-gray-300" aria-expanded="false" data-dropdown-toggle="dropdown-user">
+                                <span class="sr-only">Open user menu</span>
+                                @if (!string.IsNullOrEmpty(@User.FindFirst("Photo")?.Value))
+                                {
+                                    <img class="w-8 h-8 rounded-full" src="@User.FindFirst("Photo")?.Value" alt="user photo">
+                                }
+                                else
+                                {
+                                    <img class="w-8 h-8 rounded-full" src="https://ik.imagekit.io/6txj3mofs/GIGHub%20(11).png?updatedAt=1750552804497" alt="user photo">
+                                }
+                            </button>
+                        </div>
+                        <div class="z-50 hidden my-4 text-base list-none bg-white divide-y divide-gray-100 rounded-sm shadow-sm" id="dropdown-user">
+                            <div class="px-4 py-3" role="none">
+                                <p class="text-sm text-gray-900" role="none">
+                                    @User.FindFirst("FullName")?.Value
+                                </p>
+                                <p class="text-sm font-medium text-gray-900 truncate" role="none">
+                                    @User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value
+                                </p>
+                            </div>
+                            <ul class="py-1" role="none">
+                                <li>
+                                    <a asp-controller="Account" asp-action="LogOut" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem">Sign out</a>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <aside id="logo-sidebar" class="fixed top-0 left-0 z-40 w-64 h-screen pt-28 transition-transform -translate-x-full bg-white border-r border-gray-200 sm:translate-x-0" aria-label="Sidebar">
+        <div class="ms-2 h-full px-3 pb-4 overflow-y-auto bg-white">
+            <ul class="space-y-2 font-medium">
+                <li>
+                    <a class="flex items-center p-2 text-gray-900 rounded-lg hover:bg-gray-100 group" asp-area="" asp-controller="Freelancer" asp-action="Dashboard">
+                        <svg class="w-5 h-5 text-gray-500 transition duration-75 group-hover:text-gray-900" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 22 21">
+                            <path d="M16.975 11H10V4.025a1 1 0 0 0-1.066-.998 8.5 8.5 0 1 0 9.039 9.039.999.999 0 0 0-1-1.066h.002Z" />
+                            <path d="M12.5 0c-.157 0-.311.01-.565.027A1 1 0 0 0 11 1.02V10h8.975a1 1 0 0 0 1-.935c.013-.188.028-.374.028-.565A8.51 8.51 0 0 0 12.5 0Z" />
+                        </svg>
+                        <span class="ms-3">Dashboard</span>
+                    </a>
+                </li>
+                <li>
+                    <a class="flex items-center p-2 text-gray-900 rounded-lg hover:bg-gray-100 group" asp-area="" asp-controller="Freelancer" asp-action="Feed">
+                        <svg class="shrink-0 w-5 h-5 text-gray-500 transition duration-75 group-hover:text-gray-900" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 18 18">
+                            <path d="M6.143 0H1.857A1.857 1.857 0 0 0 0 1.857v4.286C0 7.169.831 8 1.857 8h4.286A1.857 1.857 0 0 0 8 6.143V1.857A1.857 1.857 0 0 0 6.143 0Zm10 0h-4.286A1.857 1.857 0 0 0 10 1.857v4.286C10 7.169 10.831 8 11.857 8h4.286A1.857 1.857 0 0 0 18 6.143V1.857A1.857 1.857 0 0 0 16.143 0Zm-10 10H1.857A1.857 1.857 0 0 0 0 11.857v4.286C0 17.169.831 18 1.857 18h4.286A1.857 1.857 0 0 0 8 16.143v-4.286A1.857 1.857 0 0 0 6.143 10Zm10 0h-4.286A1.857 1.857 0 0 0 10 11.857v4.286c0 1.026.831 1.857 1.857 1.857h4.286A1.857 1.857 0 0 0 18 16.143v-4.286A1.857 1.857 0 0 0 16.143 10Z" />
+                        </svg>
+                        <span class="flex-1 ms-3 whitespace-nowrap">Feed</span>
+                    </a>
+                </li>
+                <li>
+                    @if (!string.IsNullOrEmpty(@User.FindFirst("MentorshipId")?.Value))
+                    {
+                        <a class="flex items-center p-2 text-gray-900 rounded-lg hover:bg-gray-100 group" asp-area="" asp-controller="PeerMentorship" asp-action="Dashboard" asp-route-id="@User.FindFirst("MentorshipId")?.Value">
+                            <svg class="shrink-0 w-5 h-5 text-gray-500 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 18">
+                                <path d="M14 2a3.963 3.963 0 0 0-1.4.267 6.439 6.439 0 0 1-1.331 6.638A4 4 0 1 0 14 2Zm1 9h-1.264A6.957 6.957 0 0 1 15 15v2a2.97 2.97 0 0 1-.184 1H19a1 1 0 0 0 1-1v-1a5.006 5.006 0 0 0-5-5ZM6.5 9a4.5 4.5 0 1 0 0-9 4.5 4.5 0 0 0 0 9ZM8 10H5a5.006 5.006 0 0 0-5 5v2a1 1 0 0 0 1 1h11a1 1 0 0 0 1-1v-2a5.006 5.006 0 0 0-5-5Z" />
+                            </svg>
+                            <span class="flex-1 ms-3 whitespace-nowrap">Peer Mentorship</span>
+                        </a>
+                    }
+                    else
+                    {
+                        <a class="flex items-center p-2 text-gray-900 rounded-lg hover:bg-gray-100 group" asp-area="" asp-controller="PeerMentorship" asp-action="Landing">
+                            <svg class="shrink-0 w-5 h-5 text-gray-500 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 18">
+                                <path d="M14 2a3.963 3.963 0 0 0-1.4.267 6.439 6.439 0 0 1-1.331 6.638A4 4 0 1 0 14 2Zm1 9h-1.264A6.957 6.957 0 0 1 15 15v2a2.97 2.97 0 0 1-.184 1H19a1 1 0 0 0 1-1v-1a5.006 5.006 0 0 0-5-5ZM6.5 9a4.5 4.5 0 1 0 0-9 4.5 4.5 0 0 0 0 9ZM8 10H5a5.006 5.006 0 0 0-5 5v2a1 1 0 0 0 1 1h11a1 1 0 0 0 1-1v-2a5.006 5.006 0 0 0-5-5Z" />
+                            </svg>
+                            <span class="flex-1 ms-3 whitespace-nowrap">Peer Mentorship</span>
+                        </a>
+                    }
+                </li>
+                <li>
+                    <a class="flex items-center p-2 text-gray-900 rounded-lg hover:bg-gray-100 group" asp-area="" asp-controller="Freelancer" asp-action="EditAccount">
+                        <svg class="shrink-0 w-6 h-6 text-gray-500 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 22 22">
+                            <path fill-rule="evenodd" d="M12 20a7.966 7.966 0 0 1-5.002-1.756l.002.001v-.683c0-1.794 1.492-3.25 3.333-3.25h3.334c1.84 0 3.333 1.456 3.333 3.25v.683A7.966 7.966 0 0 1 12 20ZM2 12C2 6.477 6.477 2 12 2s10 4.477 10 10c0 5.5-4.44 9.963-9.932 10h-.138C6.438 21.962 2 17.5 2 12Zm10-5c-1.84 0-3.333 1.455-3.333 3.25S10.159 13.5 12 13.5c1.84 0 3.333-1.455 3.333-3.25S13.841 7 12 7Z" clip-rule="evenodd" />
+                        </svg>
+                        <span class="flex-1 ms-3 whitespace-nowrap">Account</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </aside>
+
+    <div class="sm:ml-64">
+        <div class="mt-20">
+            <div class="block w-full chat-container">
+                <!-- Chat Header -->
+                <div class="chat-header mt-1">
+                    <div class="flex items-center gap-3">
+                        <img src="@(Model.Partner.Photo ?? "/images/default-avatar.png")"
+                             alt="@Model.Partner.FirstName"
+                             class="w-12 h-12 rounded-full object-cover">
+                        <div>
+                            <h3 class="font-semibold text-lg">@Model.Partner.FirstName @Model.Partner.LastName</h3>
+                        </div>
+                        <div class="online-indicator" id="onlineIndicator" style="display: none;"></div>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <button class="btn-video" onclick="startVideoCall()" title="Start Video Call">
+                            <svg class="w-6 h-6 text-gray-800" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 6H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V7a1 1 0 0 0-1-1Zm7 11-6-2V9l6-2v10Z" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Messages Area -->
+                <div class="chat-messages" id="messagesContainer">
+                    @foreach (var message in Model.Messages)
+                    {
+                        <div class="message @(message.IsCurrentUser ? "own" : "")">
+                            <div class="message-bubble">
+                                @if (!message.IsCurrentUser)
+                                {
+                                    <div class="message-sender">@message.SenderName</div>
+                                }
+
+                                @if (message.MessageType == "text")
+                                {
+                                    <div>@message.Message</div>
+                                }
+                                else if (message.MessageType == "file")
+                                {
+                                    <div class="file-message">
+                                        <div class="file-icon">
+                                            <svg class="w-[24px] h-[24px] text-gray-800" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+                                                <path fill-rule="evenodd" d="M9 2.221V7H4.221a2 2 0 0 1 .365-.5L8.5 2.586A2 2 0 0 1 9 2.22ZM11 2v5a2 2 0 0 1-2 2H4v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2h-7Z" clip-rule="evenodd" />
+                                            </svg>
+                                        </div>
+                                        <div>
+                                            <a href="@message.FileUrl" download class="hover: underline">
+                                                @message.Message
+                                            </a>
+                                            <div class="text-xs opacity-75">
+                                                @(message.FileSize.HasValue ? (message.FileSize.Value / 1024.0 / 1024.0).ToString("F2") + " MB" : "")
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                                else if (message.MessageType == "image")
+                                {
+                                    <div class="image-message">
+                                        <img src="@message.FileUrl" alt="@message.Message"
+                                             class="max-w rounded-lg cursor-pointer"
+                                             onclick="openImageModal('@message.FileUrl')">
+                                    </div>
+                                }
+
+                                <div class="message-time">
+                                    @message.SentAt.ToString("HH:mm")
+                                    @if (message.IsCurrentUser)
+                                    {
+                                        <i class="fas fa-check @(message.IsRead ? "text-blue-400" : "")"
+                                           title="@(message.IsRead ? "Read" : "Sent")"></i>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                <!-- Typing Indicator -->
+                <div class="typing-indicator" id="typingIndicator">
+                    <span id="typingUser"></span> is typing
+                    <div class="typing-dots">
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                    </div>
+                </div>
+
+                <!-- Chat Input -->
+                <div class="chat-input">
+                    <div class="input-container">
+                        <input type="file" id="fileInput" style="display: none;"
+                               accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png,.gif,.mp4,.mov,.avi"
+                               onchange="handleFileUpload()">
+
+                        <button class="btn-file" onclick="document.getElementById('fileInput').click()" title="Attach File">
+                            <svg class="w-[24px] h-[24px] text-gray-800" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8v8a5 5 0 1 0 10 0V6.5a3.5 3.5 0 1 0-7 0V15a2 2 0 0 0 4 0V8" />
+                            </svg>
+                        </button>
+
+                        <input type="text"
+                               class="chat-input-field"
+                               id="messageInput"
+                               placeholder="Type your message..."
+                               onkeypress="handleKeyPress(event)"
+                               oninput="handleTyping()">
+
+                        <button class="btn-send" onclick="sendMessage()" title="Send Message">
+                            <svg class="w-[24px] h-[24px] text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+                                <path fill-rule="evenodd" d="M12 2a1 1 0 0 1 .932.638l7 18a1 1 0 0 1-1.326 1.281L13 19.517V13a1 1 0 1 0-2 0v6.517l-5.606 2.402a1 1 0 0 1-1.326-1.281l7-18A1 1 0 0 1 12 2Z" clip-rule="evenodd" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Video Call Notification -->
+            <div class="video-call-notification" id="videoCallNotification">
+                <div class="flex items-center gap-3 mb-3">
+                    <i class="fas fa-video text-2xl text-blue-600"></i>
+                    <div>
+                        <div class="font-semibold" id="callerName"></div>
+                        <div class="text-sm text-gray-600">Incoming video call</div>
+                    </div>
+                </div>
+                <div class="flex gap-2">
+                    <button class="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600"
+                            onclick="acceptVideoCall()">
+                        <i class="fas fa-phone"></i> Accept
+                    </button>
+                    <button class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600"
+                            onclick="declineVideoCall()">
+                        <i class="fas fa-phone-slash"></i> Decline
+                    </button>
+                </div>
+            </div>
+
+            <!-- Image Modal -->
+            <div class="modal" id="imageModal">
+                <div class="modal-content">
+                    <span class="close" onclick="closeImageModal()">&times;</span>
+                    <img id="modalImage" style="max-width: 100%; max-height: 80vh;">
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.2.1/flowbite.min.js"></script>
+    <script>
+        // SignalR Connection
+        const connection = new signalR.HubConnectionBuilder()
+            .withUrl("/mentorshipChatHub")
+            .build();
+
+        const matchId = '@Model.MatchId';
+        const currentUserId = '@Model.CurrentUserId';
+        let typingTimer;
+        let isTyping = false;
+        let currentCallerId = null;
+
+        // Start connection
+        connection.start().then(() => {
+            console.log('SignalR Connected');
+            connection.invoke('JoinMentorshipRoom', matchId);
+        }).catch(err => console.error('SignalR Connection Error: ', err));
+
+        // Connection events
+        connection.on('Connected', (connectionId) => {
+            console.log('Connected with ID:', connectionId);
+        });
+
+        connection.on('JoinedRoom', (roomName) => {
+            console.log('Joined room:', roomName);
+        });
+
+        connection.on('UserJoined', (userName) => {
+            document.getElementById('onlineIndicator').style.display = 'block';
+        });
+
+        // Message events
+        connection.on('ReceiveMessage', (message) => {
+            addMessageToChat(message);
+            scrollToBottom();
+        });
+
+        connection.on('ReceiveFile', (fileMessage) => {
+            addFileMessageToChat(fileMessage);
+            scrollToBottom();
+        });
+
+        connection.on('MessagesMarkedAsRead', (data) => {
+            markMessagesAsRead(data.MessageIds);
+        });
+
+        // Typing events
+        connection.on('TypingIndicator', (data) => {
+            if (data.IsTyping) {
+                showTypingIndicator(data.UserName);
+            } else {
+                hideTypingIndicator();
+            }
+        });
+
+        // Video call events
+        connection.on('IncomingVideoCall', (data) => {
+            currentCallerId = data.CallerId;
+            document.getElementById('callerName').textContent = data.CallerName;
+            document.getElementById('videoCallNotification').style.display = 'block';
+        });
+
+        connection.on('VideoCallAccepted', (data) => {
+            window.open(`/MentorshipChat/VideoCall/${matchId}`, '_blank', 'width=1200,height=800');
+        });
+
+        connection.on('VideoCallDeclined', () => {
+            alert('Call was declined');
+        });
+
+        // Functions
+        function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+
+            if (message) {
+                console.log('Sending message:', message, 'to match:', matchId); // Debug log
+                connection.invoke('SendMessage', matchId, message, 'text')
+                    .then(() => {
+                        console.log('Message sent successfully');
+                        input.value = '';
+                        handleTyping(); // Stop typing indicator
+                    })
+                    .catch(err => {
+                        console.error('Error sending message:', err);
+                        alert('Failed to send message: ' + err);
+                    });
+            }
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+
+        function handleTyping() {
+            if (!isTyping) {
+                isTyping = true;
+                connection.invoke('SendTypingIndicator', matchId, true);
+            }
+
+            clearTimeout(typingTimer);
+            typingTimer = setTimeout(() => {
+                isTyping = false;
+                connection.invoke('SendTypingIndicator', matchId, false);
+            }, 1000);
+        }
+
+        function handleFileUpload() {
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+
+            if (!file) {
+                return;
+            }
+
+            console.log('Selected file:', file.name, 'Size:', file.size, 'Type:', file.type);
+
+            // Validate file size (10MB limit)
+            const maxSize = 10 * 1024 * 1024;
+            if (file.size > maxSize) {
+                alert('File size exceeds 10MB limit');
+                fileInput.value = '';
+                return;
+            }
+
+            // Validate file type
+            const allowedExtensions = ['pdf', 'doc', 'docx', 'txt', 'jpg', 'jpeg', 'png', 'gif', 'mp4', 'mov', 'avi'];
+            const fileExtension = file.name.split('.').pop().toLowerCase();
+
+            if (!allowedExtensions.includes(fileExtension)) {
+                alert('File type not allowed. Allowed types: ' + allowedExtensions.join(', '));
+                fileInput.value = '';
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('matchId', matchId);
+
+            // Show upload progress
+            const loadingMessage = addSystemMessage(`Uploading ${file.name}...`);
+
+            $.ajax({
+                url: '/MentorshipChat/UploadFile',
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                timeout: 60000, // 60 seconds timeout
+                xhr: function() {
+                    const xhr = new window.XMLHttpRequest();
+                    xhr.upload.addEventListener('progress', function(evt) {
+                        if (evt.lengthComputable) {
+                            const percentComplete = Math.round((evt.loaded / evt.total) * 100);
+                            const messageElement = loadingMessage.querySelector('.message-bubble div');
+                            if (messageElement) {
+                                messageElement.textContent = `Uploading ${file.name}... ${percentComplete}%`;
+                            }
+                        }
+                    }, false);
+                    return xhr;
+                },
+                success: function(response) {
+                    console.log('Upload response:', response);
+                    loadingMessage.remove();
+
+                    if (response.success) {
+                        console.log('Sending file via SignalR:', {
+                            matchId,
+                            fileName: response.fileName,
+                            fileUrl: response.fileUrl,
+                            fileSize: response.fileSize,
+                            fileType: response.fileType
+                        });
+
+                        connection.invoke('SendFile', matchId, response.fileName,
+                            response.fileUrl, response.fileSize, response.fileType)
+                            .then(() => {
+                                console.log('File message sent via SignalR successfully');
+                            })
+                            .catch(err => {
+                                console.error('SignalR SendFile error:', err);
+                                alert('Failed to send file notification: ' + err.message);
+                            });
+                    } else {
+                        console.error('Upload failed:', response.message);
+                        alert('Upload failed: ' + (response.message || 'Unknown error'));
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('Upload AJAX error:', { xhr, status, error });
+                    loadingMessage.remove();
+
+                    let errorMessage = 'Upload failed';
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        errorMessage += ': ' + xhr.responseJSON.message;
+                    } else if (error) {
+                        errorMessage += ': ' + error;
+                    }
+
+                    alert(errorMessage);
+                }
+            });
+
+            fileInput.value = '';
+        }
+
+        function startVideoCall() {
+            connection.invoke('StartVideoCall', matchId);
+        }
+
+        function acceptVideoCall() {
+            connection.invoke('AcceptVideoCall', matchId, currentCallerId);
+            document.getElementById('videoCallNotification').style.display = 'none';
+            window.open(`/MentorshipChat/VideoCall/${matchId}`, '_blank', 'width=1200,height=800');
+        }
+
+        function declineVideoCall() {
+            connection.invoke('DeclineVideoCall', matchId, currentCallerId);
+            document.getElementById('videoCallNotification').style.display = 'none';
+        }
+
+        function addMessageToChat(message) {
+            console.log('Processing message:', message);
+
+            const messagesContainer = document.getElementById('messagesContainer');
+            const messageDiv = document.createElement('div');
+
+            // Debug each property
+            console.log('SenderId:', message.SenderId);
+            console.log('CurrentUserId:', currentUserId);
+            console.log('SenderName:', message.SenderName);
+            console.log('Message text:', message.Message);
+            console.log('SentAt:', message.SentAt);
+
+            // Safer property access with fallbacks
+            const senderId = message.SenderId || message.senderId || '';
+            const senderName = message.SenderName || message.senderName || 'Unknown User';
+            const messageText = message.Message || message.message || '';
+            const sentAt = message.SentAt || message.sentAt || new Date().toISOString();
+
+            messageDiv.className = `message ${senderId === currentUserId ? 'own' : ''}`;
+
+            // Handle date more safely
+            let time = 'Invalid Time';
+            try {
+                const messageDate = new Date(sentAt);
+                if (!isNaN(messageDate.getTime())) {
+                    time = messageDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                }
+            } catch (e) {
+                console.error('Date parsing error:', e);
+            }
+
+            messageDiv.innerHTML = `
+                <div class="message-bubble">
+                    ${senderId !== currentUserId ? `<div class="message-sender">${senderName}</div>` : ''}
+                    <div>${messageText}</div>
+                    <div class="message-time">
+                        ${time}
+                        ${senderId === currentUserId ? '<i class="fas fa-check" title="Sent"></i>' : ''}
+                    </div>
+                </div>
+            `;
+
+            messagesContainer.appendChild(messageDiv);
+        }
+
+        // Also update the addFileMessageToChat function for consistency
+                function addMessageToChat(data) {
+            console.log('Processing message data:', data);
+
+            const messagesContainer = document.getElementById('messagesContainer');
+            const messageDiv = document.createElement('div');
+
+            // Extract properties with multiple fallback options
+            const senderId = data.SenderId || data.senderId || data.userId || '';
+            const senderName = data.SenderName || data.senderName || data.name || 'Unknown User';
+            const messageText = data.Message || data.message || data.text || '';
+            const sentAt = data.SentAt || data.sentAt || data.timestamp || new Date().toISOString();
+            const messageType = data.MessageType || data.messageType || 'text';
+
+            console.log('Extracted values:', { senderId, senderName, messageText, sentAt, currentUserId });
+
+            const isOwnMessage = senderId.toString() === currentUserId.toString();
+            messageDiv.className = `message ${isOwnMessage ? 'own' : ''}`;
+
+            // Handle date safely
+            let timeDisplay = 'Now';
+            try {
+                const messageDate = new Date(sentAt);
+                if (!isNaN(messageDate.getTime())) {
+                    timeDisplay = messageDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                }
+            } catch (e) {
+                console.error('Date parsing error:', e, 'Original value:', sentAt);
+            }
+
+            messageDiv.innerHTML = `
+                <div class="message-bubble">
+                    ${!isOwnMessage ? `<div class="message-sender">${senderName}</div>` : ''}
+                    <div>${messageText}</div>
+                    <div class="message-time">
+                        ${timeDisplay}
+                        ${isOwnMessage ? '<i class="fas fa-check" title="Sent"></i>' : ''}
+                    </div>
+                </div>
+            `;
+
+            messagesContainer.appendChild(messageDiv);
+        }
+
+        // Fixed addFileMessageToChat function
+        function addFileMessageToChat(data) {
+            console.log('Processing file data:', data);
+
+            const messagesContainer = document.getElementById('messagesContainer');
+            const messageDiv = document.createElement('div');
+
+            // Extract properties with multiple fallback options
+            const senderId = data.SenderId || data.senderId || data.userId || '';
+            const senderName = data.SenderName || data.senderName || data.name || 'Unknown User';
+            const fileName = data.FileName || data.fileName || data.Message || data.message || 'Unknown File';
+            const fileUrl = data.FileUrl || data.fileUrl || data.url || '';
+            const fileSize = data.FileSize || data.fileSize || data.size || 0;
+            const fileType = data.FileType || data.fileType || data.type || '';
+            const sentAt = data.SentAt || data.sentAt || data.timestamp || new Date().toISOString();
+
+            console.log('Extracted file values:', { senderId, senderName, fileName, fileUrl, fileSize, fileType, sentAt });
+
+            const isOwnMessage = senderId.toString() === currentUserId.toString();
+            messageDiv.className = `message ${isOwnMessage ? 'own' : ''}`;
+
+            // Handle date safely
+            let timeDisplay = 'Now';
+            try {
+                const messageDate = new Date(sentAt);
+                if (!isNaN(messageDate.getTime())) {
+                    timeDisplay = messageDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                }
+            } catch (e) {
+                console.error('Date parsing error:', e, 'Original value:', sentAt);
+            }
+
+            // Format file size
+            const fileSizeFormatted = fileSize > 0 ? (fileSize / 1024 / 1024).toFixed(2) + ' MB' : '';
+
+            // Determine if it's an image
+            const isImage = fileType && (fileType.startsWith('image/') ||
+                fileName.toLowerCase().match(/\.(jpg|jpeg|png|gif|webp)$/));
+
+            const linkClass = isOwnMessage ? 'text-white hover:underline' : 'text-blue-600 hover:underline';
+
+            messageDiv.innerHTML = `
+                <div class="message-bubble">
+                    ${!isOwnMessage ? `<div class="message-sender">${senderName}</div>` : ''}
+                    ${isImage ?
+                        `<div class="image-message">
+                            <img src="${fileUrl}" alt="${fileName}"
+                                 class="max-w-xs rounded-lg cursor-pointer"
+                                 onclick="openImageModal('${fileUrl}')"
+                                 style="max-height: 200px; object-fit: cover;">
+                            <div class="text-xs opacity-75 mt-1">${fileName}</div>
+                        </div>` :
+                        `<div class="file-message">
+                            <div class="file-icon">
+                                <i class="fas fa-file"></i>
+                            </div>
+                            <div>
+                                <a href="${fileUrl}" download="${fileName}" class="${linkClass}">
+                                    ${fileName}
+                                </a>
+                                ${fileSizeFormatted ? `<div class="text-xs opacity-75">${fileSizeFormatted}</div>` : ''}
+                            </div>
+                        </div>`
+                    }
+                    <div class="message-time">
+                        ${timeDisplay}
+                        ${isOwnMessage ? '<i class="fas fa-check" title="Sent"></i>' : ''}
+                    </div>
+                </div>
+            `;
+
+            messagesContainer.appendChild(messageDiv);
+        }
+
+        function addSystemMessage(message) {
+            const messagesContainer = document.getElementById('messagesContainer');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message system';
+            messageDiv.innerHTML = `
+                <div class="message-bubble" style="background: rgba(156, 163, 175, 0.3); color: #6b7280; text-align: center;">
+                    <div style="font-style: italic;">${message}</div>
+                </div>
+            `;
+            messagesContainer.appendChild(messageDiv);
+            scrollToBottom();
+            return messageDiv;
+        }
+
+        function showTypingIndicator(userName) {
+            const indicator = document.getElementById('typingIndicator');
+            document.getElementById('typingUser').textContent = userName;
+            indicator.style.display = 'flex';
+            scrollToBottom();
+        }
+
+        function hideTypingIndicator() {
+            document.getElementById('typingIndicator').style.display = 'none';
+        }
+
+        function scrollToBottom() {
+            const container = document.getElementById('messagesContainer');
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function openImageModal(src) {
+            document.getElementById('modalImage').src = src;
+            document.getElementById('imageModal').style.display = 'block';
+        }
+
+        function closeImageModal() {
+            document.getElementById('imageModal').style.display = 'none';
+        }
+
+        function markMessagesAsRead(messageIds) {
+            messageIds.forEach(id => {
+                // Update UI to show messages as read
+                const messageElements = document.querySelectorAll('.message.own .fas.fa-check');
+                messageElements.forEach(el => {
+                    el.classList.add('text-blue-400');
+                    el.title = 'Read';
+                });
+            });
+        }
+
+        // Mark messages as read when page loads
+        connection.invoke('MarkMessagesAsRead', matchId);
+
+        // Auto-scroll to bottom on page load
+        window.onload = () => {
+            scrollToBottom();
+        };
+    </script>
+</body>
+</html>

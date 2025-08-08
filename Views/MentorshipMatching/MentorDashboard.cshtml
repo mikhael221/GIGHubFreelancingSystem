@@ -79,6 +79,15 @@
                                                 @request.Status
                                             </span>
                                         </div>
+                                        @if (request.Status == "Active")
+                                        {
+                                            <a asp-controller="MentorshipChat"
+                                               asp-action="Index"
+                                               asp-route-matchId="@request.Id"
+                                               class="btn btn-primary">
+                                                💬 Chat
+                                            </a>
+                                        }
                                     </div>
                                 </li>
                             }
