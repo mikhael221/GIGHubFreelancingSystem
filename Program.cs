@@ -20,11 +20,15 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
 
 builder.Services.AddScoped<IMentorshipMatchingService, MentorshipMatchingService>();
 
+builder.Services.AddScoped<IMessageEncryptionService, MessageEncryptionService>();
+
 // Add SignalR
 builder.Services.AddSignalR(options =>
 {
     options.EnableDetailedErrors = true; // Enable for development
     options.MaximumReceiveMessageSize = 10 * 1024 * 1024; // 10MB for file uploads
+    options.ClientTimeoutInterval = TimeSpan.FromSeconds(60);
+    options.HandshakeTimeout = TimeSpan.FromSeconds(15);
 });
 
 var app = builder.Build();
@@ -33,8 +37,20 @@ var app = builder.Build();
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
+}
+else
+{
+    // Only enable detailed errors in development
+    app.UseDeveloperExceptionPage();
+}
+
+var masterKey = builder.Configuration["ENCRYPTION_MASTER_KEY"] ??
+                builder.Configuration["Encryption:MasterKey"];
+
+if (string.IsNullOrEmpty(masterKey))
+{
+    throw new InvalidOperationException("Encryption master key not configured");
 }
 
 app.UseHttpsRedirection();

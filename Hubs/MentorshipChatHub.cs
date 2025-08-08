@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
 using Freelancing.Data;
 using Freelancing.Models.Entities;
+using Freelancing.Services;
 using Microsoft.EntityFrameworkCore;
 
 namespace Freelancing.Hubs
@@ -11,12 +12,14 @@ namespace Freelancing.Hubs
     public class MentorshipChatHub : Hub
     {
         private readonly ApplicationDbContext _context;
+        private readonly IMessageEncryptionService _encryptionService;
         private static readonly Dictionary<string, string> UserConnections = new();
         private static readonly Dictionary<string, List<string>> RoomConnections = new();
 
-        public MentorshipChatHub(ApplicationDbContext context)
+        public MentorshipChatHub(ApplicationDbContext context, IMessageEncryptionService encryptionService)
         {
             _context = context;
+            _encryptionService = encryptionService;
         }
 
         public override async Task OnConnectedAsync()
@@ -97,85 +100,6 @@ namespace Freelancing.Hubs
                 }
 
                 var userId = Guid.Parse(userIdClaim);
-
-                // Get user info from database to ensure we have the name
-                var user = await _context.UserAccounts.FirstOrDefaultAsync(u => u.Id == userId);
-                if (user == null)
-                {
-                    await Clients.Caller.SendAsync("Error", "User not found");
-                    return;
-                }
-
-                var fullName = $"{user.FirstName} {user.LastName}";
-
-                // Verify access and get match details
-                var match = await _context.MentorshipMatches
-                    .FirstOrDefaultAsync(mm => mm.Id.ToString() == mentorshipMatchId &&
-                                              (mm.MentorId == userId || mm.MenteeId == userId) &&
-                                              mm.Status == "Active");
-
-                if (match == null)
-                {
-                    await Clients.Caller.SendAsync("Error", "Access denied or match not found");
-                    return;
-                }
-
-                // Save message to database
-                var chatMessage = new MentorshipChatMessage
-                {
-                    Id = Guid.NewGuid(),
-                    MentorshipMatchId = Guid.Parse(mentorshipMatchId),
-                    SenderId = userId,
-                    Message = message,
-                    MessageType = messageType,
-                    SentAt = DateTime.UtcNow,
-                    IsRead = false
-                };
-
-                _context.MentorshipChatMessages.Add(chatMessage);
-                await _context.SaveChangesAsync();
-
-                var roomName = $"mentorship_{mentorshipMatchId}";
-
-                // Create the message object to send
-                var messageToSend = new
-                {
-                    Id = chatMessage.Id.ToString(),
-                    SenderId = userId.ToString(),
-                    SenderName = fullName,
-                    Message = message,
-                    MessageType = messageType,
-                    SentAt = chatMessage.SentAt.ToString("O"), // Use ISO 8601 format
-                    IsRead = false
-                };
-
-                // Log for debugging (remove in production)
-                Console.WriteLine($"Sending message: {System.Text.Json.JsonSerializer.Serialize(messageToSend)}");
-
-                // Send to all users in the room
-                await Clients.Group(roomName).SendAsync("ReceiveMessage", messageToSend);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error in SendMessage: {ex.Message}");
-                await Clients.Caller.SendAsync("Error", $"Failed to send message: {ex.Message}");
-            }
-        }
-
-        public async Task SendFile(string mentorshipMatchId, string fileName, string fileUrl, long fileSize, string fileType)
-        {
-            try
-            {
-                var userIdClaim = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                if (string.IsNullOrEmpty(userIdClaim))
-                {
-                    await Clients.Caller.SendAsync("Error", "User not authenticated");
-                    return;
-                }
-
-                var userId = Guid.Parse(userIdClaim);
-
-                // Get user info from database to ensure we have the name
                 var user = await _context.UserAccounts.FirstOrDefaultAsync(u => u.Id == userId);
                 if (user == null)
                 {
@@ -197,61 +121,170 @@ namespace Freelancing.Hubs
                     return;
                 }
 
-                // Determine message type based on file type
-                string messageType = "file";
-                if (!string.IsNullOrEmpty(fileType) && fileType.StartsWith("image/"))
-                {
-                    messageType = "image";
-                }
+                // Generate encryption key for this room
+                var encryptionKey = _encryptionService.GenerateRoomKey(mentorshipMatchId);
 
-                // Save file message to database
-                var fileMessage = new MentorshipChatMessage
+                // Encrypt the message before storing
+                var encryptedMessage = _encryptionService.EncryptMessage(message, encryptionKey);
+
+                // Save encrypted message to database
+                var chatMessage = new MentorshipChatMessage
                 {
                     Id = Guid.NewGuid(),
                     MentorshipMatchId = Guid.Parse(mentorshipMatchId),
                     SenderId = userId,
-                    Message = fileName, // Store filename in message field
+                    Message = encryptedMessage, // Store encrypted
                     MessageType = messageType,
-                    FileUrl = fileUrl,
-                    FileSize = fileSize,
-                    FileType = fileType,
                     SentAt = DateTime.UtcNow,
                     IsRead = false
                 };
 
-                _context.MentorshipChatMessages.Add(fileMessage);
+                _context.MentorshipChatMessages.Add(chatMessage);
                 await _context.SaveChangesAsync();
 
                 var roomName = $"mentorship_{mentorshipMatchId}";
 
-                // Create the file message object to send
+                // Send decrypted message to clients for display
                 var messageToSend = new
                 {
-                    Id = fileMessage.Id.ToString(),
+                    Id = chatMessage.Id.ToString(),
                     SenderId = userId.ToString(),
                     SenderName = fullName,
-                    Message = fileName, // This will be used as fallback
+                    Message = message, // Send original message for display
+                    MessageType = messageType,
+                    SentAt = chatMessage.SentAt.ToString("O"),
+                    IsRead = false,
+                    IsEncrypted = false // Server-side encryption
+                };
+
+                await Clients.Group(roomName).SendAsync("ReceiveMessage", messageToSend);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in SendMessage: {ex.Message}");
+                await Clients.Caller.SendAsync("Error", $"Failed to send message: {ex.Message}");
+            }
+        }
+
+        // FIXED: Complete SendFile implementation with encryption support
+        public async Task SendFile(string mentorshipMatchId, string fileName, string fileUrl, long fileSize, string fileType)
+        {
+            try
+            {
+                var userIdClaim = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userIdClaim))
+                {
+                    await Clients.Caller.SendAsync("Error", "User not authenticated");
+                    return;
+                }
+
+                var userId = Guid.Parse(userIdClaim);
+                var user = await _context.UserAccounts.FirstOrDefaultAsync(u => u.Id == userId);
+                if (user == null)
+                {
+                    await Clients.Caller.SendAsync("Error", "User not found");
+                    return;
+                }
+
+                var fullName = $"{user.FirstName} {user.LastName}";
+
+                // Verify access
+                var match = await _context.MentorshipMatches
+                    .FirstOrDefaultAsync(mm => mm.Id.ToString() == mentorshipMatchId &&
+                                              (mm.MentorId == userId || mm.MenteeId == userId) &&
+                                              mm.Status == "Active");
+
+                if (match == null)
+                {
+                    await Clients.Caller.SendAsync("Error", "Access denied or match not found");
+                    return;
+                }
+
+                // Generate encryption key for this room
+                var encryptionKey = _encryptionService.GenerateRoomKey(mentorshipMatchId);
+
+                // Encrypt the file name before storing (optional)
+                var encryptedFileName = fileName;
+                try
+                {
+                    encryptedFileName = _encryptionService.EncryptMessage(fileName, encryptionKey);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Failed to encrypt filename: {ex.Message}");
+                    // Continue with unencrypted filename if encryption fails
+                }
+
+                // Determine message type based on file type
+                var messageType = DetermineMessageType(fileType, fileName);
+
+                // Save encrypted file message to database
+                var chatMessage = new MentorshipChatMessage
+                {
+                    Id = Guid.NewGuid(),
+                    MentorshipMatchId = Guid.Parse(mentorshipMatchId),
+                    SenderId = userId,
+                    Message = encryptedFileName, // Store encrypted filename
+                    MessageType = messageType,
+                    FileUrl = fileUrl,
+                    FileType = fileType,
+                    FileSize = fileSize,
+                    SentAt = DateTime.UtcNow,
+                    IsRead = false
+                };
+
+                _context.MentorshipChatMessages.Add(chatMessage);
+                await _context.SaveChangesAsync();
+
+                var roomName = $"mentorship_{mentorshipMatchId}";
+
+                // Send file message to clients
+                var fileMessageToSend = new
+                {
+                    Id = chatMessage.Id.ToString(),
+                    SenderId = userId.ToString(),
+                    SenderName = fullName,
+                    Message = fileName, // Send original filename for display
                     FileName = fileName,
                     FileUrl = fileUrl,
                     FileSize = fileSize,
                     FileType = fileType,
                     MessageType = messageType,
-                    SentAt = fileMessage.SentAt.ToString("O"), // Use ISO 8601 format
-                    IsRead = false
+                    SentAt = chatMessage.SentAt.ToString("O"),
+                    IsRead = false,
+                    IsEncrypted = false // Server-side encryption
                 };
 
-                // Log for debugging (remove in production)
-                Console.WriteLine($"Sending file message: {System.Text.Json.JsonSerializer.Serialize(messageToSend)}");
-
-                // Send to all users in the room
-                await Clients.Group(roomName).SendAsync("ReceiveFile", messageToSend);
+                await Clients.Group(roomName).SendAsync("ReceiveFile", fileMessageToSend);
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error in SendFile: {ex.Message}");
-                Console.WriteLine($"Stack trace: {ex.StackTrace}");
                 await Clients.Caller.SendAsync("Error", $"Failed to send file: {ex.Message}");
             }
+        }
+
+        // Helper method to determine message type based on file
+        private string DetermineMessageType(string fileType, string fileName)
+        {
+            if (string.IsNullOrEmpty(fileType))
+            {
+                // Fallback to file extension
+                var extension = Path.GetExtension(fileName)?.ToLowerInvariant();
+                return extension switch
+                {
+                    ".jpg" or ".jpeg" or ".png" or ".gif" or ".webp" => "image",
+                    ".mp4" or ".mov" or ".avi" or ".wmv" => "video",
+                    _ => "file"
+                };
+            }
+
+            if (fileType.StartsWith("image/"))
+                return "image";
+            if (fileType.StartsWith("video/"))
+                return "video";
+
+            return "file";
         }
 
         public async Task StartVideoCall(string mentorshipMatchId)
@@ -260,7 +293,6 @@ namespace Freelancing.Hubs
             var fullName = Context.User?.FindFirst("FullName")?.Value;
             var roomName = $"mentorship_{mentorshipMatchId}";
 
-            // Notify other user about incoming video call
             await Clients.OthersInGroup(roomName).SendAsync("IncomingVideoCall", new
             {
                 CallerId = userId,

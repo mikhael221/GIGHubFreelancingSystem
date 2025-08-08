@@ -126,11 +126,26 @@
                 <!-- Chat Header -->
                 <div class="chat-header mt-1">
                     <div class="flex items-center gap-3">
-                        <img src="@(Model.Partner.Photo ?? "/images/default-avatar.png")"
+                        <img src="@(Model.Partner.Photo ?? "https://ik.imagekit.io/6txj3mofs/GIGHub%20(11).png?updatedAt=1750552804497")"
                              alt="@Model.Partner.FirstName"
                              class="w-12 h-12 rounded-full object-cover">
                         <div>
                             <h3 class="font-semibold text-lg">@Model.Partner.FirstName @Model.Partner.LastName</h3>
+                            <!-- Simple security indicator -->
+                            <div class="flex items-center gap-2 text-sm">
+                                <span class="text-green-600 flex items-center gap-1">
+                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"></path>
+                                    </svg>
+                                    Secure Chat
+                                </span>
+                                <a onclick="showSecurityInfo()"
+                                   title="Security information">
+                                    <svg class="w-[17px] h-[17px] text-blue-800" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+                                        <path fill-rule="evenodd" d="M2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10S2 17.523 2 12Zm9.408-5.5a1 1 0 1 0 0 2h.01a1 1 0 1 0 0-2h-.01ZM10 10a1 1 0 1 0 0 2h1v3h-1a1 1 0 1 0 0 2h4a1 1 0 1 0 0-2h-1v-4a1 1 0 0 0-1-1h-2Z" clip-rule="evenodd" />
+                                    </svg>
+                                </a>
+                            </div>
                         </div>
                         <div class="online-indicator" id="onlineIndicator" style="display: none;"></div>
                     </div>
@@ -144,6 +159,81 @@
                     </div>
                 </div>
 
+                <!-- Security Information Modal -->
+                <div id="securityInfoModal" class="fixed inset-0 hidden z-50" style="background: rgba(0,0,0,0.8);">
+                    <div class="flex items-center justify-center min-h-screen px-4">
+                        <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+                            <div class="flex justify-between items-center mb-4">
+                                <h3 class="text-lg font-semibold">Chat Security</h3>
+                                <button onclick="hideSecurityInfo()" class="text-gray-400 hover:text-gray-600">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                    </svg>
+                                </button>
+                            </div>
+
+                            <div class="space-y-4">
+                                <div class="flex items-start gap-3">
+                                    <div class="text-green-500 mt-1">
+                                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"></path>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-medium text-gray-900">Encrypted Storage</h4>
+                                        <p class="text-sm text-gray-600">Your messages are encrypted using AES-256 encryption before being stored in our database.</p>
+                                    </div>
+                                </div>
+
+                                <div class="flex items-start gap-3">
+                                    <div class="text-blue-500 mt-1">
+                                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                            <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-medium text-gray-900">Secure Transmission</h4>
+                                        <p class="text-sm text-gray-600">All messages are sent over HTTPS and processed securely on our servers.</p>
+                                    </div>
+                                </div>
+
+                                <div class="flex items-start gap-3">
+                                    <div class="text-purple-500 mt-1">
+                                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M18 8a6 6 0 01-7.743 5.743L10 14l-1 1-1 1H6v2H2v-4l4.257-4.257A6 6 0 1118 8zm-6-4a1 1 0 100 2 2 2 0 012 2 1 1 0 102 0 4 4 0 00-4-4z" clip-rule="evenodd"></path>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-medium text-gray-900">Access Control</h4>
+                                        <p class="text-sm text-gray-600">Only authorized mentors and mentees can access their conversation messages.</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mt-6 bg-blue-50 border border-blue-200 rounded-md p-4">
+                                <div class="flex">
+                                    <div class="text-blue-400 mr-2">
+                                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h4 class="text-sm font-medium text-blue-800">Server-Side Security</h4>
+                                        <p class="text-sm text-blue-700">Messages are automatically encrypted and decrypted by our secure servers to provide the best user experience.</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mt-6 flex justify-end">
+                                <button onclick="hideSecurityInfo()"
+                                        class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
+                                    Got it
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Messages Area -->
                 <div class="chat-messages" id="messagesContainer">
                     @foreach (var message in Model.Messages)
@@ -152,7 +242,7 @@
                             <div class="message-bubble">
                                 @if (!message.IsCurrentUser)
                                 {
-                                    <div class="message-sender">@message.SenderName</div>
+                                    <div class="message-sender"></div>
                                 }
 
                                 @if (message.MessageType == "text")
@@ -182,11 +272,12 @@
                                     <div class="image-message">
                                         <img src="@message.FileUrl" alt="@message.Message"
                                              class="max-w rounded-lg cursor-pointer"
-                                             onclick="openImageModal('@message.FileUrl')">
+                                             onclick="openImageModal('@message.FileUrl')"
+                                             style="max-height: 300px; object-fit: cover;">
                                     </div>
                                 }
 
-                                <div class="message-time">
+                                <div class="message-time" data-timestamp="@message.SentAt.ToString("yyyy-MM-ddTHH:mm:ss.fffZ")">
                                     @message.SentAt.ToString("HH:mm")
                                     @if (message.IsCurrentUser)
                                     {
@@ -282,11 +373,47 @@
         let isTyping = false;
         let currentCallerId = null;
 
+        // Timezone handling - get user's timezone offset
+        const userTimezoneOffset = new Date().getTimezoneOffset();
+
+        // Function to format time consistently
+        function formatTime(dateString) {
+            try {
+                const date = new Date(dateString);
+                if (isNaN(date.getTime())) {
+                    return 'Now';
+                }
+                return date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            } catch (e) {
+                console.error('Date formatting error:', e);
+                return 'Now';
+            }
+        }
+
         // Start connection
         connection.start().then(() => {
             console.log('SignalR Connected');
             connection.invoke('JoinMentorshipRoom', matchId);
+
+            // Fix existing message times on page load
+            fixExistingMessageTimes();
         }).catch(err => console.error('SignalR Connection Error: ', err));
+
+        // Fix existing message times to use consistent timezone
+        function fixExistingMessageTimes() {
+            const messageTimeElements = document.querySelectorAll('.message-time[data-timestamp]');
+            messageTimeElements.forEach(element => {
+                const timestamp = element.getAttribute('data-timestamp');
+                if (timestamp) {
+                    const timeText = formatTime(timestamp);
+                    // Find and update only the first text node
+                    const firstTextNode = Array.from(element.childNodes).find(node => node.nodeType === Node.TEXT_NODE);
+                    if (firstTextNode) {
+                        firstTextNode.textContent = timeText + ' ';
+                    }
+                }
+            });
+        }
 
         // Connection events
         connection.on('Connected', (connectionId) => {
@@ -346,7 +473,7 @@
             const message = input.value.trim();
 
             if (message) {
-                console.log('Sending message:', message, 'to match:', matchId); // Debug log
+                console.log('Sending message:', message, 'to match:', matchId);
                 connection.invoke('SendMessage', matchId, message, 'text')
                     .then(() => {
                         console.log('Message sent successfully');
@@ -447,6 +574,7 @@
                             fileType: response.fileType
                         });
 
+                        // Send file via SignalR
                         connection.invoke('SendFile', matchId, response.fileName,
                             response.fileUrl, response.fileSize, response.fileType)
                             .then(() => {
@@ -454,7 +582,10 @@
                             })
                             .catch(err => {
                                 console.error('SignalR SendFile error:', err);
-                                alert('Failed to send file notification: ' + err.message);
+                                alert('Failed to send file notification: ' + err.message || err.toString());
+
+                                // Add error message to chat
+                                addSystemMessage(`Failed to send file: ${err.message || 'Unknown error'}`);
                             });
                     } else {
                         console.error('Upload failed:', response.message);
@@ -462,14 +593,21 @@
                     }
                 },
                 error: function(xhr, status, error) {
-                    console.error('Upload AJAX error:', { xhr, status, error });
+                    console.error('Upload AJAX error:', { xhr, status, error, responseText: xhr.responseText });
                     loadingMessage.remove();
 
                     let errorMessage = 'Upload failed';
-                    if (xhr.responseJSON && xhr.responseJSON.message) {
-                        errorMessage += ': ' + xhr.responseJSON.message;
-                    } else if (error) {
-                        errorMessage += ': ' + error;
+                    try {
+                        const response = JSON.parse(xhr.responseText);
+                        if (response && response.message) {
+                            errorMessage += ': ' + response.message;
+                        }
+                    } catch (e) {
+                        if (error) {
+                            errorMessage += ': ' + error;
+                        } else if (xhr.responseText) {
+                            errorMessage += ': ' + xhr.responseText;
+                        }
                     }
 
                     alert(errorMessage);
@@ -494,54 +632,22 @@
             document.getElementById('videoCallNotification').style.display = 'none';
         }
 
-        function addMessageToChat(message) {
-            console.log('Processing message:', message);
-
-            const messagesContainer = document.getElementById('messagesContainer');
-            const messageDiv = document.createElement('div');
-
-            // Debug each property
-            console.log('SenderId:', message.SenderId);
-            console.log('CurrentUserId:', currentUserId);
-            console.log('SenderName:', message.SenderName);
-            console.log('Message text:', message.Message);
-            console.log('SentAt:', message.SentAt);
-
-            // Safer property access with fallbacks
-            const senderId = message.SenderId || message.senderId || '';
-            const senderName = message.SenderName || message.senderName || 'Unknown User';
-            const messageText = message.Message || message.message || '';
-            const sentAt = message.SentAt || message.sentAt || new Date().toISOString();
-
-            messageDiv.className = `message ${senderId === currentUserId ? 'own' : ''}`;
-
-            // Handle date more safely
-            let time = 'Invalid Time';
-            try {
-                const messageDate = new Date(sentAt);
-                if (!isNaN(messageDate.getTime())) {
-                    time = messageDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                }
-            } catch (e) {
-                console.error('Date parsing error:', e);
-            }
-
-            messageDiv.innerHTML = `
-                <div class="message-bubble">
-                    ${senderId !== currentUserId ? `<div class="message-sender">${senderName}</div>` : ''}
-                    <div>${messageText}</div>
-                    <div class="message-time">
-                        ${time}
-                        ${senderId === currentUserId ? '<i class="fas fa-check" title="Sent"></i>' : ''}
-                    </div>
-                </div>
-            `;
-
-            messagesContainer.appendChild(messageDiv);
+        function showSecurityInfo() {
+            document.getElementById('securityInfoModal').classList.remove('hidden');
         }
 
-        // Also update the addFileMessageToChat function for consistency
-                function addMessageToChat(data) {
+        function hideSecurityInfo() {
+            document.getElementById('securityInfoModal').classList.add('hidden');
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('securityInfoModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                hideSecurityInfo();
+            }
+        });
+
+        function addMessageToChat(data) {
             console.log('Processing message data:', data);
 
             const messagesContainer = document.getElementById('messagesContainer');
@@ -559,22 +665,13 @@
             const isOwnMessage = senderId.toString() === currentUserId.toString();
             messageDiv.className = `message ${isOwnMessage ? 'own' : ''}`;
 
-            // Handle date safely
-            let timeDisplay = 'Now';
-            try {
-                const messageDate = new Date(sentAt);
-                if (!isNaN(messageDate.getTime())) {
-                    timeDisplay = messageDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                }
-            } catch (e) {
-                console.error('Date parsing error:', e, 'Original value:', sentAt);
-            }
+            // Use consistent time formatting
+            const timeDisplay = formatTime(sentAt);
 
             messageDiv.innerHTML = `
                 <div class="message-bubble">
-                    ${!isOwnMessage ? `<div class="message-sender">${senderName}</div>` : ''}
                     <div>${messageText}</div>
-                    <div class="message-time">
+                    <div class="message-time" data-timestamp="${sentAt}">
                         ${timeDisplay}
                         ${isOwnMessage ? '<i class="fas fa-check" title="Sent"></i>' : ''}
                     </div>
@@ -584,11 +681,15 @@
             messagesContainer.appendChild(messageDiv);
         }
 
-        // Fixed addFileMessageToChat function
         function addFileMessageToChat(data) {
             console.log('Processing file data:', data);
 
             const messagesContainer = document.getElementById('messagesContainer');
+            if (!messagesContainer) {
+                console.error('Messages container not found');
+                return;
+            }
+
             const messageDiv = document.createElement('div');
 
             // Extract properties with multiple fallback options
@@ -598,57 +699,77 @@
             const fileUrl = data.FileUrl || data.fileUrl || data.url || '';
             const fileSize = data.FileSize || data.fileSize || data.size || 0;
             const fileType = data.FileType || data.fileType || data.type || '';
+            const messageType = data.MessageType || data.messageType || 'file';
             const sentAt = data.SentAt || data.sentAt || data.timestamp || new Date().toISOString();
 
-            console.log('Extracted file values:', { senderId, senderName, fileName, fileUrl, fileSize, fileType, sentAt });
+            console.log('Extracted file values:', { senderId, senderName, fileName, fileUrl, fileSize, fileType, messageType, sentAt });
 
             const isOwnMessage = senderId.toString() === currentUserId.toString();
             messageDiv.className = `message ${isOwnMessage ? 'own' : ''}`;
 
-            // Handle date safely
-            let timeDisplay = 'Now';
-            try {
-                const messageDate = new Date(sentAt);
-                if (!isNaN(messageDate.getTime())) {
-                    timeDisplay = messageDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                }
-            } catch (e) {
-                console.error('Date parsing error:', e, 'Original value:', sentAt);
-            }
+            // Use consistent time formatting
+            const timeDisplay = formatTime(sentAt);
 
-            // Format file size
+            // Format file size only for non-image files
             const fileSizeFormatted = fileSize > 0 ? (fileSize / 1024 / 1024).toFixed(2) + ' MB' : '';
 
-            // Determine if it's an image
-            const isImage = fileType && (fileType.startsWith('image/') ||
-                fileName.toLowerCase().match(/\.(jpg|jpeg|png|gif|webp)$/));
+            // Determine if it's an image based on message type or file type
+            const isImage = messageType === 'image' ||
+                           (fileType && fileType.startsWith('image/')) ||
+                           fileName.toLowerCase().match(/\.(jpg|jpeg|png|gif|webp)$/);
+
+            const isVideo = messageType === 'video' ||
+                           (fileType && fileType.startsWith('video/')) ||
+                           fileName.toLowerCase().match(/\.(mp4|mov|avi|wmv)$/);
 
             const linkClass = isOwnMessage ? 'text-white hover:underline' : 'text-blue-600 hover:underline';
 
+            let contentHtml = '';
+
+            if (isImage) {
+                // For images, show only the image without filename or size
+                // Use consistent sizing with server-rendered images
+                contentHtml = `
+                    <div class="image-message">
+                        <img src="${fileUrl}" alt="${fileName}"
+                             class="max-w rounded-lg cursor-pointer"
+                             onclick="openImageModal('${fileUrl}')"
+                             style="max-height: 300px; object-fit: cover;">
+                    </div>
+                `;
+            } else if (isVideo) {
+                contentHtml = `
+                    <div class="video-message">
+                        <video class="max-w-xs rounded-lg" controls style="max-height: 200px;">
+                            <source src="${fileUrl}" type="${fileType}">
+                            Your browser does not support the video tag.
+                        </video>
+                        <div class="text-xs opacity-75 mt-1">${fileName}</div>
+                        ${fileSizeFormatted ? `<div class="text-xs opacity-75">${fileSizeFormatted}</div>` : ''}
+                    </div>
+                `;
+            } else {
+                contentHtml = `
+                    <div class="file-message">
+                        <div class="file-icon">
+                            <svg class="w-[24px] h-[24px] text-gray-800" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+                                <path fill-rule="evenodd" d="M9 2.221V7H4.221a2 2 0 0 1 .365-.5L8.5 2.586A2 2 0 0 1 9 2.22ZM11 2v5a2 2 0 0 1-2 2H4v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2h-7Z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                        <div>
+                            <a href="${fileUrl}" download="${fileName}" class="${linkClass}">
+                                ${fileName}
+                            </a>
+                            ${fileSizeFormatted ? `<div class="text-xs opacity-75">${fileSizeFormatted}</div>` : ''}
+                        </div>
+                    </div>
+                `;
+            }
+
             messageDiv.innerHTML = `
                 <div class="message-bubble">
-                    ${!isOwnMessage ? `<div class="message-sender">${senderName}</div>` : ''}
-                    ${isImage ?
-                        `<div class="image-message">
-                            <img src="${fileUrl}" alt="${fileName}"
-                                 class="max-w-xs rounded-lg cursor-pointer"
-                                 onclick="openImageModal('${fileUrl}')"
-                                 style="max-height: 200px; object-fit: cover;">
-                            <div class="text-xs opacity-75 mt-1">${fileName}</div>
-                        </div>` :
-                        `<div class="file-message">
-                            <div class="file-icon">
-                                <i class="fas fa-file"></i>
-                            </div>
-                            <div>
-                                <a href="${fileUrl}" download="${fileName}" class="${linkClass}">
-                                    ${fileName}
-                                </a>
-                                ${fileSizeFormatted ? `<div class="text-xs opacity-75">${fileSizeFormatted}</div>` : ''}
-                            </div>
-                        </div>`
-                    }
-                    <div class="message-time">
+                    ${contentHtml}
+                    <div class="message-time" data-timestamp="${sentAt}">
                         ${timeDisplay}
                         ${isOwnMessage ? '<i class="fas fa-check" title="Sent"></i>' : ''}
                     </div>
@@ -656,6 +777,7 @@
             `;
 
             messagesContainer.appendChild(messageDiv);
+            scrollToBottom();
         }
 
         function addSystemMessage(message) {
@@ -685,7 +807,9 @@
 
         function scrollToBottom() {
             const container = document.getElementById('messagesContainer');
-            container.scrollTop = container.scrollHeight;
+            if (container) {
+                container.scrollTop = container.scrollHeight;
+            }
         }
 
         function openImageModal(src) {

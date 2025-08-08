@@ -5,6 +5,7 @@ using System.Security.Claims;
 using Freelancing.Data;
 using Freelancing.Models.Entities;
 using Freelancing.Models;
+using Freelancing.Services;
 
 namespace Freelancing.Controllers
 {
@@ -13,13 +14,15 @@ namespace Freelancing.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly IWebHostEnvironment _environment;
+        private readonly IMessageEncryptionService _encryptionService;
         private const int MaxFileSize = 10 * 1024 * 1024; // 10MB
         private readonly string[] AllowedFileTypes = { ".pdf", ".doc", ".docx", ".txt", ".jpg", ".jpeg", ".png", ".gif", ".mp4", ".mov", ".avi" };
 
-        public MentorshipChatController(ApplicationDbContext context, IWebHostEnvironment environment)
+        public MentorshipChatController(ApplicationDbContext context, IWebHostEnvironment environment, IMessageEncryptionService encryptionService)
         {
             _context = context;
             _environment = environment;
+            _encryptionService = encryptionService;
         }
 
         [HttpGet]
@@ -41,26 +44,9 @@ namespace Freelancing.Controllers
                 return RedirectToAction("AvailableMentors", "MentorshipMatching");
             }
 
-            // Get chat messages
-            var messages = await _context.MentorshipChatMessages
-                .Where(mcm => mcm.MentorshipMatchId == matchId)
-                .Include(mcm => mcm.Sender)
-                .OrderBy(mcm => mcm.SentAt)
-                .Select(mcm => new ChatMessageViewModel
-                {
-                    Id = mcm.Id,
-                    SenderId = mcm.SenderId,
-                    SenderName = $"{mcm.Sender.FirstName} {mcm.Sender.LastName}",
-                    Message = mcm.Message,
-                    MessageType = mcm.MessageType,
-                    FileUrl = mcm.FileUrl,
-                    FileType = mcm.FileType,
-                    FileSize = mcm.FileSize,
-                    SentAt = mcm.SentAt,
-                    IsRead = mcm.IsRead,
-                    IsCurrentUser = mcm.SenderId == userId
-                })
-                .ToListAsync();
+            // Get and decrypt chat messages
+            var encryptionKey = _encryptionService.GenerateRoomKey(matchId.ToString());
+            var messages = await GetDecryptedMessages(matchId, userId, encryptionKey);
 
             var partner = match.MentorId == userId ? match.Mentee : match.Mentor;
 
@@ -77,6 +63,118 @@ namespace Freelancing.Controllers
             await MarkMessagesAsRead(matchId, userId);
 
             return View(viewModel);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetMessages(Guid matchId, int page = 1, int pageSize = 50)
+        {
+            var userId = GetCurrentUserId();
+
+            // Verify access
+            var hasAccess = await _context.MentorshipMatches
+                .AnyAsync(mm => mm.Id == matchId &&
+                               (mm.MentorId == userId || mm.MenteeId == userId) &&
+                               mm.Status == "Active");
+
+            if (!hasAccess)
+            {
+                return Json(new { success = false, message = "Access denied" });
+            }
+
+            // Get and decrypt messages
+            var encryptionKey = _encryptionService.GenerateRoomKey(matchId.ToString());
+            var messages = await GetDecryptedMessagesPage(matchId, userId, encryptionKey, page, pageSize);
+
+            return Json(new { success = true, messages = messages.OrderBy(m => m.SentAt) });
+        }
+
+        private async Task<List<ChatMessageViewModel>> GetDecryptedMessages(Guid matchId, Guid userId, string encryptionKey)
+        {
+            var messages = await _context.MentorshipChatMessages
+                .Where(mcm => mcm.MentorshipMatchId == matchId && !mcm.IsDeleted)
+                .Include(mcm => mcm.Sender)
+                .OrderBy(mcm => mcm.SentAt)
+                .ToListAsync();
+
+            var decryptedMessages = new List<ChatMessageViewModel>();
+
+            foreach (var message in messages)
+            {
+                var viewModel = new ChatMessageViewModel
+                {
+                    Id = message.Id,
+                    SenderId = message.SenderId,
+                    SenderName = $"{message.Sender.FirstName} {message.Sender.LastName}",
+                    MessageType = message.MessageType,
+                    FileUrl = message.FileUrl,
+                    FileType = message.FileType,
+                    FileSize = message.FileSize,
+                    SentAt = message.SentAt,
+                    IsRead = message.IsRead,
+                    IsCurrentUser = message.SenderId == userId
+                };
+
+                // Try to decrypt the message
+                try
+                {
+                    viewModel.Message = _encryptionService.DecryptMessage(message.Message, encryptionKey);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Decryption failed for message {message.Id}: {ex.Message}");
+                    // If decryption fails, assume it's a plain text message (for backward compatibility)
+                    viewModel.Message = message.Message;
+                }
+
+                decryptedMessages.Add(viewModel);
+            }
+
+            return decryptedMessages;
+        }
+
+        private async Task<List<dynamic>> GetDecryptedMessagesPage(Guid matchId, Guid userId, string encryptionKey, int page, int pageSize)
+        {
+            var messages = await _context.MentorshipChatMessages
+                .Where(mcm => mcm.MentorshipMatchId == matchId && !mcm.IsDeleted)
+                .Include(mcm => mcm.Sender)
+                .OrderByDescending(mcm => mcm.SentAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            var decryptedMessages = new List<dynamic>();
+
+            foreach (var message in messages)
+            {
+                string decryptedContent;
+                try
+                {
+                    decryptedContent = _encryptionService.DecryptMessage(message.Message, encryptionKey);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Decryption failed for message {message.Id}: {ex.Message}");
+                    // Fallback to original message if decryption fails
+                    decryptedContent = message.Message;
+                }
+
+                decryptedMessages.Add(new
+                {
+                    Id = message.Id,
+                    SenderId = message.SenderId,
+                    SenderName = $"{message.Sender.FirstName} {message.Sender.LastName}",
+                    Message = decryptedContent,
+                    MessageType = message.MessageType,
+                    FileUrl = message.FileUrl,
+                    FileType = message.FileType,
+                    FileSize = message.FileSize,
+                    SentAt = message.SentAt,
+                    IsRead = message.IsRead,
+                    IsCurrentUser = message.SenderId == userId
+                });
+            }
+
+            return decryptedMessages;
         }
 
         [HttpPost]
@@ -134,16 +232,28 @@ namespace Freelancing.Controllers
                     await file.CopyToAsync(stream);
                 }
 
-                // Create file URL (make sure this matches your app's URL structure)
+                // Create file URL
                 var fileUrl = $"/uploads/mentorship-chat/{uniqueFileName}";
 
-                // Log successful upload
+                // Optional: Encrypt the original filename before storing
+                var encryptionKey = _encryptionService.GenerateRoomKey(matchId.ToString());
+                var encryptedFileName = file.FileName;
+                try
+                {
+                    encryptedFileName = _encryptionService.EncryptMessage(file.FileName, encryptionKey);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Failed to encrypt filename: {ex.Message}");
+                    // Continue with unencrypted filename
+                }
+
                 Console.WriteLine($"File uploaded successfully: {file.FileName} -> {fileUrl}");
 
                 return Json(new
                 {
                     success = true,
-                    fileName = file.FileName,
+                    fileName = file.FileName, // Return original filename for display
                     fileUrl = fileUrl,
                     fileSize = file.Length,
                     fileType = file.ContentType ?? "application/octet-stream"
@@ -152,7 +262,6 @@ namespace Freelancing.Controllers
             catch (Exception ex)
             {
                 Console.WriteLine($"Upload error: {ex.Message}");
-                Console.WriteLine($"Stack trace: {ex.StackTrace}");
                 return Json(new { success = false, message = $"Upload failed: {ex.Message}" });
             }
         }
@@ -177,47 +286,6 @@ namespace Freelancing.Controllers
             await _context.SaveChangesAsync();
 
             return Json(new { success = true });
-        }
-
-        [HttpGet]
-        public async Task<IActionResult> GetMessages(Guid matchId, int page = 1, int pageSize = 50)
-        {
-            var userId = GetCurrentUserId();
-
-            // Verify access
-            var hasAccess = await _context.MentorshipMatches
-                .AnyAsync(mm => mm.Id == matchId &&
-                               (mm.MentorId == userId || mm.MenteeId == userId) &&
-                               mm.Status == "Active");
-
-            if (!hasAccess)
-            {
-                return Json(new { success = false, message = "Access denied" });
-            }
-
-            var messages = await _context.MentorshipChatMessages
-                .Where(mcm => mcm.MentorshipMatchId == matchId && !mcm.IsDeleted)
-                .Include(mcm => mcm.Sender)
-                .OrderByDescending(mcm => mcm.SentAt)
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
-                .Select(mcm => new
-                {
-                    Id = mcm.Id,
-                    SenderId = mcm.SenderId,
-                    SenderName = $"{mcm.Sender.FirstName} {mcm.Sender.LastName}",
-                    Message = mcm.Message,
-                    MessageType = mcm.MessageType,
-                    FileUrl = mcm.FileUrl,
-                    FileType = mcm.FileType,
-                    FileSize = mcm.FileSize,
-                    SentAt = mcm.SentAt,
-                    IsRead = mcm.IsRead,
-                    IsCurrentUser = mcm.SenderId == userId
-                })
-                .ToListAsync();
-
-            return Json(new { success = true, messages = messages.OrderBy(m => m.SentAt) });
         }
 
         [HttpGet]
