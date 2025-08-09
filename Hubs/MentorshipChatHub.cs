@@ -88,6 +88,36 @@ namespace Freelancing.Hubs
             await Clients.OthersInGroup(roomName).SendAsync("UserJoined", Context.User.Identity.Name);
         }
 
+        public async Task JoinUserRoom(string userId)
+        {
+            try
+            {
+                // Verify the user ID matches the authenticated user
+                var authenticatedUserId = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                
+                if (string.IsNullOrEmpty(authenticatedUserId) || authenticatedUserId != userId)
+                {
+                    await Clients.Caller.SendAsync("Error", "Access denied");
+                    return;
+                }
+
+                var roomName = $"user_{userId}";
+                await Groups.AddToGroupAsync(Context.ConnectionId, roomName);
+
+                if (!RoomConnections.ContainsKey(roomName))
+                {
+                    RoomConnections[roomName] = new List<string>();
+                }
+                RoomConnections[roomName].Add(Context.ConnectionId);
+
+                await Clients.Caller.SendAsync("JoinedUserRoom", roomName);
+            }
+            catch (Exception ex)
+            {
+                await Clients.Caller.SendAsync("Error", "Failed to join user room");
+            }
+        }
+
         public async Task SendMessage(string mentorshipMatchId, string message, string messageType = "text")
         {
             try
@@ -289,68 +319,306 @@ namespace Freelancing.Hubs
 
         public async Task StartVideoCall(string mentorshipMatchId)
         {
-            var userId = Guid.Parse(Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value);
-            var fullName = Context.User?.FindFirst("FullName")?.Value;
-            var roomName = $"mentorship_{mentorshipMatchId}";
-
-            await Clients.OthersInGroup(roomName).SendAsync("IncomingVideoCall", new
+            try
             {
-                CallerId = userId,
-                CallerName = fullName,
-                MentorshipMatchId = mentorshipMatchId
-            });
+                var userIdClaim = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userIdClaim))
+                {
+                    await Clients.Caller.SendAsync("Error", "User not authenticated");
+                    return;
+                }
+
+                var userId = Guid.Parse(userIdClaim);
+                var user = await _context.UserAccounts.FirstOrDefaultAsync(u => u.Id == userId);
+                if (user == null)
+                {
+                    await Clients.Caller.SendAsync("Error", "User not found");
+                    return;
+                }
+                var fullName = $"{user.FirstName} {user.LastName}";
+
+                // Verify access to this mentorship match
+                var match = await _context.MentorshipMatches
+                    .FirstOrDefaultAsync(mm => mm.Id.ToString() == mentorshipMatchId &&
+                                              (mm.MentorId == userId || mm.MenteeId == userId) &&
+                                              mm.Status == "Active");
+
+                if (match == null)
+                {
+                    await Clients.Caller.SendAsync("Error", "Access denied or mentorship not active");
+                    return;
+                }
+
+                var roomName = $"mentorship_{mentorshipMatchId}";
+
+                // Notify the caller that their call is being requested
+                await Clients.Caller.SendAsync("CallRequested", new
+                {
+                    MentorshipMatchId = mentorshipMatchId,
+                    CallerId = userId.ToString(),
+                    CallerName = fullName ?? "Unknown User"
+                });
+
+                // Send to mentorship room (for users currently in chat)
+                await Clients.OthersInGroup(roomName).SendAsync("IncomingVideoCall", new
+                {
+                    CallerId = userId.ToString(),
+                    CallerName = fullName ?? "Unknown User",
+                    MentorshipMatchId = mentorshipMatchId
+                });
+
+                // Also send to the partner's personal room (for global notifications)
+                var partnerId = match.MentorId == userId ? match.MenteeId : match.MentorId;
+                var partnerRoomName = $"user_{partnerId}";
+                
+                await Clients.Group(partnerRoomName).SendAsync("IncomingVideoCall", new
+                {
+                    CallerId = userId.ToString(),
+                    CallerName = fullName ?? "Unknown User",
+                    MentorshipMatchId = mentorshipMatchId
+                });
+            }
+            catch (Exception ex)
+            {
+                await Clients.Caller.SendAsync("Error", "Failed to start video call");
+            }
         }
 
         public async Task AcceptVideoCall(string mentorshipMatchId, string callerId)
         {
-            var userId = Guid.Parse(Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value);
-            var roomName = $"mentorship_{mentorshipMatchId}";
-
-            await Clients.Group(roomName).SendAsync("VideoCallAccepted", new
+            try
             {
-                AccepterId = userId,
-                CallerId = callerId,
-                MentorshipMatchId = mentorshipMatchId
-            });
+                var userIdClaim = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userIdClaim))
+                {
+                    await Clients.Caller.SendAsync("Error", "User not authenticated");
+                    return;
+                }
+
+                var userId = Guid.Parse(userIdClaim);
+
+                // Verify access to this mentorship match
+                var match = await _context.MentorshipMatches
+                    .FirstOrDefaultAsync(mm => mm.Id.ToString() == mentorshipMatchId &&
+                                              (mm.MentorId == userId || mm.MenteeId == userId) &&
+                                              mm.Status == "Active");
+
+                if (match == null)
+                {
+                    await Clients.Caller.SendAsync("Error", "Access denied or mentorship not active");
+                    return;
+                }
+
+                var roomName = $"mentorship_{mentorshipMatchId}";
+
+                // Notify the caller that their call was accepted
+                await Clients.User(callerId).SendAsync("CallAccepted", new
+                {
+                    MentorshipMatchId = mentorshipMatchId,
+                    AccepterId = userId.ToString()
+                });
+
+                await Clients.Group(roomName).SendAsync("VideoCallAccepted", new
+                {
+                    AccepterId = userId.ToString(),
+                    CallerId = callerId,
+                    MentorshipMatchId = mentorshipMatchId
+                });
+            }
+            catch (Exception ex)
+            {
+                await Clients.Caller.SendAsync("Error", "Failed to accept video call");
+            }
         }
 
         public async Task DeclineVideoCall(string mentorshipMatchId, string callerId)
         {
-            var roomName = $"mentorship_{mentorshipMatchId}";
-
-            await Clients.Group(roomName).SendAsync("VideoCallDeclined", new
+            try
             {
-                MentorshipMatchId = mentorshipMatchId
-            });
+                var userIdClaim = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userIdClaim))
+                {
+                    await Clients.Caller.SendAsync("Error", "User not authenticated");
+                    return;
+                }
+
+                var userId = Guid.Parse(userIdClaim);
+
+                // Verify access to this mentorship match
+                var match = await _context.MentorshipMatches
+                    .FirstOrDefaultAsync(mm => mm.Id.ToString() == mentorshipMatchId &&
+                                              (mm.MentorId == userId || mm.MenteeId == userId) &&
+                                              mm.Status == "Active");
+
+                if (match == null)
+                {
+                    await Clients.Caller.SendAsync("Error", "Access denied or mentorship not active");
+                    return;
+                }
+
+                var roomName = $"mentorship_{mentorshipMatchId}";
+
+                // Notify the caller that their call was declined
+                await Clients.User(callerId).SendAsync("CallDeclined", new
+                {
+                    MentorshipMatchId = mentorshipMatchId,
+                    DeclinerId = userId.ToString()
+                });
+
+                await Clients.Group(roomName).SendAsync("VideoCallDeclined", new
+                {
+                    MentorshipMatchId = mentorshipMatchId
+                });
+            }
+            catch (Exception ex)
+            {
+                await Clients.Caller.SendAsync("Error", "Failed to decline video call");
+            }
         }
 
         public async Task EndVideoCall(string mentorshipMatchId)
         {
-            var roomName = $"mentorship_{mentorshipMatchId}";
-
-            await Clients.Group(roomName).SendAsync("VideoCallEnded", new
+            try
             {
-                MentorshipMatchId = mentorshipMatchId
-            });
+                var userIdClaim = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userIdClaim))
+                {
+                    await Clients.Caller.SendAsync("Error", "User not authenticated");
+                    return;
+                }
+
+                var userId = Guid.Parse(userIdClaim);
+
+                // Verify access to this mentorship match
+                var match = await _context.MentorshipMatches
+                    .FirstOrDefaultAsync(mm => mm.Id.ToString() == mentorshipMatchId &&
+                                              (mm.MentorId == userId || mm.MenteeId == userId) &&
+                                              mm.Status == "Active");
+
+                if (match == null)
+                {
+                    await Clients.Caller.SendAsync("Error", "Access denied or mentorship not active");
+                    return;
+                }
+
+                var roomName = $"mentorship_{mentorshipMatchId}";
+
+                await Clients.Group(roomName).SendAsync("VideoCallEnded", new
+                {
+                    MentorshipMatchId = mentorshipMatchId
+                });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in EndVideoCall: {ex.Message}");
+                await Clients.Caller.SendAsync("Error", "Failed to end video call");
+            }
         }
 
         // WebRTC signaling methods
         public async Task SendOffer(string mentorshipMatchId, string offer)
         {
-            var roomName = $"mentorship_{mentorshipMatchId}";
-            await Clients.OthersInGroup(roomName).SendAsync("ReceiveOffer", offer);
+            try
+            {
+                var userIdClaim = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userIdClaim))
+                {
+                    await Clients.Caller.SendAsync("Error", "User not authenticated");
+                    return;
+                }
+
+                var userId = Guid.Parse(userIdClaim);
+
+                // Verify access to this mentorship match
+                var match = await _context.MentorshipMatches
+                    .FirstOrDefaultAsync(mm => mm.Id.ToString() == mentorshipMatchId &&
+                                              (mm.MentorId == userId || mm.MenteeId == userId) &&
+                                              mm.Status == "Active");
+
+                if (match == null)
+                {
+                    await Clients.Caller.SendAsync("Error", "Access denied or mentorship not active");
+                    return;
+                }
+
+                var roomName = $"mentorship_{mentorshipMatchId}";
+                await Clients.OthersInGroup(roomName).SendAsync("ReceiveOffer", offer);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in SendOffer: {ex.Message}");
+                await Clients.Caller.SendAsync("Error", "Failed to send offer");
+            }
         }
 
         public async Task SendAnswer(string mentorshipMatchId, string answer)
         {
-            var roomName = $"mentorship_{mentorshipMatchId}";
-            await Clients.OthersInGroup(roomName).SendAsync("ReceiveAnswer", answer);
+            try
+            {
+                var userIdClaim = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userIdClaim))
+                {
+                    await Clients.Caller.SendAsync("Error", "User not authenticated");
+                    return;
+                }
+
+                var userId = Guid.Parse(userIdClaim);
+
+                // Verify access to this mentorship match
+                var match = await _context.MentorshipMatches
+                    .FirstOrDefaultAsync(mm => mm.Id.ToString() == mentorshipMatchId &&
+                                              (mm.MentorId == userId || mm.MenteeId == userId) &&
+                                              mm.Status == "Active");
+
+                if (match == null)
+                {
+                    await Clients.Caller.SendAsync("Error", "Access denied or mentorship not active");
+                    return;
+                }
+
+                var roomName = $"mentorship_{mentorshipMatchId}";
+                await Clients.OthersInGroup(roomName).SendAsync("ReceiveAnswer", answer);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in SendAnswer: {ex.Message}");
+                await Clients.Caller.SendAsync("Error", "Failed to send answer");
+            }
         }
 
         public async Task SendIceCandidate(string mentorshipMatchId, string candidate)
         {
-            var roomName = $"mentorship_{mentorshipMatchId}";
-            await Clients.OthersInGroup(roomName).SendAsync("ReceiveIceCandidate", candidate);
+            try
+            {
+                var userIdClaim = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userIdClaim))
+                {
+                    await Clients.Caller.SendAsync("Error", "User not authenticated");
+                    return;
+                }
+
+                var userId = Guid.Parse(userIdClaim);
+
+                // Verify access to this mentorship match
+                var match = await _context.MentorshipMatches
+                    .FirstOrDefaultAsync(mm => mm.Id.ToString() == mentorshipMatchId &&
+                                              (mm.MentorId == userId || mm.MenteeId == userId) &&
+                                              mm.Status == "Active");
+
+                if (match == null)
+                {
+                    await Clients.Caller.SendAsync("Error", "Access denied or mentorship not active");
+                    return;
+                }
+
+                var roomName = $"mentorship_{mentorshipMatchId}";
+                await Clients.OthersInGroup(roomName).SendAsync("ReceiveIceCandidate", candidate);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in SendIceCandidate: {ex.Message}");
+                await Clients.Caller.SendAsync("Error", "Failed to send ICE candidate");
+            }
         }
 
         public async Task MarkMessagesAsRead(string mentorshipMatchId)
@@ -380,16 +648,36 @@ namespace Freelancing.Hubs
 
         public async Task SendTypingIndicator(string mentorshipMatchId, bool isTyping)
         {
-            var userId = Guid.Parse(Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value);
-            var fullName = Context.User?.FindFirst("FullName")?.Value;
-            var roomName = $"mentorship_{mentorshipMatchId}";
-
-            await Clients.OthersInGroup(roomName).SendAsync("TypingIndicator", new
+            try
             {
-                UserId = userId,
-                UserName = fullName,
-                IsTyping = isTyping
-            });
+                var userIdClaim = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userIdClaim))
+                {
+                    return; // Don't send error for typing indicator
+                }
+
+                var userId = Guid.Parse(userIdClaim);
+                var user = await _context.UserAccounts.FirstOrDefaultAsync(u => u.Id == userId);
+                if (user == null)
+                {
+                    return; // Don't send error for typing indicator
+                }
+
+                var fullName = $"{user.FirstName} {user.LastName}";
+                var roomName = $"mentorship_{mentorshipMatchId}";
+
+                await Clients.OthersInGroup(roomName).SendAsync("TypingIndicator", new
+                {
+                    UserId = userId.ToString(),
+                    UserName = fullName,
+                    IsTyping = isTyping
+                });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in SendTypingIndicator: {ex.Message}");
+                // Don't send error for typing indicator
+            }
         }
     }
 }

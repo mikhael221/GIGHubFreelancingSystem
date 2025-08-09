@@ -58,6 +58,10 @@ const firstPart = document.getElementById('firstPart');
 const secondPart = document.getElementById('secondPart');
 
 function initializeForm() {
+    if (!secondPart) {
+        return;
+    }
+    
     const secondPartErrors = secondPart.querySelectorAll('.text-danger');
     let hasSecondPartErrors = false;
 
@@ -74,32 +78,40 @@ function initializeForm() {
     updateForm();
 }
 
-nextBtn.addEventListener('click', function () {
-    if (currentPart < totalParts) {
-        const inputs = firstPart.querySelectorAll('input, select, textarea');
-        let valid = true;
-        for (const input of inputs) {
-            if (!input.checkValidity()) {
-                input.reportValidity();
-                valid = false;
-                break;
+if (nextBtn) {
+    nextBtn.addEventListener('click', function () {
+        if (currentPart < totalParts) {
+            const inputs = firstPart.querySelectorAll('input, select, textarea');
+            let valid = true;
+            for (const input of inputs) {
+                if (!input.checkValidity()) {
+                    input.reportValidity();
+                    valid = false;
+                    break;
+                }
+            }
+            if (valid) {
+                currentPart++;
+                updateForm();
             }
         }
-        if (valid) {
-            currentPart++;
+    });
+}
+
+if (backBtn) {
+    backBtn.addEventListener('click', function () {
+        if (currentPart > 1) {
+            currentPart--;
             updateForm();
         }
-    }
-});
-
-backBtn.addEventListener('click', function () {
-    if (currentPart > 1) {
-        currentPart--;
-        updateForm();
-    }
-});
+    });
+}
 
 function updateForm() {
+    if (!firstPart || !secondPart || !nextBtn || !backBtn || !submitBtn) {
+        return;
+    }
+    
     firstPart.classList.add('hidden');
     secondPart.classList.add('hidden');
 
@@ -116,7 +128,9 @@ function updateForm() {
     }
 }
 
-document.addEventListener('DOMContentLoaded', initializeForm);
+if (nextBtn && backBtn && submitBtn && firstPart && secondPart) {
+    document.addEventListener('DOMContentLoaded', initializeForm);
+}
 
 
 //Delete Post

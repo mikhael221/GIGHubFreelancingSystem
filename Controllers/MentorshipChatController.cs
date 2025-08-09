@@ -6,6 +6,7 @@ using Freelancing.Data;
 using Freelancing.Models.Entities;
 using Freelancing.Models;
 using Freelancing.Services;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Freelancing.Controllers
 {
@@ -289,34 +290,65 @@ namespace Freelancing.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> VideoCall(Guid matchId)
+        [Route("MentorshipChat/VideoCall/{matchId}")]
+        public async Task<IActionResult> VideoCall(string matchId)
         {
-            var userId = GetCurrentUserId();
-
-            var match = await _context.MentorshipMatches
-                .Include(mm => mm.Mentor)
-                .Include(mm => mm.Mentee)
-                .FirstOrDefaultAsync(mm => mm.Id == matchId &&
-                                          (mm.MentorId == userId || mm.MenteeId == userId) &&
-                                          mm.Status == "Active");
-
-            if (match == null)
+            try
             {
-                TempData["Error"] = "Access denied or mentorship not found";
-                return RedirectToAction("Index", new { matchId });
+                var userId = GetCurrentUserId();
+
+                // Parse the matchId
+                Guid parsedMatchId;
+                if (string.IsNullOrEmpty(matchId) || !Guid.TryParse(matchId, out parsedMatchId))
+                {
+                    TempData["Error"] = "Invalid mentorship match";
+                    return RedirectToAction("AvailableMentors", "MentorshipMatching");
+                }
+
+                var match = await _context.MentorshipMatches
+                    .Include(mm => mm.Mentor)
+                    .Include(mm => mm.Mentee)
+                    .Include(mm => mm.MentorMentorship)
+                    .Include(mm => mm.MenteeMentorship)
+                    .FirstOrDefaultAsync(mm => mm.Id == parsedMatchId &&
+                                              (mm.MentorId == userId || mm.MenteeId == userId) &&
+                                              mm.Status == "Active");
+
+                if (match == null)
+                {
+                    // Check if the match exists but user doesn't have access
+                    var matchExists = await _context.MentorshipMatches
+                        .AnyAsync(mm => mm.Id == parsedMatchId);
+                    
+                    if (!matchExists)
+                    {
+                        TempData["Error"] = "Mentorship match not found";
+                        return RedirectToAction("AvailableMentors", "MentorshipMatching");
+                    }
+                    else
+                    {
+                        TempData["Error"] = "Access denied or mentorship not active";
+                        return RedirectToAction("AvailableMentors", "MentorshipMatching");
+                    }
+                }
+                
+                var partner = match.MentorId == userId ? match.Mentee : match.Mentor;
+
+                var viewModel = new VideoCallViewModel
+                {
+                    MatchId = parsedMatchId,
+                    Partner = partner,
+                    CurrentUserId = userId,
+                    IsCurrentUserMentor = match.MentorId == userId
+                };
+
+                return View(viewModel);
             }
-
-            var partner = match.MentorId == userId ? match.Mentee : match.Mentor;
-
-            var viewModel = new VideoCallViewModel
+            catch (Exception ex)
             {
-                MatchId = matchId,
-                Partner = partner,
-                CurrentUserId = userId,
-                IsCurrentUserMentor = match.MentorId == userId
-            };
-
-            return View(viewModel);
+                TempData["Error"] = "An error occurred while accessing the video call";
+                return RedirectToAction("AvailableMentors", "MentorshipMatching");
+            }
         }
 
         private async Task MarkMessagesAsRead(Guid matchId, Guid userId)
@@ -342,5 +374,27 @@ namespace Freelancing.Controllers
         {
             return Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
         }
+
+        // Temporary action to fix existing mentorship matches
+        [HttpGet]
+        public async Task<IActionResult> FixMentorshipMatches()
+        {
+            try
+            {
+                var mentorshipService = HttpContext.RequestServices.GetService<IMentorshipMatchingService>();
+                if (mentorshipService != null)
+                {
+                    var result = await mentorshipService.FixExistingMentorshipMatchesAsync();
+                    return Json(new { success = result, message = result ? "Mentorship matches fixed successfully" : "No matches needed fixing" });
+                }
+                return Json(new { success = false, message = "Service not available" });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = $"Error: {ex.Message}" });
+            }
+        }
+
+
     }
 }

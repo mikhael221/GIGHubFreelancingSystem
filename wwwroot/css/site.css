@@ -412,6 +412,34 @@
   animation: slideInRight 0.3s ease-out;
 }
 
+/* Call Waiting Notification */
+.call-waiting-notification {
+  display: none;
+  position: fixed;
+  top: 5rem;
+  right: 1rem;
+  background-color: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+  padding: 1rem;
+  z-index: 50;
+  animation: slideInRight 0.3s ease-out;
+}
+
+.call-waiting-notification button {
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  transition: all 0.2s;
+  border: none;
+  cursor: pointer;
+}
+
+.call-waiting-notification button:hover {
+  transform: scale(1.05);
+}
+
 @keyframes slideInRight {
   from {
     transform: translateX(100%);

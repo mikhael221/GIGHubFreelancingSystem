@@ -1,1 +1,466 @@
-﻿
+﻿@model Freelancing.Models.VideoCallViewModel
+@{
+    Layout = null;
+    ViewData["Title"] = $"Video Call with {Model.Partner.FirstName} {Model.Partner.LastName}";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"]</title>
+    <link rel="stylesheet" href="~/css/output.css" />
+    <link rel="stylesheet" href="https://rsms.me/inter/inter.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.0/signalr.min.js"></script>
+    <style>
+        .video-container {
+            position: relative;
+            width: 100%;
+            height: 100vh;
+            background: #000;
+            overflow: hidden;
+        }
+        
+        .remote-video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .local-video {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 200px;
+            height: 150px;
+            border-radius: 8px;
+            border: 2px solid #fff;
+            object-fit: cover;
+            z-index: 10;
+        }
+        
+        .controls {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 15px;
+            z-index: 20;
+        }
+        
+        .control-btn {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .control-btn.primary {
+            background: #dc2626;
+            color: white;
+        }
+        
+        .control-btn.primary:hover {
+            background: #b91c1c;
+        }
+        
+        .control-btn.secondary {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            backdrop-filter: blur(10px);
+        }
+        
+        .control-btn.secondary:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        
+        .control-btn.secondary.muted {
+            background: #dc2626;
+        }
+        
+        .control-btn.secondary.muted:hover {
+            background: #b91c1c;
+        }
+        
+        .call-info {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: white;
+            z-index: 10;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 10px 15px;
+            border-radius: 8px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .connection-status {
+            position: absolute;
+            top: 80px;
+            left: 20px;
+            color: white;
+            z-index: 10;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            text-align: center;
+            z-index: 5;
+        }
+        
+        .loading i {
+            font-size: 48px;
+            margin-bottom: 15px;
+            animation: spin 1s linear infinite;
+        }
+        
+        @@keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        .error-message {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            text-align: center;
+            z-index: 5;
+            background: rgba(220, 38, 38, 0.9);
+            padding: 20px;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="video-container">
+        <!-- Remote video -->
+        <video id="remoteVideo" class="remote-video" autoplay playsinline></video>
+        
+        <!-- Local video -->
+        <video id="localVideo" class="local-video" autoplay playsinline muted></video>
+        
+        <!-- Call info -->
+        <div class="call-info">
+            <h3 class="text-lg font-semibold">@Model.Partner.FirstName @Model.Partner.LastName</h3>
+            <p class="text-sm opacity-75">Video Call</p>
+        </div>
+        
+        <!-- Connection status -->
+        <div class="connection-status" id="connectionStatus">
+            Connecting...
+        </div>
+        
+        <!-- Loading indicator -->
+        <div class="loading" id="loadingIndicator">
+            <i class="fas fa-spinner"></i>
+            <p>Establishing connection...</p>
+        </div>
+        
+        <!-- Error message -->
+        <div class="error-message" id="errorMessage" style="display: none;">
+            <i class="fas fa-exclamation-triangle text-2xl mb-2"></i>
+            <p id="errorText"></p>
+        </div>
+        
+        <!-- Controls -->
+        <div class="controls">
+            <button class="control-btn secondary" id="muteBtn" onclick="toggleMute()" title="Mute/Unmute">
+                <i class="fas fa-microphone"></i>
+            </button>
+            <button class="control-btn secondary" id="videoBtn" onclick="toggleVideo()" title="Turn Video On/Off">
+                <i class="fas fa-video"></i>
+            </button>
+            <button class="control-btn primary" onclick="endCall()" title="End Call">
+                <i class="fas fa-phone-slash"></i>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // WebRTC configuration
+        const configuration = {
+            iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:stun1.l.google.com:19302' }
+            ]
+        };
+
+        // Global variables
+        let peerConnection;
+        let localStream;
+        let remoteStream;
+        let isMuted = false;
+        let isVideoEnabled = true;
+        let isInitiator = false;
+
+        // DOM elements
+        const localVideo = document.getElementById('localVideo');
+        const remoteVideo = document.getElementById('remoteVideo');
+        const muteBtn = document.getElementById('muteBtn');
+        const videoBtn = document.getElementById('videoBtn');
+        const connectionStatus = document.getElementById('connectionStatus');
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        const errorMessage = document.getElementById('errorMessage');
+        const errorText = document.getElementById('errorText');
+
+        // SignalR connection
+        const connection = new signalR.HubConnectionBuilder()
+            .withUrl('/mentorshipChatHub')
+            .withAutomaticReconnect()
+            .build();
+
+        // Test function to check WebRTC support
+        function checkWebRTCSupport() {
+            console.log('=== WEBRTC SUPPORT CHECK ===');
+            console.log('RTCPeerConnection:', typeof RTCPeerConnection !== 'undefined' ? '✅ Supported' : '❌ Not supported');
+            console.log('getUserMedia:', typeof navigator.mediaDevices?.getUserMedia !== 'undefined' ? '✅ Supported' : '❌ Not supported');
+            console.log('WebSocket:', typeof WebSocket !== 'undefined' ? '✅ Supported' : '❌ Not supported');
+            console.log('SignalR:', typeof signalR !== 'undefined' ? '✅ Supported' : '❌ Not supported');
+        }
+
+        // Initialize video call
+        async function initializeVideoCall() {
+            console.log('=== VIDEO CALL INITIALIZATION STARTED ===');
+            console.log('MatchId:', '@Model.MatchId');
+            console.log('CurrentUserId:', '@Model.CurrentUserId');
+            console.log('Partner:', '@Model.Partner.FirstName @Model.Partner.LastName');
+            
+            // Check WebRTC support first
+            checkWebRTCSupport();
+            
+            try {
+                console.log('Requesting camera/microphone access...');
+                // Get user media
+                localStream = await navigator.mediaDevices.getUserMedia({
+                    video: true,
+                    audio: true
+                });
+                console.log('✅ Camera/microphone access granted');
+                console.log('Local stream tracks:', localStream.getTracks().map(t => t.kind));
+                
+                localVideo.srcObject = localStream;
+                
+                // Create peer connection
+                peerConnection = new RTCPeerConnection(configuration);
+                
+                // Add local stream to peer connection
+                localStream.getTracks().forEach(track => {
+                    peerConnection.addTrack(track, localStream);
+                });
+                
+                // Handle remote stream
+                peerConnection.ontrack = (event) => {
+                    remoteStream = event.streams[0];
+                    remoteVideo.srcObject = remoteStream;
+                    loadingIndicator.style.display = 'none';
+                    updateConnectionStatus('Connected');
+                };
+                
+                // Handle ICE candidates
+                peerConnection.onicecandidate = (event) => {
+                    if (event.candidate) {
+                        connection.invoke('SendIceCandidate', '@Model.MatchId', JSON.stringify(event.candidate));
+                    }
+                };
+                
+                // Handle connection state changes
+                peerConnection.onconnectionstatechange = () => {
+                    updateConnectionStatus(peerConnection.connectionState);
+                    
+                    if (peerConnection.connectionState === 'failed') {
+                        showError('Connection failed. Please try again.');
+                    }
+                };
+                
+                // Connect to SignalR
+                console.log('Connecting to SignalR...');
+                await connection.start();
+                console.log('✅ SignalR connected');
+                
+                console.log('Joining mentorship room:', '@Model.MatchId');
+                await connection.invoke('JoinMentorshipRoom', '@Model.MatchId');
+                console.log('✅ Joined mentorship room');
+                
+                // Set up SignalR event handlers
+                setupSignalREvents();
+                
+                // Check if we should create offer (initiator)
+                setTimeout(() => {
+                    if (!isInitiator) {
+                        createOffer();
+                    }
+                }, 1000);
+                
+            } catch (error) {
+                console.error('Error initializing video call:', error);
+                showError('Failed to access camera/microphone. Please check permissions.');
+            }
+        }
+
+        // Set up SignalR event handlers
+        function setupSignalREvents() {
+            console.log('Setting up SignalR event handlers...');
+            
+            // Handle incoming offers
+            connection.on('ReceiveOffer', async (offer) => {
+                console.log('📥 Received offer:', offer);
+                try {
+                    const offerObj = JSON.parse(offer);
+                    await peerConnection.setRemoteDescription(new RTCSessionDescription(offerObj));
+                    
+                    const answer = await peerConnection.createAnswer();
+                    await peerConnection.setLocalDescription(answer);
+                    
+                    connection.invoke('SendAnswer', '@Model.MatchId', JSON.stringify(answer));
+                } catch (error) {
+                    console.error('Error handling offer:', error);
+                    showError('Failed to establish connection.');
+                }
+            });
+            
+            // Handle incoming answers
+            connection.on('ReceiveAnswer', async (answer) => {
+                try {
+                    const answerObj = JSON.parse(answer);
+                    await peerConnection.setRemoteDescription(new RTCSessionDescription(answerObj));
+                } catch (error) {
+                    console.error('Error handling answer:', error);
+                }
+            });
+            
+            // Handle ICE candidates
+            connection.on('ReceiveIceCandidate', async (candidate) => {
+                try {
+                    const candidateObj = JSON.parse(candidate);
+                    await peerConnection.addIceCandidate(new RTCIceCandidate(candidateObj));
+                } catch (error) {
+                    console.error('Error handling ICE candidate:', error);
+                }
+            });
+            
+            // Handle call ended
+            connection.on('VideoCallEnded', () => {
+                endCall();
+            });
+        }
+
+        // Create offer
+        async function createOffer() {
+            try {
+                const offer = await peerConnection.createOffer();
+                await peerConnection.setLocalDescription(offer);
+                
+                connection.invoke('SendOffer', '@Model.MatchId', JSON.stringify(offer));
+            } catch (error) {
+                console.error('Error creating offer:', error);
+                showError('Failed to create connection offer.');
+            }
+        }
+
+        // Toggle mute
+        function toggleMute() {
+            const audioTrack = localStream.getAudioTracks()[0];
+            if (audioTrack) {
+                audioTrack.enabled = !audioTrack.enabled;
+                isMuted = !audioTrack.enabled;
+                
+                const icon = muteBtn.querySelector('i');
+                if (isMuted) {
+                    icon.className = 'fas fa-microphone-slash';
+                    muteBtn.classList.add('muted');
+                } else {
+                    icon.className = 'fas fa-microphone';
+                    muteBtn.classList.remove('muted');
+                }
+            }
+        }
+
+        // Toggle video
+        function toggleVideo() {
+            const videoTrack = localStream.getVideoTracks()[0];
+            if (videoTrack) {
+                videoTrack.enabled = !videoTrack.enabled;
+                isVideoEnabled = videoTrack.enabled;
+                
+                const icon = videoBtn.querySelector('i');
+                if (!isVideoEnabled) {
+                    icon.className = 'fas fa-video-slash';
+                    videoBtn.classList.add('muted');
+                } else {
+                    icon.className = 'fas fa-video';
+                    videoBtn.classList.remove('muted');
+                }
+            }
+        }
+
+        // End call
+        function endCall() {
+            // Stop all tracks
+            if (localStream) {
+                localStream.getTracks().forEach(track => track.stop());
+            }
+            
+            // Close peer connection
+            if (peerConnection) {
+                peerConnection.close();
+            }
+            
+            // Notify others
+            connection.invoke('EndVideoCall', '@Model.MatchId');
+            
+            // Close window
+            window.close();
+        }
+
+        // Update connection status
+        function updateConnectionStatus(status) {
+            connectionStatus.textContent = status.charAt(0).toUpperCase() + status.slice(1);
+            
+            if (status === 'connected') {
+                connectionStatus.style.background = 'rgba(34, 197, 94, 0.8)';
+            } else if (status === 'failed') {
+                connectionStatus.style.background = 'rgba(220, 38, 38, 0.8)';
+            } else {
+                connectionStatus.style.background = 'rgba(0, 0, 0, 0.5)';
+            }
+        }
+
+        // Show error
+        function showError(message) {
+            errorText.textContent = message;
+            errorMessage.style.display = 'block';
+            loadingIndicator.style.display = 'none';
+        }
+
+        // Handle page unload
+        window.addEventListener('beforeunload', () => {
+            endCall();
+        });
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeVideoCall();
+        });
+    </script>
+</body>
+</html>

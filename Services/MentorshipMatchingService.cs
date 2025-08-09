@@ -7,6 +7,7 @@ namespace Freelancing.Services
     public interface IMentorshipMatchingService
     {
         Task<List<UserAccount>> FindPotentialMentorsAsync(Guid menteeId);
+        Task<bool> FixExistingMentorshipMatchesAsync();
     }
 
     public class MentorshipMatchingService : IMentorshipMatchingService
@@ -95,6 +96,8 @@ namespace Freelancing.Services
             {
                 MentorId = mentorId,
                 MenteeId = menteeId,
+                MentorMentorshipId = mentor.Id,
+                MenteeMentorshipId = mentee.Id,
                 MatchedDate = DateTime.UtcNow,
                 Status = "Active"
             };
@@ -122,6 +125,47 @@ namespace Freelancing.Services
                 .ToListAsync();
 
             return matches;
+        }
+
+        // Fix existing mentorship matches that are missing mentorship IDs
+        public async Task<bool> FixExistingMentorshipMatchesAsync()
+        {
+            try
+            {
+                var matchesToFix = await _context.MentorshipMatches
+                    .Where(mm => mm.MentorMentorshipId == Guid.Empty || mm.MenteeMentorshipId == Guid.Empty)
+                    .ToListAsync();
+
+                foreach (var match in matchesToFix)
+                {
+                    // Get the mentor's mentorship record
+                    var mentorMentorship = await _context.PeerMentorships
+                        .FirstOrDefaultAsync(pm => pm.UserId == match.MentorId && pm.Role.ToLower() == "mentor");
+                    
+                    // Get the mentee's mentorship record
+                    var menteeMentorship = await _context.PeerMentorships
+                        .FirstOrDefaultAsync(pm => pm.UserId == match.MenteeId && pm.Role.ToLower() == "mentee");
+
+                    if (mentorMentorship != null && menteeMentorship != null)
+                    {
+                        match.MentorMentorshipId = mentorMentorship.Id;
+                        match.MenteeMentorshipId = menteeMentorship.Id;
+                    }
+                }
+
+                if (matchesToFix.Any())
+                {
+                    await _context.SaveChangesAsync();
+                    return true;
+                }
+
+                return false;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error fixing mentorship matches: {ex.Message}");
+                return false;
+            }
         }
     }
 }

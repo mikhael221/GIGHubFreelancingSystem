@@ -350,6 +350,23 @@
                 </div>
             </div>
 
+            <!-- Call Waiting Notification -->
+            <div class="call-waiting-notification" id="callWaitingNotification">
+                <div class="flex items-center gap-3 mb-3">
+                    <i class="fas fa-phone text-2xl text-orange-500"></i>
+                    <div>
+                        <div class="font-semibold">Calling...</div>
+                        <div class="text-sm text-gray-600">Waiting for response</div>
+                    </div>
+                </div>
+                <div class="flex gap-2">
+                    <button class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600"
+                            onclick="cancelVideoCall()">
+                        <i class="fas fa-times"></i> Cancel
+                    </button>
+                </div>
+            </div>
+
             <!-- Image Modal -->
             <div class="modal" id="imageModal">
                 <div class="modal-content">
@@ -369,9 +386,12 @@
 
         const matchId = '@Model.MatchId';
         const currentUserId = '@Model.CurrentUserId';
+        
+
         let typingTimer;
         let isTyping = false;
         let currentCallerId = null;
+        let isConnectionReady = false;
 
         // Timezone handling - get user's timezone offset
         const userTimezoneOffset = new Date().getTimezoneOffset();
@@ -393,11 +413,15 @@
         // Start connection
         connection.start().then(() => {
             console.log('SignalR Connected');
+            isConnectionReady = true;
             connection.invoke('JoinMentorshipRoom', matchId);
 
             // Fix existing message times on page load
             fixExistingMessageTimes();
-        }).catch(err => console.error('SignalR Connection Error: ', err));
+        }).catch(err => {
+            console.error('SignalR Connection Error: ', err);
+            isConnectionReady = false;
+        });
 
         // Fix existing message times to use consistent timezone
         function fixExistingMessageTimes() {
@@ -418,6 +442,23 @@
         // Connection events
         connection.on('Connected', (connectionId) => {
             console.log('Connected with ID:', connectionId);
+            isConnectionReady = true;
+        });
+
+        // Handle connection state changes
+        connection.onclose(() => {
+            console.log('SignalR connection closed');
+            isConnectionReady = false;
+        });
+
+        connection.onreconnecting(() => {
+            console.log('SignalR reconnecting...');
+            isConnectionReady = false;
+        });
+
+        connection.onreconnected(() => {
+            console.log('SignalR reconnected');
+            isConnectionReady = true;
         });
 
         connection.on('JoinedRoom', (roomName) => {
@@ -426,6 +467,16 @@
 
         connection.on('UserJoined', (userName) => {
             document.getElementById('onlineIndicator').style.display = 'block';
+        });
+
+        // Error handling
+        connection.on('Error', (error) => {
+            console.error('SignalR Error:', error);
+            if (error.includes('Access denied') || error.includes('mentorship not active')) {
+                alert('Access denied. You may not have permission to access this mentorship or it may not be active.');
+            } else {
+                alert('Connection error: ' + error);
+            }
         });
 
         // Message events
@@ -454,16 +505,61 @@
 
         // Video call events
         connection.on('IncomingVideoCall', (data) => {
-            currentCallerId = data.CallerId;
-            document.getElementById('callerName').textContent = data.CallerName;
+            console.log('Incoming video call:', data);
+            console.log('Data type:', typeof data);
+            console.log('Data properties:', Object.keys(data));
+            console.log('CallerId:', data.callerId);
+            console.log('CallerName:', data.callerName);
+            
+            // Since we're already in the chat, we don't need to show the global notification
+            // The global notification system will handle this for users not in the chat
+            // We can still show a local notification if needed
+            console.log('MentorshipMatchId:', data.mentorshipMatchId);
+            
+            currentCallerId = data.callerId;
+            document.getElementById('callerName').textContent = data.callerName;
             document.getElementById('videoCallNotification').style.display = 'block';
         });
 
         connection.on('VideoCallAccepted', (data) => {
-            window.open(`/MentorshipChat/VideoCall/${matchId}`, '_blank', 'width=1200,height=800');
+            console.log('Video call accepted:', data);
+            console.log('Current matchId:', matchId);
+            console.log('Data mentorshipMatchId:', data.mentorshipMatchId);
+            
+            // Use the matchId from the data if available, otherwise use the current matchId
+            const targetMatchId = data.mentorshipMatchId || matchId;
+            const videoCallUrl = `/MentorshipChat/VideoCall/${targetMatchId}`;
+            
+            // Add a small delay to ensure the server-side processing is complete
+            setTimeout(() => {
+                window.open(videoCallUrl, '_blank', 'width=1200,height=800');
+            }, 500);
         });
 
-        connection.on('VideoCallDeclined', () => {
+        connection.on('VideoCallDeclined', (data) => {
+            console.log('Video call declined:', data);
+            alert('Call was declined');
+        });
+
+        // Call waiting events
+        connection.on('CallRequested', (data) => {
+            console.log('Call requested:', data);
+            // Show the waiting notification
+            document.getElementById('callWaitingNotification').style.display = 'block';
+        });
+
+        connection.on('CallAccepted', (data) => {
+            console.log('Call accepted:', data);
+            // Hide the waiting notification
+            document.getElementById('callWaitingNotification').style.display = 'none';
+            
+            // The VideoCallAccepted event will handle opening the video call window
+        });
+
+        connection.on('CallDeclined', (data) => {
+            console.log('Call declined:', data);
+            // Hide the waiting notification
+            document.getElementById('callWaitingNotification').style.display = 'none';
             alert('Call was declined');
         });
 
@@ -618,18 +714,88 @@
         }
 
         function startVideoCall() {
-            connection.invoke('StartVideoCall', matchId);
+            // Check if connection is established
+            if (!isConnectionReady) {
+                console.log('Connection not ready, waiting for connection...');
+                alert('Connection not ready. Please wait a moment and try again.');
+                return;
+            }
+
+            console.log('Starting video call with matchId:', matchId);
+            console.log('matchId type:', typeof matchId, 'value:', matchId);
+            console.log('Connection state:', connection.state);
+            
+            connection.invoke('StartVideoCall', matchId)
+                .then(() => {
+                    console.log('Video call started successfully');
+                })
+                .catch(error => {
+                    console.error('Error starting video call:', error);
+                    alert('Failed to start video call. Please try again.');
+                });
         }
 
         function acceptVideoCall() {
-            connection.invoke('AcceptVideoCall', matchId, currentCallerId);
-            document.getElementById('videoCallNotification').style.display = 'none';
-            window.open(`/MentorshipChat/VideoCall/${matchId}`, '_blank', 'width=1200,height=800');
+            // Check if connection is established
+            if (!isConnectionReady) {
+                console.log('Connection not ready, waiting for connection...');
+                alert('Connection not ready. Please wait a moment and try again.');
+                return;
+            }
+
+            console.log('Accepting video call with matchId:', matchId, 'callerId:', currentCallerId);
+            console.log('matchId type:', typeof matchId, 'value:', matchId);
+            console.log('currentCallerId type:', typeof currentCallerId, 'value:', currentCallerId);
+            
+            connection.invoke('AcceptVideoCall', matchId, currentCallerId)
+                .then(() => {
+                    document.getElementById('videoCallNotification').style.display = 'none';
+                    // Don't open the video call window here - let the VideoCallAccepted event handle it
+                })
+                .catch(error => {
+                    console.error('Error accepting video call:', error);
+                    alert('Failed to accept video call. Please try again.');
+                    document.getElementById('videoCallNotification').style.display = 'none';
+                });
         }
 
         function declineVideoCall() {
-            connection.invoke('DeclineVideoCall', matchId, currentCallerId);
-            document.getElementById('videoCallNotification').style.display = 'none';
+            // Check if connection is established
+            if (!isConnectionReady) {
+                console.log('Connection not ready, waiting for connection...');
+                alert('Connection not ready. Please wait a moment and try again.');
+                return;
+            }
+
+            console.log('Declining video call with matchId:', matchId, 'callerId:', currentCallerId);
+            connection.invoke('DeclineVideoCall', matchId, currentCallerId)
+                .then(() => {
+                    console.log('Video call declined successfully');
+                    document.getElementById('videoCallNotification').style.display = 'none';
+                })
+                .catch(error => {
+                    console.error('Error declining video call:', error);
+                    alert('Failed to decline video call. Please try again.');
+                    document.getElementById('videoCallNotification').style.display = 'none';
+                });
+        }
+
+        function cancelVideoCall() {
+            // Check if connection is established
+            if (!isConnectionReady) {
+                console.log('Connection not ready, waiting for connection...');
+                alert('Connection not ready. Please wait a moment and try again.');
+                return;
+            }
+
+            console.log('Cancelling video call with matchId:', matchId);
+            
+            // Hide the waiting notification
+            document.getElementById('callWaitingNotification').style.display = 'none';
+            
+            // Note: We don't need to send a specific cancel event to the server
+            // The waiting notification will just disappear, and if the other person
+            // tries to accept/decline later, it won't affect anything
         }
 
         function showSecurityInfo() {
