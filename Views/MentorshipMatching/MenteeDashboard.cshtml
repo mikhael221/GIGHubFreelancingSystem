@@ -21,9 +21,12 @@
                 </div>
                 <div class="flow-root">
                     <ul role="list" class="divide-y divide-gray-300">
-                        @if (Model.RequestsSent.Any())
+                        @{
+                            var activeMentor = Model.RequestsSent.Where(r => r.Status == "Active").ToList();
+                        }
+                        @if (activeMentor.Any())
                         {
-                            @foreach (var request in Model.RequestsSent)
+                            @foreach (var request in activeMentor)
                             {
                                 <li class="py-3 sm:py-4">
                                     <div class="flex items-center space-x-4">
@@ -52,31 +55,24 @@
                                                 </p>
                                             }
                                         </div>
-                                        <div class="inline-flex items-center text-base font-semibold text-gray-900">
-                                            @{
-                                                var statusClass = request.Status.ToLower() switch
-                                                {
-                                                    "pending" => "bg-yellow-100 text-yellow-800",
-                                                    "active" => "bg-green-100 text-green-800",
-                                                    "rejected" => "bg-red-100 text-red-800",
-                                                    "completed" => "bg-blue-100 text-blue-800",
-                                                    "cancelled" => "bg-gray-100 text-gray-800",
-                                                    _ => "bg-gray-100 text-gray-800"
-                                                };
+                                        <div class="inline-flex items-center text-sm text-gray-900">
+                                            @if (request.Status == "Active")
+                                            {
+                                                <a asp-controller="MentorshipChat"
+                                                   asp-action="Index"
+                                                   asp-route-matchId="@request.Id"
+                                                   class="btn btn-primary">
+                                                    <div class="inline-flex items-center">
+                                                        <svg class="w-[12px] h-[12px] text-gray-800" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                                                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 9h5m3 0h2M7 12h2m3 0h5M5 5h14a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1h-6.616a1 1 0 0 0-.67.257l-2.88 2.592A.5.5 0 0 1 8 18.477V17a1 1 0 0 0-1-1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z" />
+                                                        </svg>
+                                                        <div class="mb-1">
+                                                            Chat
+                                                        </div>
+                                                    </div>
+                                                </a>
                                             }
-                                            <span class="@statusClass px-2 py-1 text-xs font-medium rounded-full">
-                                                @request.Status
-                                            </span>
                                         </div>
-                                        @if (request.Status == "Active")
-                                        {
-                                            <a asp-controller="MentorshipChat"
-                                               asp-action="Index"
-                                               asp-route-matchId="@request.Id"
-                                               class="btn btn-primary">
-                                                💬 Chat
-                                            </a>
-                                        }
                                     </div>
                                 </li>
                             }
@@ -92,11 +88,17 @@
                             </li>
                         }
                     </ul>
-                    <div class="text-center">
-                        <a asp-controller="MentorshipMatching" asp-action="AvailableMentors" type="button" class="text-gray-900 bg-white border border-gray-300 focus:outline-none hover:bg-gray-100 focus:ring-4 focus:ring-gray-100 font-medium rounded-lg text-sm px-5 py-2 me-2 mb-2 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:bg-gray-700 dark:hover:border-gray-600 dark:focus:ring-gray-700">
-                            Find Mentors
-                        </a>
-                    </div>
+                    @{
+                        var hasActiveMentor = Model.RequestsSent.Any(r => r.Status == "Active");
+                    }
+                    @if (!hasActiveMentor)
+                    {
+                        <div class="text-center">
+                            <a asp-controller="MentorshipMatching" asp-action="AvailableMentors" type="button" class="text-gray-900 bg-white border border-gray-300 focus:outline-none hover:bg-gray-100 focus:ring-4 focus:ring-gray-100 font-medium rounded-lg text-sm px-5 py-2 me-2 mb-2 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:bg-gray-700 dark:hover:border-gray-600 dark:focus:ring-gray-700">
+                                Find Mentors
+                            </a>
+                        </div>
+                    }
                 </div>
             </div>
             <div class="w-full max-w p-4 bg-white border border-gray-300 rounded-lg shadow-sm sm:p-8">
