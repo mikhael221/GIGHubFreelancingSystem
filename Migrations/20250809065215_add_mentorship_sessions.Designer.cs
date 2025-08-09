@@ -4,6 +4,7 @@ using Freelancing.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Freelancing.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250809065215_add_mentorship_sessions")]
+    partial class add_mentorship_sessions
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -236,12 +239,24 @@ namespace Freelancing.Migrations
                     b.Property<Guid>("CreatedByUserId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<string>("LocationType")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<string>("MeetingLink")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
                     b.Property<Guid>("MentorshipMatchId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Notes")
                         .HasMaxLength(2000)
                         .HasColumnType("nvarchar(2000)");
+
+                    b.Property<DateTime>("ScheduledEndUtc")
+                        .HasColumnType("datetime2");
 
                     b.Property<DateTime>("ScheduledStartUtc")
                         .HasColumnType("datetime2");
@@ -265,6 +280,8 @@ namespace Freelancing.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("MentorshipMatchId");
+
+                    b.HasIndex("ScheduledStartUtc", "ScheduledEndUtc");
 
                     b.ToTable("MentorshipSessions");
                 });

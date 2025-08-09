@@ -341,6 +341,37 @@ namespace Freelancing.Controllers
                 .OrderByDescending(r => r.RequestDate)
                 .ToListAsync();
 
+            // Sessions for mentee (local time semantics): fetch all, then split into proposed and upcoming
+            var menteeSessionsAll = await _context.MentorshipSessions
+                .Include(s => s.MentorshipMatch)
+                .ThenInclude(m => m.Mentor)
+                .Include(s => s.MentorshipMatch)
+                .ThenInclude(m => m.Mentee)
+                .Where(s => (s.MentorshipMatch.MenteeId == currentUserId || s.MentorshipMatch.MentorId == currentUserId))
+                .Select(s => new MentorshipSessionItem
+                {
+                    SessionId = s.Id,
+                    MatchId = s.MentorshipMatchId,
+                    PartnerName = s.MentorshipMatch.MentorId == currentUserId
+                        ? $"{s.MentorshipMatch.Mentee.FirstName} {s.MentorshipMatch.Mentee.LastName}"
+                        : $"{s.MentorshipMatch.Mentor.FirstName} {s.MentorshipMatch.Mentor.LastName}",
+                    Title = s.Title,
+                    StartUtc = s.ScheduledStartUtc,
+                    Status = s.Status,
+                    IsCreatedByCurrentUser = s.CreatedByUserId == currentUserId
+                })
+                .ToListAsync();
+
+            dashboardModel.ProposedSessions = menteeSessionsAll
+                .Where(s => s.Status == "Proposed")
+                .OrderBy(s => s.StartUtc)
+                .ToList();
+
+            dashboardModel.UpcomingSessions = menteeSessionsAll
+                .Where(s => s.Status == "Confirmed" && s.StartUtc > DateTime.Now)
+                .OrderBy(s => s.StartUtc)
+                .ToList();
+
             return View(dashboardModel);
         }
 
@@ -368,6 +399,37 @@ namespace Freelancing.Controllers
                 })
                 .OrderByDescending(r => r.RequestDate)
                 .ToListAsync();
+
+            // Sessions for mentor (local): fetch all, then split
+            var mentorSessionsAll = await _context.MentorshipSessions
+                .Include(s => s.MentorshipMatch)
+                .ThenInclude(m => m.Mentee)
+                .Include(s => s.MentorshipMatch)
+                .ThenInclude(m => m.Mentor)
+                .Where(s => (s.MentorshipMatch.MenteeId == currentUserId || s.MentorshipMatch.MentorId == currentUserId))
+                .Select(s => new MentorshipSessionItem
+                {
+                    SessionId = s.Id,
+                    MatchId = s.MentorshipMatchId,
+                    PartnerName = s.MentorshipMatch.MentorId == currentUserId
+                        ? $"{s.MentorshipMatch.Mentee.FirstName} {s.MentorshipMatch.Mentee.LastName}"
+                        : $"{s.MentorshipMatch.Mentor.FirstName} {s.MentorshipMatch.Mentor.LastName}",
+                    Title = s.Title,
+                    StartUtc = s.ScheduledStartUtc,
+                    Status = s.Status,
+                    IsCreatedByCurrentUser = s.CreatedByUserId == currentUserId
+                })
+                .ToListAsync();
+
+            dashboardModel.ProposedSessions = mentorSessionsAll
+                .Where(s => s.Status == "Proposed")
+                .OrderBy(s => s.StartUtc)
+                .ToList();
+
+            dashboardModel.UpcomingSessions = mentorSessionsAll
+                .Where(s => s.Status == "Confirmed" && s.StartUtc > DateTime.Now)
+                .OrderBy(s => s.StartUtc)
+                .ToList();
 
             return View(dashboardModel);
         }

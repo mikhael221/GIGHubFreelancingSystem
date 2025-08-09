@@ -4,6 +4,7 @@ using Freelancing.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Freelancing.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250809070304_update_mentor_sessions")]
+    partial class update_mentor_sessions
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -243,6 +246,9 @@ namespace Freelancing.Migrations
                         .HasMaxLength(2000)
                         .HasColumnType("nvarchar(2000)");
 
+                    b.Property<DateTime>("ScheduledEndUtc")
+                        .HasColumnType("datetime2");
+
                     b.Property<DateTime>("ScheduledStartUtc")
                         .HasColumnType("datetime2");
 
@@ -265,6 +271,8 @@ namespace Freelancing.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("MentorshipMatchId");
+
+                    b.HasIndex("ScheduledStartUtc", "ScheduledEndUtc");
 
                     b.ToTable("MentorshipSessions");
                 });

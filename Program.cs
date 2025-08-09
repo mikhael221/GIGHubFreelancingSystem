@@ -21,6 +21,7 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
 builder.Services.AddScoped<IMentorshipMatchingService, MentorshipMatchingService>();
 
 builder.Services.AddScoped<IMessageEncryptionService, MessageEncryptionService>();
+builder.Services.AddScoped<IMentorshipSchedulingService, MentorshipSchedulingService>();
 
 // Add SignalR
 builder.Services.AddSignalR(options =>

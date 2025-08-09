@@ -7,8 +7,36 @@
 
 <div class="p-4 sm:ml-64">
     <div class="p-4 mt-20">
+        <div class="mb-4">
+            <h4 class="text-2xl font-bold text-dark font-medium">
+                Hello, @User.FindFirst("FullName")?.Value
+            </h4>
+        </div>
+        @if (TempData["Error"] != null)
+        {
+            <div class="mt-2 p-4 mb-4 text-sm text-red-800 border border-red-300 rounded-lg bg-red-50" role="alert">
+                <svg class="shrink-0 inline w-4 h-4 me-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5ZM9.5 4a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM12 15H8a1 1 0 0 1 0-2h1v-3H8a1 1 0 0 1 0-2h2a1 1 0 0 1 1 1v4h1a1 1 0 0 1 0 2Z" />
+                </svg>
+                <span class="sr-only">Error!</span>
+                <div>
+                    @TempData["Error"]
+                </div>
+            </div>
+        }
+        @if (TempData["Success"] != null)
+        {
+            <div class="mt-2 flex items-center p-4 mb-4 text-sm text-green-800 border border-green-300 rounded-lg bg-green-50" role="alert">
+                <svg class="shrink-0 inline w-4 h-4 me-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5Zm3.707 8.207-4 4a1 1 0 0 1-1.414 0l-2-2a1 1 0 0 1 1.414-1.414L9 10.586l3.293-3.293a1 1 0 0 1 1.414 1.414Z" />
+                </svg>
+                <span class="sr-only">Success</span>
+                <div>
+                    @TempData["Success"]
+                </div>
+            </div>
+        }
         <div class="grid grid-cols-2 gap-4 mb-4">
-
             <div class="w-full max-w p-4 bg-white border border-gray-300 rounded-lg shadow-sm sm:p-8">
                 <div class="flex items-center justify-between mb-4">
                     <h5 class="text-xl font-bold leading-none text-gray-900">My Mentees</h5>
@@ -40,19 +68,19 @@
                                                 @request.MenteeName
                                             </p>
                                             <p class="text-sm text-gray-500 truncate">
-                                                Requested: @request.RequestDate.ToString("MMM dd, yyyy")
+                                                Requested: @request.RequestDate.ToLocalTime().ToString("MMM dd, yyyy")
                                             </p>
                                             @if (request.StartDate.HasValue)
                                             {
                                                 <p class="text-sm text-green-600 truncate">
-                                                    Started: @request.StartDate.Value.ToString("MMM dd, yyyy")
+                                                    Started: @request.StartDate.Value.ToLocalTime().ToString("MMM dd, yyyy")
                                                 </p>
                                             }
                                         </div>
                                         <div class="inline-flex items-center text-sm text-gray-900">
                                             @if (request.Status == "Active")
                                             {
-                                                <a asp-controller="MentorshipChat"
+                                                <a asp-controller="MentorshipManage"
                                                    asp-action="Index"
                                                    asp-route-matchId="@request.Id"
                                                    class="btn btn-primary me-3">
@@ -188,15 +216,89 @@
                 </div>
                 <div class="flow-root">
                     <ul role="list" class="divide-y divide-gray-300">
+                        @if (Model.UpcomingSessions.Any())
+                        {
+                            @foreach (var s in Model.UpcomingSessions)
+                            {
+                                <li class="py-3 sm:py-4">
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <div class="text-sm font-medium text-gray-900">@(!string.IsNullOrWhiteSpace(s.Title) ? s.Title : "Session")</div>
+                                            <div class="text-sm text-gray-600">With @s.PartnerName • @s.StartUtc.ToString("MMM dd, yyyy h:mm tt")</div>
+                                        </div>
+                                        <div class="inline-flex items-center text-sm text-gray-900">
+                                            <a asp-controller="MentorshipChat"
+                                               asp-action="Index"
+                                               asp-route-matchId="@s.MatchId"
+                                               class="btn btn-primary">
+                                                <div class="inline-flex items-center">
+                                                    <svg class="w-[12px] h-[12px] text-gray-800" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                                                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 9h5m3 0h2M7 12h2m3 0h5M5 5h14a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1h-6.616a1 1 0 0 0-.67.257l-2.88 2.592A.5.5 0 0 1 8 18.477V17a1 1 0 0 0-1-1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z" />
+                                                    </svg>
+                                                    Open Chat
+                                                </div>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </li>
+                            }
+                        }
+                        else
+                        {
+                            <li class="py-3 sm:py-4"><div class="text-sm text-center text-gray-500">No upcoming sessions</div></li>
+                        }
                     </ul>
                 </div>
             </div>
             <div class="w-full max-w p-4 bg-white border border-gray-300 rounded-lg shadow-sm sm:p-8">
                 <div class="flex items-center justify-between mb-4">
-                    <h5 class="text-xl font-bold leading-none text-gray-900">Session History</h5>
+                    <h5 class="text-xl font-bold leading-none text-gray-900">Proposed Sessions</h5>
                 </div>
                 <div class="flow-root">
                     <ul role="list" class="divide-y divide-gray-300">
+                        @if (Model.ProposedSessions.Any())
+                        {
+                            @foreach (var s in Model.ProposedSessions)
+                            {
+                                <li class="py-3 sm:py-4">
+                                    <div class="flex items-center justify-between">
+                                        @if (!s.IsCreatedByCurrentUser)
+                                        {
+                                            <div>
+                                                <div class="text-sm font-medium text-gray-900">@(!string.IsNullOrWhiteSpace(s.Title) ? s.Title : "Proposed Session")</div>
+                                                <div class="text-sm text-gray-600">From @s.PartnerName • @s.StartUtc.ToString("MMM dd, yyyy h:mm tt")</div>
+                                            </div>
+                                            <div class="flex gap-2">
+                                                <form asp-controller="MentorshipManage" asp-action="AcceptSession" method="post">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="sessionId" value="@s.SessionId" />
+                                                    <input type="hidden" name="returnUrl" value="@Url.Action("MentorDashboard", "MentorshipMatching")" />
+                                                    <button class="focus:outline-none text-white bg-green-700 hover:bg-green-800 focus:ring-4 focus:ring-green-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mt-3">Accept</button>
+                                                </form>
+                                                <form asp-controller="MentorshipManage" asp-action="DeclineSession" method="post">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="sessionId" value="@s.SessionId" />
+                                                    <input type="hidden" name="returnUrl" value="@Url.Action("MentorDashboard", "MentorshipMatching")" />
+                                                    <button class="focus:outline-none text-white bg-red-700 hover:bg-red-800 focus:ring-4 focus:ring-red-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mt-3">Decline</button>
+                                                </form>
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <div>
+                                                <div class="text-sm font-medium text-gray-900">@(!string.IsNullOrWhiteSpace(s.Title) ? s.Title : "Proposed Session")</div>
+                                                <div class="text-sm text-gray-600">Created by You • @s.StartUtc.ToString("MMM dd, yyyy h:mm tt")</div>
+                                            </div>
+                                            <div class="text-sm text-gray-500">Awaiting response</div>
+                                        }
+                                    </div>
+                                </li>
+                            }
+                        }
+                        else
+                        {
+                            <li class="py-3 sm:py-4"><div class="text-sm text-center text-gray-500">No proposals awaiting your response</div></li>
+                        }
                     </ul>
                 </div>
             </div>

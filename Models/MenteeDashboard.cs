@@ -3,6 +3,8 @@
     public class MenteeDashboard
     {
         public List<MentorshipRequestViewModel> RequestsSent { get; set; } = new List<MentorshipRequestViewModel>();
+        public List<MentorshipSessionItem> UpcomingSessions { get; set; } = new List<MentorshipSessionItem>();
+        public List<MentorshipSessionItem> ProposedSessions { get; set; } = new List<MentorshipSessionItem>();
     }
 
     public class MentorshipRequestViewModel

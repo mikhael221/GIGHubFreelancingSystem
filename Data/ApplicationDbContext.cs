@@ -17,6 +17,7 @@ namespace Freelancing.Data
         public DbSet<UserSkill> UserSkills { get; set; }
         public DbSet<UserAccountSkill> UserAccountSkills { get; set; }
         public DbSet<MentorshipMatch> MentorshipMatches { get; set; }
+        public DbSet<MentorshipSession> MentorshipSessions { get; set; }
 
 
         // New chat-related entities
@@ -120,6 +121,16 @@ namespace Freelancing.Data
                 .WithMany()
                 .HasForeignKey(mcm => mcm.MentorshipMatchId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            // MentorshipSession relationships and indexes
+            modelBuilder.Entity<MentorshipSession>()
+                .HasOne(ms => ms.MentorshipMatch)
+                .WithMany()
+                .HasForeignKey(ms => ms.MentorshipMatchId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<MentorshipSession>()
+                .HasIndex(ms => ms.MentorshipMatchId);
 
             modelBuilder.Entity<MentorshipChatMessage>()
                 .HasOne(mcm => mcm.Sender)
