@@ -67,11 +67,11 @@ namespace Freelancing.Hubs
             var match = await _context.MentorshipMatches
                 .FirstOrDefaultAsync(mm => mm.Id.ToString() == mentorshipMatchId &&
                                           (mm.MentorId == userId || mm.MenteeId == userId) &&
-                                          mm.Status == "Active");
+                                          (mm.Status == "Active" || mm.Status == "Completed"));
 
             if (match == null)
             {
-                await Clients.Caller.SendAsync("Error", "Access denied or mentorship not active");
+                await Clients.Caller.SendAsync("Error", "Access denied or mentorship not found");
                 return;
             }
 
@@ -143,7 +143,7 @@ namespace Freelancing.Hubs
                 var match = await _context.MentorshipMatches
                     .FirstOrDefaultAsync(mm => mm.Id.ToString() == mentorshipMatchId &&
                                               (mm.MentorId == userId || mm.MenteeId == userId) &&
-                                              mm.Status == "Active");
+                                              (mm.Status == "Active" || mm.Status == "Completed"));
 
                 if (match == null)
                 {
@@ -222,7 +222,7 @@ namespace Freelancing.Hubs
                 var match = await _context.MentorshipMatches
                     .FirstOrDefaultAsync(mm => mm.Id.ToString() == mentorshipMatchId &&
                                               (mm.MentorId == userId || mm.MenteeId == userId) &&
-                                              mm.Status == "Active");
+                                              (mm.Status == "Active" || mm.Status == "Completed"));
 
                 if (match == null)
                 {
@@ -341,11 +341,11 @@ namespace Freelancing.Hubs
                 var match = await _context.MentorshipMatches
                     .FirstOrDefaultAsync(mm => mm.Id.ToString() == mentorshipMatchId &&
                                               (mm.MentorId == userId || mm.MenteeId == userId) &&
-                                              mm.Status == "Active");
+                                              (mm.Status == "Active" || mm.Status == "Completed"));
 
                 if (match == null)
                 {
-                    await Clients.Caller.SendAsync("Error", "Access denied or mentorship not active");
+                    await Clients.Caller.SendAsync("Error", "Access denied or mentorship not found");
                     return;
                 }
 
@@ -401,11 +401,11 @@ namespace Freelancing.Hubs
                 var match = await _context.MentorshipMatches
                     .FirstOrDefaultAsync(mm => mm.Id.ToString() == mentorshipMatchId &&
                                               (mm.MentorId == userId || mm.MenteeId == userId) &&
-                                              mm.Status == "Active");
+                                              (mm.Status == "Active" || mm.Status == "Completed"));
 
                 if (match == null)
                 {
-                    await Clients.Caller.SendAsync("Error", "Access denied or mentorship not active");
+                    await Clients.Caller.SendAsync("Error", "Access denied or mentorship not found");
                     return;
                 }
 
@@ -448,11 +448,11 @@ namespace Freelancing.Hubs
                 var match = await _context.MentorshipMatches
                     .FirstOrDefaultAsync(mm => mm.Id.ToString() == mentorshipMatchId &&
                                               (mm.MentorId == userId || mm.MenteeId == userId) &&
-                                              mm.Status == "Active");
+                                              (mm.Status == "Active" || mm.Status == "Completed"));
 
                 if (match == null)
                 {
-                    await Clients.Caller.SendAsync("Error", "Access denied or mentorship not active");
+                    await Clients.Caller.SendAsync("Error", "Access denied or mentorship not found");
                     return;
                 }
 
@@ -493,11 +493,11 @@ namespace Freelancing.Hubs
                 var match = await _context.MentorshipMatches
                     .FirstOrDefaultAsync(mm => mm.Id.ToString() == mentorshipMatchId &&
                                               (mm.MentorId == userId || mm.MenteeId == userId) &&
-                                              mm.Status == "Active");
+                                              (mm.Status == "Active" || mm.Status == "Completed"));
 
                 if (match == null)
                 {
-                    await Clients.Caller.SendAsync("Error", "Access denied or mentorship not active");
+                    await Clients.Caller.SendAsync("Error", "Access denied or mentorship not found");
                     return;
                 }
 
@@ -533,11 +533,11 @@ namespace Freelancing.Hubs
                 var match = await _context.MentorshipMatches
                     .FirstOrDefaultAsync(mm => mm.Id.ToString() == mentorshipMatchId &&
                                               (mm.MentorId == userId || mm.MenteeId == userId) &&
-                                              mm.Status == "Active");
+                                              (mm.Status == "Active" || mm.Status == "Completed"));
 
                 if (match == null)
                 {
-                    await Clients.Caller.SendAsync("Error", "Access denied or mentorship not active");
+                    await Clients.Caller.SendAsync("Error", "Access denied or mentorship not found");
                     return;
                 }
 
@@ -568,11 +568,11 @@ namespace Freelancing.Hubs
                 var match = await _context.MentorshipMatches
                     .FirstOrDefaultAsync(mm => mm.Id.ToString() == mentorshipMatchId &&
                                               (mm.MentorId == userId || mm.MenteeId == userId) &&
-                                              mm.Status == "Active");
+                                              (mm.Status == "Active" || mm.Status == "Completed"));
 
                 if (match == null)
                 {
-                    await Clients.Caller.SendAsync("Error", "Access denied or mentorship not active");
+                    await Clients.Caller.SendAsync("Error", "Access denied or mentorship not found");
                     return;
                 }
 
@@ -603,11 +603,11 @@ namespace Freelancing.Hubs
                 var match = await _context.MentorshipMatches
                     .FirstOrDefaultAsync(mm => mm.Id.ToString() == mentorshipMatchId &&
                                               (mm.MentorId == userId || mm.MenteeId == userId) &&
-                                              mm.Status == "Active");
+                                              (mm.Status == "Active" || mm.Status == "Completed"));
 
                 if (match == null)
                 {
-                    await Clients.Caller.SendAsync("Error", "Access denied or mentorship not active");
+                    await Clients.Caller.SendAsync("Error", "Access denied or mentorship not found");
                     return;
                 }
 

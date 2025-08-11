@@ -103,10 +103,6 @@ namespace Freelancing.Controllers
                     var claimsPrincipal = new ClaimsPrincipal(claimsIdentity);
                     // Sign in the user again with updated claims
                     await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, claimsPrincipal);
-                    // Redirect to success page instead of clearing ModelState
-                    TempData["SuccessMessage"] = "Registration successful!";
-                    TempData["UserName"] = $"{account.FirstName} {account.LastName}";
-                    TempData["UserRole"] = account.Role;
 
                     return RedirectToAction("RegistrationSuccess");
                 }

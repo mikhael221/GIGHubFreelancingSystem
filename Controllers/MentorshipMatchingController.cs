@@ -34,7 +34,6 @@ namespace Freelancing.Controllers
 
             if (mentorship == null)
             {
-                TempData["ErrorMessage"] = "You must be registered in the peer mentorship program to access matching.";
                 return RedirectToAction("Registration", "PeerMentorship");
             }
 
@@ -297,7 +296,6 @@ namespace Freelancing.Controllers
             await ReloadCreateRequestModel(model);
             ViewBag.RequestSent = true;
             ViewBag.SentMessage = model.Notes;
-            TempData["Success"] = $"Mentorship request sent successfully to {mentor?.FirstName} {mentor?.LastName}! You'll be notified when they respond.";
 
             return View(model);
         }
@@ -333,9 +331,11 @@ namespace Freelancing.Controllers
                 {
                     Id = mm.Id,
                     MentorName = $"{mm.Mentor.FirstName} {mm.Mentor.LastName}",
+                    MentorPhoto = mm.Mentor.Photo,
                     Status = mm.Status,
                     RequestDate = mm.MatchedDate,
                     StartDate = mm.StartDate,
+                    EndDate = mm.EndDate,
                     Notes = mm.Notes
                 })
                 .OrderByDescending(r => r.RequestDate)
@@ -347,7 +347,8 @@ namespace Freelancing.Controllers
                 .ThenInclude(m => m.Mentor)
                 .Include(s => s.MentorshipMatch)
                 .ThenInclude(m => m.Mentee)
-                .Where(s => (s.MentorshipMatch.MenteeId == currentUserId || s.MentorshipMatch.MentorId == currentUserId))
+                .Where(s => (s.MentorshipMatch.MenteeId == currentUserId || s.MentorshipMatch.MentorId == currentUserId) &&
+                           s.MentorshipMatch.Status == "Active") // Only include sessions from active mentorships
                 .Select(s => new MentorshipSessionItem
                 {
                     SessionId = s.Id,
@@ -372,7 +373,31 @@ namespace Freelancing.Controllers
                 .OrderBy(s => s.StartUtc)
                 .ToList();
 
+            // Get goal progress for the mentee
+            dashboardModel.CompletedGoalsCount = await GetCompletedGoalsCountAsync(currentUserId);
+
             return View(dashboardModel);
+        }
+
+        private async Task<int> GetCompletedGoalsCountAsync(Guid userId)
+        {
+            // Get all active and completed mentorship matches for the user as mentee
+            var mentorshipMatches = await _context.MentorshipMatches
+                .Where(mm => mm.MenteeId == userId && (mm.Status == "Active" || mm.Status == "Completed"))
+                .Select(mm => mm.Id)
+                .ToListAsync();
+
+            if (!mentorshipMatches.Any())
+                return 0;
+
+            // Get all goal completions for these matches where both mentor and mentee have completed
+            var completedGoals = await _context.MentorshipGoalCompletions
+                .Where(mgc => mentorshipMatches.Contains(mgc.MentorshipMatchId))
+                .GroupBy(mgc => new { mgc.MentorshipMatchId, mgc.GoalId })
+                .Where(g => g.Count() >= 2) // Both mentor and mentee have completed
+                .CountAsync();
+
+            return completedGoals;
         }
 
         private Guid GetCurrentUserId()
@@ -392,9 +417,11 @@ namespace Freelancing.Controllers
                 {
                     Id = mm.Id,
                     MenteeName = $"{mm.Mentee.FirstName} {mm.Mentee.LastName}", // Show mentee name
+                    MenteePhoto = mm.Mentee.Photo,
                     Status = mm.Status,
                     RequestDate = mm.MatchedDate,
                     StartDate = mm.StartDate,
+                    EndDate = mm.EndDate,
                     Notes = mm.Notes
                 })
                 .OrderByDescending(r => r.RequestDate)
@@ -406,7 +433,8 @@ namespace Freelancing.Controllers
                 .ThenInclude(m => m.Mentee)
                 .Include(s => s.MentorshipMatch)
                 .ThenInclude(m => m.Mentor)
-                .Where(s => (s.MentorshipMatch.MenteeId == currentUserId || s.MentorshipMatch.MentorId == currentUserId))
+                .Where(s => (s.MentorshipMatch.MenteeId == currentUserId || s.MentorshipMatch.MentorId == currentUserId) &&
+                           s.MentorshipMatch.Status == "Active") // Only include sessions from active mentorships
                 .Select(s => new MentorshipSessionItem
                 {
                     SessionId = s.Id,
@@ -430,6 +458,19 @@ namespace Freelancing.Controllers
                 .Where(s => s.Status == "Confirmed" && s.StartUtc > DateTime.Now)
                 .OrderBy(s => s.StartUtc)
                 .ToList();
+
+            // Get review statistics
+            var reviews = await _context.MentorReviews
+                .Where(mr => mr.MentorId == currentUserId)
+                .ToListAsync();
+
+            if (reviews.Any())
+            {
+                dashboardModel.TotalReviews = reviews.Count;
+                dashboardModel.AverageRating = Math.Round(reviews.Average(r => r.Rating), 1);
+                dashboardModel.FourPlusStarReviews = reviews.Count(r => r.Rating >= 4);
+                dashboardModel.WouldRecommendCount = reviews.Count(r => r.WouldRecommend);
+            }
 
             return View(dashboardModel);
         }
@@ -502,6 +543,41 @@ namespace Freelancing.Controllers
 
             await _context.SaveChangesAsync();
             return RedirectToAction("PendingRequests");
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> FinishMentorship(Guid matchId)
+        {
+            var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!Guid.TryParse(userIdString, out Guid userId))
+                return Unauthorized();
+
+            var mentorshipMatch = await _context.MentorshipMatches
+                .Include(mm => mm.Mentor)
+                .Include(mm => mm.Mentee)
+                .FirstOrDefaultAsync(mm => mm.Id == matchId && mm.MenteeId == userId);
+
+            if (mentorshipMatch == null)
+            {
+                return Json(new { success = false, message = "Mentorship match not found." });
+            }
+
+            if (mentorshipMatch.Status != "Active")
+            {
+                return Json(new { success = false, message = "Only active mentorships can be finished." });
+            }
+
+            // Update the mentorship status to Completed and set the end date
+            mentorshipMatch.Status = "Completed";
+            mentorshipMatch.EndDate = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+
+            return Json(new { 
+                success = true, 
+                message = $"Mentorship with {mentorshipMatch.Mentor.FirstName} {mentorshipMatch.Mentor.LastName} has been completed successfully!" 
+            });
         }
     }
 }

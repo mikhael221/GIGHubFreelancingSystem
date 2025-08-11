@@ -4,6 +4,7 @@ using Freelancing.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Freelancing.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250810142326_AddIconSvgToGoals")]
+    partial class AddIconSvgToGoals
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -84,58 +87,6 @@ namespace Freelancing.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Goals");
-                });
-
-            modelBuilder.Entity("Freelancing.Models.Entities.MentorReview", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("AreasForImprovement")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<string>("Comments")
-                        .HasMaxLength(2000)
-                        .HasColumnType("nvarchar(2000)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime2")
-                        .HasDefaultValueSql("GETUTCDATE()");
-
-                    b.Property<Guid>("MenteeId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("MentorId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("MentorshipMatchId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<int>("Rating")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Strengths")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<bool>("WouldRecommend")
-                        .HasColumnType("bit");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CreatedAt");
-
-                    b.HasIndex("MenteeId");
-
-                    b.HasIndex("MentorId");
-
-                    b.HasIndex("MentorshipMatchId")
-                        .IsUnique();
-
-                    b.ToTable("MentorReviews");
                 });
 
             modelBuilder.Entity("Freelancing.Models.Entities.MentorshipChatFile", b =>
@@ -557,33 +508,6 @@ namespace Freelancing.Migrations
                     b.Navigation("Project");
 
                     b.Navigation("User");
-                });
-
-            modelBuilder.Entity("Freelancing.Models.Entities.MentorReview", b =>
-                {
-                    b.HasOne("Freelancing.Models.Entities.UserAccount", "Mentee")
-                        .WithMany()
-                        .HasForeignKey("MenteeId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-
-                    b.HasOne("Freelancing.Models.Entities.UserAccount", "Mentor")
-                        .WithMany()
-                        .HasForeignKey("MentorId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-
-                    b.HasOne("Freelancing.Models.Entities.MentorshipMatch", "MentorshipMatch")
-                        .WithMany()
-                        .HasForeignKey("MentorshipMatchId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Mentee");
-
-                    b.Navigation("Mentor");
-
-                    b.Navigation("MentorshipMatch");
                 });
 
             modelBuilder.Entity("Freelancing.Models.Entities.MentorshipChatFile", b =>

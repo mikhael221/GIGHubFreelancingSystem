@@ -8,7 +8,7 @@
 <div class="p-4 sm:ml-64">
     <div class="p-4 mt-20">
         <div class="mb-4">
-            <h4 class="text-2xl font-bold text-dark font-medium">
+            <h4 class="text-2xl font-bold text-dark">
                 Hello, @User.FindFirst("FullName")?.Value
             </h4>
         </div>
@@ -36,6 +36,26 @@
                 </div>
             </div>
         }
+        <div class="w-full p-4 mb-4 text-left bg-white border border-gray-200 rounded-lg shadow-sm sm:p-8">
+            <div class="flex items-center justify-between mb-4">
+                <h5 class="mb-2 text-3xl font-bold text-gray-900">Your Rating</h5>
+                <a asp-controller="MentorshipManage" asp-action="MyReviews" class="text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-4 py-3 transition-colors duration-200 flex items-center">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    </svg>
+                    View All Reviews
+                </a>
+            </div>
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <div>
+                        <h5 class="mb-1 text-3xl font-bold text-gray-900">@Model.AverageRating.ToString("F1")</h5>
+                        <p class="text-sm text-gray-600">@Model.TotalReviews reviews</p>
+                    </div>
+                </div>
+            </div>
+        </div>        
         <div class="grid grid-cols-2 gap-4 mb-4">
             <div class="w-full max-w p-4 bg-white border border-gray-300 rounded-lg shadow-sm sm:p-8">
                 <div class="flex items-center justify-between mb-4">
@@ -53,15 +73,14 @@
                                 <li class="py-3 sm:py-4">
                                     <div class="flex items-center space-x-4">
                                         <div class="flex-shrink-0">
-                                            <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
-                                                <span class="text-white text-sm font-medium">
-                                                    @{
-                                                        var nameParts = request.MenteeName.Split(' ');
-                                                        var initials = nameParts[0].Substring(0, 1) + (nameParts.Length > 1 ? nameParts[1].Substring(0, 1) : "");
-                                                    }
-                                                    @initials
-                                                </span>
-                                            </div>
+                                            @if (!string.IsNullOrEmpty(request.MenteePhoto))
+                                            {
+                                                <img src="@request.MenteePhoto" alt="Profile" class="w-8 h-8 rounded-full object-cover">
+                                            }
+                                            else
+                                            {
+                                                <img src="https://ik.imagekit.io/6txj3mofs/GIGHub%20(11).png?updatedAt=1750552804497" alt="Profile" class="w-8 h-8 rounded-full object-cover">
+                                            }
                                         </div>
                                         <div class="flex-1 min-w-0">
                                             <p class="text-sm font-medium text-gray-900 truncate">
@@ -81,15 +100,17 @@
                                             @if (request.Status == "Active")
                                             {
                                                 <a asp-controller="MentorshipManage"
-                                                   asp-action="Index"
+                                                   asp-action="Goals"
                                                    asp-route-matchId="@request.Id"
                                                    class="btn btn-primary me-3">
                                                     <div class="inline-flex items-center">
-                                                        <svg class="w-[12px] h-[12px] text-gray-800" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                                                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13v-2a1 1 0 0 0-1-1h-.757l-.707-1.707.535-.536a1 1 0 0 0 0-1.414l-1.414-1.414a1 1 0 0 0-1.414 0l-.536.535L14 4.757V4a1 1 0 0 0-1-1h-2a1 1 0 0 0-1 1v.757l-1.707.707-.536-.535a1 1 0 0 0-1.414 0L4.929 6.343a1 1 0 0 0 0 1.414l.536.536L4.757 10H4a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1h.757l.707 1.707-.535.536a1 1 0 0 0 0 1.414l1.414 1.414a1 1 0 0 0 1.414 0l.536-.535 1.707.707V20a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1v-.757l1.707-.708.536.536a1 1 0 0 0 1.414 0l1.414-1.414a1 1 0 0 0 0-1.414l-.535-.536.707-1.707H20a1 1 0 0 0 1-1Z" />
-                                                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
+                                                        <svg class="w-[20px] h-[20px] text-gray-800" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                                                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 6V9h3l3-3h-3V3l-3 3z" />
+                                                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m15 9-2.5 2.5" />
+                                                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12.33 3H12a9 9 0 1 0 9 9c0-.11 0-.22 0-.33" />
+                                                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16.9 13A5 5 0 1 1 11 7.1" />
                                                         </svg>
-                                                        Manage
+                                                        Goals
                                                     </div>
                                                 </a>
                                                 <a asp-controller="MentorshipChat"
@@ -97,7 +118,7 @@
                                                    asp-route-matchId="@request.Id"
                                                    class="btn btn-primary">
                                                     <div class="inline-flex items-center">
-                                                        <svg class="w-[12px] h-[12px] text-gray-800" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                                                        <svg class="w-[20px] h-[20px] text-gray-800" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
                                                             <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 9h5m3 0h2M7 12h2m3 0h5M5 5h14a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1h-6.616a1 1 0 0 0-.67.257l-2.88 2.592A.5.5 0 0 1 8 18.477V17a1 1 0 0 0-1-1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z" />
                                                         </svg>
                                                         Chat
@@ -109,12 +130,71 @@
                                 </li>
                             }
                         }
-                        else
+                        @{
+                            var completedMentees = Model.RequestsReceived.Where(r => r.Status == "Completed").ToList();
+                        }
+                        @if (completedMentees.Any())
+                        {
+                            @foreach (var request in completedMentees)
+                            {
+                                <li class="py-3 sm:py-4">
+                                    <div class="flex items-center space-x-4">
+                                        <div class="flex-shrink-0">
+                                            @if (!string.IsNullOrEmpty(request.MenteePhoto))
+                                            {
+                                                <img src="@request.MenteePhoto" alt="Profile" class="w-8 h-8 rounded-full object-cover">
+                                            }
+                                            else
+                                            {
+                                                <img src="https://ik.imagekit.io/6txj3mofs/GIGHub%20(11).png?updatedAt=1750552804497" alt="Profile" class="w-8 h-8 rounded-full object-cover">
+                                            }
+                                        </div>
+                                        <div class="flex-1 min-w-0">
+                                            <p class="text-sm font-medium text-gray-900 truncate">
+                                                @request.MenteeName
+                                            </p>
+                                            <p class="text-sm text-gray-500 truncate">
+                                                Requested: @request.RequestDate.ToLocalTime().ToString("MMM dd, yyyy")
+                                            </p>
+                                            @if (request.StartDate.HasValue)
+                                            {
+                                                <p class="text-sm text-gray-600 truncate">
+                                                    Started: @request.StartDate.Value.ToLocalTime().ToString("MMM dd, yyyy")
+                                                </p>
+                                            }
+                                            @if (request.EndDate.HasValue)
+                                            {
+                                                <p class="text-sm text-green-600 truncate">
+                                                    Completed: @request.EndDate.Value.ToLocalTime().ToString("MMM dd, yyyy")
+                                                </p>
+                                            }
+                                        </div>
+                                        <div class="inline-flex items-center text-sm text-gray-900">
+                                            @if (request.Status == "Completed")
+                                            {
+                                                <a asp-controller="MentorshipChat"
+                                                   asp-action="Index"
+                                                   asp-route-matchId="@request.Id"
+                                                   class="btn btn-primary">
+                                                    <div class="inline-flex items-center">
+                                                        <svg class="w-[20px] h-[20px] text-gray-800" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                                                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 9h5m3 0h2M7 12h2m3 0h5M5 5h14a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1h-6.616a1 1 0 0 0-.67.257l-2.88 2.592A.5.5 0 0 1 8 18.477V17a1 1 0 0 0-1-1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z" />
+                                                        </svg>
+                                                        Chat
+                                                    </div>
+                                                </a>
+                                            }
+                                        </div>
+                                    </div>
+                                </li>
+                            }
+                        }
+                        @if (!activeMentees.Any() && !completedMentees.Any())
                         {
                             <li class="py-3 sm:py-4">
                                 <div class="text-center">
                                     <div class="text-sm text-gray-500">
-                                        No active mentees
+                                        No mentees yet
                                     </div>
                                 </div>
                             </li>
@@ -232,7 +312,7 @@
                                                asp-route-matchId="@s.MatchId"
                                                class="btn btn-primary">
                                                 <div class="inline-flex items-center">
-                                                    <svg class="w-[12px] h-[12px] text-gray-800" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                                                    <svg class="w-[20px] h-[20px] text-gray-800" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
                                                         <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 9h5m3 0h2M7 12h2m3 0h5M5 5h14a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1h-6.616a1 1 0 0 0-.67.257l-2.88 2.592A.5.5 0 0 1 8 18.477V17a1 1 0 0 0-1-1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z" />
                                                     </svg>
                                                     Open Chat

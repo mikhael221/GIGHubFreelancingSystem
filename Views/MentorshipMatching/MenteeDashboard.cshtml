@@ -5,16 +5,18 @@
 
 @model Freelancing.Models.MenteeDashboard
 
+@Html.AntiForgeryToken()
+
 <div class="p-4 sm:ml-64">
     <div class="p-4 mt-20">
         <div class="mb-4">
-            <h4 class="text-2xl font-bold text-dark font-medium">
+            <h4 class="text-2xl font-bold text-dark">
                 Hello, @User.FindFirst("FullName")?.Value
             </h4>
         </div>
         @if (TempData["Error"] != null)
         {
-            <div class="mt-2 p-4 mb-4 text-sm text-red-800 border border-red-300 rounded-lg bg-red-50" role="alert">
+            <div class="mt-2 flex items-center p-4 mb-4 text-sm text-red-800 border border-red-300 rounded-lg bg-red-50" role="alert">
                 <svg class="shrink-0 inline w-4 h-4 me-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
                     <path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5ZM9.5 4a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM12 15H8a1 1 0 0 1 0-2h1v-3H8a1 1 0 0 1 0-2h2a1 1 0 0 1 1 1v4h1a1 1 0 0 1 0 2Z" />
                 </svg>
@@ -36,6 +38,52 @@
                 </div>
             </div>
         }
+        <div class="w-full p-4 mb-4 text-left bg-white sm:p-8">
+            <h5 class="mb-4 text-2xl font-bold text-gray-900 text-center">Learning Goals Progress</h5>
+
+            <div class="flex justify-center">
+                <div class="progress-container">
+                    <svg class="progress-circle" viewBox="0 0 200 200" aria-hidden="true">
+                        <defs>
+                            <linearGradient id="learningGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                                <stop offset="0%" style="stop-color:#8b5cf6" />
+                                <stop offset="50%" style="stop-color:#f59e0b" />
+                                <stop offset="100%" style="stop-color:#10b981" />
+                            </linearGradient>
+                        </defs>
+                        <circle class="progress-circle-bg"
+                                cx="100"
+                                cy="100"
+                                r="90">
+                        </circle>
+                        <circle id="learningProgress"
+                                class="progress-circle-fill gradient-purple-orange"
+                                cx="100"
+                                cy="100"
+                                r="90"
+                                data-progress="@Model.ProgressPercentage">
+                        </circle>
+                    </svg>
+                    <div class="progress-text">
+                        <div class="progress-number">0</div>
+                        <div class="progress-label">Goals Completed</div>
+                    </div>
+                </div>
+            </div>
+            @if (Model.ProgressPercentage == 100)
+            {
+                var activeMentorship = Model.RequestsSent.FirstOrDefault(r => r.Status == "Active");
+                if (activeMentorship != null)
+                {
+                    <div class="text-center mt-5">
+                        <button type="button" class="text-blue-900 bg-white border border-blue-300 focus:outline-none hover:bg-blue-100 focus:ring-4 focus:ring-blue-100 font-medium rounded-lg text-sm px-5 py-2"
+                                onclick="finishMentorship('@activeMentorship.Id')">
+                            Finish Mentorship
+                        </button>
+                    </div>
+                }
+            }
+        </div>
         <div class="grid grid-cols-2 gap-4 mb-4">
             <div class="w-full max-w p-4 bg-white border border-gray-300 rounded-lg shadow-sm sm:p-8">
                 <div class="flex items-center justify-between mb-4">
@@ -53,15 +101,14 @@
                                 <li class="py-3 sm:py-4">
                                     <div class="flex items-center space-x-4">
                                         <div class="flex-shrink-0">
-                                            <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
-                                                <span class="text-white text-sm font-medium">
-                                                    @{
-                                                        var nameParts = request.MentorName.Split(' ');
-                                                        var initials = nameParts[0].Substring(0, 1) + (nameParts.Length > 1 ? nameParts[1].Substring(0, 1) : "");
-                                                    }
-                                                    @initials
-                                                </span>
-                                            </div>
+                                            @if (!string.IsNullOrEmpty(request.MentorPhoto))
+                                            {
+                                                <img src="@request.MentorPhoto" alt="Profile" class="w-8 h-8 rounded-full object-cover">
+                                            }
+                                            else
+                                            {
+                                                <img src="https://ik.imagekit.io/6txj3mofs/GIGHub%20(11).png?updatedAt=1750552804497" alt="Profile" class="w-8 h-8 rounded-full object-cover">
+                                            }
                                         </div>
                                         <div class="flex-1 min-w-0">
                                             <p class="text-sm font-medium text-gray-900 truncate">
@@ -73,19 +120,35 @@
                                             @if (request.StartDate.HasValue)
                                             {
                                                 <p class="text-sm text-green-600 truncate">
-                                                    Started: @request.StartDate.Value.ToLocalTime().ToString("MMM dd, yyyy")
+                                                    Started: @request.StartDate.Value.ToString("MMM dd, yyyy")
                                                 </p>
                                             }
                                         </div>
                                         <div class="inline-flex items-center text-sm text-gray-900">
                                             @if (request.Status == "Active")
                                             {
-                                                <a asp-controller="MentorshipChat"
-                                                   asp-action="Index"
+                                                <a asp-controller="MentorshipManage"
+                                                   asp-action="Goals"
                                                    asp-route-matchId="@request.Id"
                                                    class="btn btn-primary">
                                                     <div class="inline-flex items-center">
-                                                        <svg class="w-[12px] h-[12px] text-gray-800" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                                                        <svg class="w-[20px] h-[20px] text-gray-800" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                                                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 6V9h3l3-3h-3V3l-3 3z" />
+                                                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m15 9-2.5 2.5" />
+                                                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12.33 3H12a9 9 0 1 0 9 9c0-.11 0-.22 0-.33" />
+                                                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16.9 13A5 5 0 1 1 11 7.1" />
+                                                        </svg>
+                                                        <div class="mb-1">
+                                                            Goals
+                                                        </div>
+                                                    </div>
+                                                </a>
+                                                <a asp-controller="MentorshipChat"
+                                                   asp-action="Index"
+                                                   asp-route-matchId="@request.Id"
+                                                   class="btn btn-primary ms-5">
+                                                    <div class="inline-flex items-center">
+                                                        <svg class="w-[20px] h-[20px] text-gray-800" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
                                                             <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 9h5m3 0h2M7 12h2m3 0h5M5 5h14a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1h-6.616a1 1 0 0 0-.67.257l-2.88 2.592A.5.5 0 0 1 8 18.477V17a1 1 0 0 0-1-1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z" />
                                                         </svg>
                                                         <div class="mb-1">
@@ -99,28 +162,106 @@
                                 </li>
                             }
                         }
-                        else
+                        @{
+                            var completedMentor = Model.RequestsSent.Where(r => r.Status == "Completed").ToList();
+                        }
+                        @if (completedMentor.Any())
                         {
-                            <li class="py-3 sm:py-4">
-                                <div class="text-center">
-                                    <div class="text-sm text-gray-500">
-                                        No mentorship requests sent
+                            @foreach (var request in completedMentor)
+                            {
+                                <li class="py-3 sm:py-4">
+                                    <div class="flex items-center space-x-4">
+                                        <div class="flex-shrink-0">
+                                            @if (!string.IsNullOrEmpty(request.MentorPhoto))
+                                            {
+                                                <img src="@request.MentorPhoto" alt="Profile" class="w-8 h-8 rounded-full object-cover">
+                                            }
+                                            else
+                                            {
+                                                <img src="https://ik.imagekit.io/6txj3mofs/GIGHub%20(11).png?updatedAt=1750552804497" alt="Profile" class="w-8 h-8 rounded-full object-cover">
+                                            }
+                                        </div>
+                                        <div class="flex-1 min-w-0">
+                                            <p class="text-sm font-medium text-gray-900 truncate">
+                                                @request.MentorName
+                                            </p>
+                                            <p class="text-sm text-gray-500 truncate">
+                                                Requested: @request.RequestDate.ToLocalTime().ToString("MMM dd, yyyy")
+                                            </p>
+                                            @if (request.StartDate.HasValue)
+                                            {
+                                                <p class="text-sm text-gray-600 truncate">
+                                                    Started: @request.StartDate.Value.ToString("MMM dd, yyyy")
+                                                </p>
+                                            }
+                                            @if (request.EndDate.HasValue)
+                                            {
+                                                <p class="text-sm text-green-600 truncate">
+                                                    Completed: @request.EndDate.Value.ToString("MMM dd, yyyy")
+                                                </p>
+                                            }
+                                        </div>
+                                        <div class="inline-flex items-center text-sm text-gray-900">
+                                            @if (request.Status == "Completed")
+                                            {
+                                                <a asp-controller="MentorshipManage"
+                                                   asp-action="Feedback"
+                                                   asp-route-matchId="@request.Id"
+                                                   class="btn btn-primary">
+                                                    <div class="inline-flex items-center">
+                                                        <svg class="w-[20px] h-[20px] text-gray-800" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                                                            <path stroke="currentColor" stroke-width="2" d="M11.083 5.104c.35-.8 1.485-.8 1.834 0l1.752 4.022a1 1 0 0 0 .84.597l4.463.342c.9.069 1.255 1.2.556 1.771l-3.33 2.723a1 1 0 0 0-.337 1.016l1.03 4.119c.214.858-.71 1.552-1.474 1.106l-3.913-2.281a1 1 0 0 0-1.008 0L7.583 20.8c-.764.446-1.688-.248-1.474-1.106l1.03-4.119A1 1 0 0 0 6.8 14.56l-3.33-2.723c-.698-.571-.342-1.702.557-1.771l4.462-.342a1 1 0 0 0 .84-.597l1.753-4.022Z" />
+                                                        </svg>
+                                                        <div>
+                                                            Feedback
+                                                        </div>
+                                                    </div>
+                                                </a>
+                                                <a asp-controller="MentorshipChat"
+                                                   asp-action="Index"
+                                                   asp-route-matchId="@request.Id"
+                                                   class="btn btn-primary ms-5">
+                                                    <div class="inline-flex items-center">
+                                                        <svg class="w-[20px] h-[20px] text-gray-800" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                                                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 9h5m3 0h2M7 12h2m3 0h5M5 5h14a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1h-6.616a1 1 0 0 0-.67.257l-2.88 2.592A.5.5 0 0 1 8 18.477V17a1 1 0 0 0-1-1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z" />
+                                                        </svg>
+                                                        <div class="mb-1">
+                                                            Chat
+                                                        </div>
+                                                    </div>
+                                                </a>
+                                            }
+                                        </div>
                                     </div>
-                                </div>
-                            </li>
+                                </li>
+                            }
                         }
                     </ul>
                     @{
-                        var hasActiveMentor = Model.RequestsSent.Any(r => r.Status == "Active");
+                        var hasActiveMentor = Model.RequestsSent.Any(r => r.Status == "Active" || r.Status == "Completed");
                     }
                     @if (!hasActiveMentor)
                     {
+                        <div class="text-center mb-4">
+                            <div class="text-sm text-gray-500">
+                                No matched mentor yet.
+                            </div>
+                        </div>
                         <div class="text-center">
                             <a asp-controller="MentorshipMatching" asp-action="AvailableMentors" type="button" class="text-gray-900 bg-white border border-gray-300 focus:outline-none hover:bg-gray-100 focus:ring-4 focus:ring-gray-100 font-medium rounded-lg text-sm px-5 py-2 me-2 mb-2 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:bg-gray-700 dark:hover:border-gray-600 dark:focus:ring-gray-700">
                                 Find Mentors
                             </a>
                         </div>
                     }
+                </div>
+            </div>
+            <div class="w-full max-w p-4 bg-white border border-gray-300 rounded-lg shadow-sm sm:p-8">
+                <div class="flex items-center justify-between mb-4">
+                    <h5 class="text-xl font-bold leading-none text-gray-900">Session History</h5>
+                </div>
+                <div class="flow-root">
+                    <ul role="list" class="divide-y divide-gray-300">
+                    </ul>
                 </div>
             </div>
             <div class="w-full max-w p-4 bg-white border border-gray-300 rounded-lg shadow-sm sm:p-8">
@@ -145,7 +286,7 @@
                                                asp-route-matchId="@s.MatchId"
                                                class="btn btn-primary">
                                                 <div class="inline-flex items-center">
-                                                    <svg class="w-[12px] h-[12px] text-gray-800" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                                                    <svg class="w-[20px] h-[20px] text-gray-800" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
                                                         <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 9h5m3 0h2M7 12h2m3 0h5M5 5h14a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1h-6.616a1 1 0 0 0-.67.257l-2.88 2.592A.5.5 0 0 1 8 18.477V17a1 1 0 0 0-1-1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z" />
                                                     </svg>
                                                     Open Chat
@@ -215,15 +356,103 @@
                     </ul>
                 </div>
             </div>
-            <div class="w-full max-w p-4 bg-white border border-gray-300 rounded-lg shadow-sm sm:p-8">
-                <div class="flex items-center justify-between mb-4">
-                    <h5 class="text-xl font-bold leading-none text-gray-900">Session History</h5>
-                </div>
-                <div class="flow-root">
-                    <ul role="list" class="divide-y divide-gray-300">
-                    </ul>
-                </div>
-            </div>
         </div>
     </div>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const progressElement = document.getElementById('learningProgress');
+        if (!progressElement) return;
+
+        const radius = parseFloat(progressElement.getAttribute('r')) || 90;
+        const circumference = 2 * Math.PI * radius;
+        progressElement.style.setProperty('--circumference', `${circumference}`);
+        progressElement.style.strokeDasharray = `${circumference}`;
+
+        const percentage = Math.max(0, Math.min(100, parseFloat(progressElement.getAttribute('data-progress')) || 0));
+        const offset = circumference * (1 - percentage / 100);
+        // Delay to allow DOM styles to apply, then animate via CSS transition
+        requestAnimationFrame(() => {
+            progressElement.style.strokeDashoffset = `${offset}`;
+        });
+
+        const numberElement = document.querySelector('.progress-number');
+        if (numberElement) animateNumber(numberElement, 0, percentage, 1200);
+    });
+
+    function animateNumber(element, start, end, duration) {
+        const startTime = performance.now();
+        function update(currentTime) {
+            const elapsed = currentTime - startTime;
+            const t = Math.min(elapsed / duration, 1);
+            const easeOut = 1 - Math.pow(1 - t, 3);
+            const current = Math.round(start + (end - start) * easeOut);
+            element.textContent = current;
+            if (t < 1) requestAnimationFrame(update);
+        }
+        requestAnimationFrame(update);
+    }
+
+    function finishMentorship(matchId) {
+        if (!confirm('Are you sure you want to finish this mentorship? This action cannot be undone.')) {
+            return;
+        }
+
+        // Get the anti-forgery token
+        const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+        if (!token) {
+            alert('Security token not found. Please refresh the page and try again.');
+            return;
+        }
+
+        // Disable the button to prevent multiple clicks
+        const button = event.target;
+        const originalText = button.textContent;
+        button.disabled = true;
+        button.textContent = 'Finishing...';
+
+        fetch('/MentorshipMatching/FinishMentorship', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'RequestVerificationToken': token
+            },
+            body: `matchId=${matchId}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Show success message briefly, then refresh the page
+                const successMessage = document.createElement('div');
+                successMessage.className = 'mt-2 flex items-center p-4 mb-4 text-sm text-green-800 border border-green-300 rounded-lg bg-green-50';
+                successMessage.innerHTML = `
+                    <svg class="shrink-0 inline w-4 h-4 me-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5Zm3.707 8.207-4 4a1 1 0 0 1-1.414 0l-2-2a1 1 0 0 1 1.414-1.414L9 10.586l3.293-3.293a1 1 0 0 1 1.414 1.414Z" />
+                    </svg>
+                    <span class="sr-only">Success</span>
+                    <div>${data.message}</div>
+                `;
+
+                // Insert the success message before the progress container
+                const progressContainer = document.querySelector('.progress-container').parentElement;
+                progressContainer.parentElement.insertBefore(successMessage, progressContainer);
+
+                // Refresh the page after a short delay to show updated data
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1500);
+            } else {
+                throw new Error(data.message || 'Failed to finish mentorship');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Failed to finish mentorship. Please try again.');
+
+            // Re-enable the button
+            button.disabled = false;
+            button.textContent = originalText;
+        });
+    }
+</script>

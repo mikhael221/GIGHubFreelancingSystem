@@ -37,7 +37,7 @@ namespace Freelancing.Controllers
                 .Include(mm => mm.Mentee)
                 .FirstOrDefaultAsync(mm => mm.Id == matchId &&
                                           (mm.MentorId == userId || mm.MenteeId == userId) &&
-                                          mm.Status == "Active");
+                                          (mm.Status == "Active" || mm.Status == "Completed"));
 
             if (match == null)
             {
@@ -49,11 +49,13 @@ namespace Freelancing.Controllers
             var encryptionKey = _encryptionService.GenerateRoomKey(matchId.ToString());
             var messages = await GetDecryptedMessages(matchId, userId, encryptionKey);
 
+            var status = match.Status;
             var partner = match.MentorId == userId ? match.Mentee : match.Mentor;
 
             var viewModel = new MentorshipChatViewModel
             {
                 MatchId = matchId,
+                Status = status,
                 Partner = partner,
                 CurrentUserId = userId,
                 Messages = messages,
@@ -75,7 +77,7 @@ namespace Freelancing.Controllers
             var hasAccess = await _context.MentorshipMatches
                 .AnyAsync(mm => mm.Id == matchId &&
                                (mm.MentorId == userId || mm.MenteeId == userId) &&
-                               mm.Status == "Active");
+                               (mm.Status == "Active" || mm.Status == "Completed"));
 
             if (!hasAccess)
             {
@@ -189,7 +191,7 @@ namespace Freelancing.Controllers
                 var hasAccess = await _context.MentorshipMatches
                     .AnyAsync(mm => mm.Id == matchId &&
                                    (mm.MentorId == userId || mm.MenteeId == userId) &&
-                                   mm.Status == "Active");
+                                   (mm.Status == "Active" || mm.Status == "Completed"));
 
                 if (!hasAccess)
                 {
@@ -312,7 +314,7 @@ namespace Freelancing.Controllers
                     .Include(mm => mm.MenteeMentorship)
                     .FirstOrDefaultAsync(mm => mm.Id == parsedMatchId &&
                                               (mm.MentorId == userId || mm.MenteeId == userId) &&
-                                              mm.Status == "Active");
+                                              (mm.Status == "Active" || mm.Status == "Completed"));
 
                 if (match == null)
                 {
@@ -327,7 +329,7 @@ namespace Freelancing.Controllers
                     }
                     else
                     {
-                        TempData["Error"] = "Access denied or mentorship not active";
+                        TempData["Error"] = "Access denied or mentorship not found";
                         return RedirectToAction("AvailableMentors", "MentorshipMatching");
                     }
                 }

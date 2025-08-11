@@ -5,6 +5,7 @@ namespace Freelancing.Models
     public class MentorshipChatViewModel
     {
         public Guid MatchId { get; set; }
+        public string Status { get; set; }
         public UserAccount Partner { get; set; }
         public Guid CurrentUserId { get; set; }
         public List<ChatMessageViewModel> Messages { get; set; } = new();

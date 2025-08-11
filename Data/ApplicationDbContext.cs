@@ -18,7 +18,9 @@ namespace Freelancing.Data
         public DbSet<UserAccountSkill> UserAccountSkills { get; set; }
         public DbSet<MentorshipMatch> MentorshipMatches { get; set; }
         public DbSet<MentorshipSession> MentorshipSessions { get; set; }
-
+        public DbSet<Goal> Goals { get; set; }
+        public DbSet<MentorshipGoalCompletion> MentorshipGoalCompletions { get; set; }
+        public DbSet<MentorReview> MentorReviews { get; set; }
 
         // New chat-related entities
         public DbSet<MentorshipChatMessage> MentorshipChatMessages { get; set; }
@@ -47,10 +49,9 @@ namespace Freelancing.Data
                 .IsUnique();
 
             modelBuilder.Entity<Project>()
-                .HasMany(p => p.Biddings)
-                .WithOne(b => b.Project)
-                .HasForeignKey(b => b.ProjectId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .HasOne(p => p.User)
+                .WithMany(u => u.Projects)
+                .HasForeignKey(p => p.UserId);
 
             modelBuilder.Entity<Project>()
                 .HasOne(p => p.AcceptedBid)
@@ -174,6 +175,81 @@ namespace Freelancing.Data
             modelBuilder.Entity<MentorshipChatFile>()
                 .Property(mcf => mcf.UploadedAt)
                 .HasDefaultValueSql("GETUTCDATE()");
+
+            // MentorshipGoalCompletion relationships and configurations
+            modelBuilder.Entity<MentorshipGoalCompletion>()
+                .HasOne(mgc => mgc.MentorshipMatch)
+                .WithMany()
+                .HasForeignKey(mgc => mgc.MentorshipMatchId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<MentorshipGoalCompletion>()
+                .HasOne(mgc => mgc.Goal)
+                .WithMany()
+                .HasForeignKey(mgc => mgc.GoalId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<MentorshipGoalCompletion>()
+                .HasOne(mgc => mgc.CompletedByUser)
+                .WithMany()
+                .HasForeignKey(mgc => mgc.CompletedByUserId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            // Add indexes for better performance
+            modelBuilder.Entity<MentorshipGoalCompletion>()
+                .HasIndex(mgc => new { mgc.MentorshipMatchId, mgc.GoalId });
+
+            modelBuilder.Entity<MentorshipGoalCompletion>()
+                .HasIndex(mgc => mgc.CompletedByUserId);
+
+            modelBuilder.Entity<MentorshipGoalCompletion>()
+                .HasIndex(mgc => mgc.CompletedAt);
+
+            // Configure default values
+            modelBuilder.Entity<MentorshipGoalCompletion>()
+                .Property(mgc => mgc.CompletedAt)
+                .HasDefaultValueSql("GETUTCDATE()");
+
+            // MentorReview relationships and configurations
+            modelBuilder.Entity<MentorReview>()
+                .HasOne(mr => mr.MentorshipMatch)
+                .WithMany()
+                .HasForeignKey(mr => mr.MentorshipMatchId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<MentorReview>()
+                .HasOne(mr => mr.Mentor)
+                .WithMany()
+                .HasForeignKey(mr => mr.MentorId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<MentorReview>()
+                .HasOne(mr => mr.Mentee)
+                .WithMany()
+                .HasForeignKey(mr => mr.MenteeId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            // Ensure one review per mentorship match
+            modelBuilder.Entity<MentorReview>()
+                .HasIndex(mr => mr.MentorshipMatchId)
+                .IsUnique();
+
+            // Add indexes for better performance
+            modelBuilder.Entity<MentorReview>()
+                .HasIndex(mr => mr.MentorId);
+
+            modelBuilder.Entity<MentorReview>()
+                .HasIndex(mr => mr.MenteeId);
+
+            modelBuilder.Entity<MentorReview>()
+                .HasIndex(mr => mr.CreatedAt);
+
+            // Configure default values
+            modelBuilder.Entity<MentorReview>()
+                .Property(mr => mr.CreatedAt)
+                .HasDefaultValueSql("GETUTCDATE()");
+
+
 
             base.OnModelCreating(modelBuilder);
         }
