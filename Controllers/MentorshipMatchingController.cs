@@ -14,11 +14,13 @@ namespace Freelancing.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly IMentorshipMatchingService _matchingService;
+        private readonly INotificationService _notificationService;
 
-        public MentorshipMatchingController(ApplicationDbContext context, IMentorshipMatchingService matchingService)
+        public MentorshipMatchingController(ApplicationDbContext context, IMentorshipMatchingService matchingService, INotificationService notificationService)
         {
             _context = context;
             _matchingService = matchingService;
+            _notificationService = notificationService;
         }
 
         // Main matching page - shows potential matches and existing matches
@@ -247,6 +249,10 @@ namespace Freelancing.Controllers
                     ViewBag.RequestSent = true;
                     ViewBag.SentMessage = model.Notes;
                     ViewBag.CanReRequest = false; // Reset flag
+                    
+                    // Create notification for the mentor about the re-request
+                    await CreateMentorshipRequestNotification(model.PartnerId, User.FindFirst("FullName")?.Value);
+                    
                     return View(model);
                 }
             }
@@ -297,6 +303,9 @@ namespace Freelancing.Controllers
             ViewBag.RequestSent = true;
             ViewBag.SentMessage = model.Notes;
 
+            // Create notification for the mentor about the new request
+            await CreateMentorshipRequestNotification(model.PartnerId, User.FindFirst("FullName")?.Value);
+
             return View(model);
         }
 
@@ -316,6 +325,18 @@ namespace Freelancing.Controllers
                     .Select(uas => uas.UserSkill)
                     .ToListAsync();
             }
+        }
+
+        private async Task CreateMentorshipRequestNotification(Guid mentorId, string? menteeName)
+        {
+            await _notificationService.CreateNotificationAsync(
+                mentorId,
+                "New Mentorship Request",
+                $"You have received a new mentorship request from {menteeName}. Click to review the request.",
+                "mentorship_request",
+                "<svg fill=\"#000000\" viewBox=\"0 0 16 16\" id=\"request-new-16px\" xmlns=\"http://www.w3.org/2000/svg\"><g id=\"SVGRepo_bgCarrier\" stroke-width=\"0\"></g><g id=\"SVGRepo_tracerCarrier\" stroke-linecap=\"round\" stroke-linejoin=\"round\"></g><g id=\"SVGRepo_iconCarrier\"> <path id=\"Path_46\" data-name=\"Path 46\" d=\"M-17,11a2,2,0,0,0,2-2,2,2,0,0,0-2-2,2,2,0,0,0-2,2A2,2,0,0,0-17,11Zm0-3a1,1,0,0,1,1,1,1,1,0,0,1-1,1,1,1,0,0,1-1-1A1,1,0,0,1-17,8Zm2.5,4h-5A2.5,2.5,0,0,0-22,14.5,1.5,1.5,0,0,0-20.5,16h7A1.5,1.5,0,0,0-12,14.5,2.5,2.5,0,0,0-14.5,12Zm1,3h-7a.5.5,0,0,1-.5-.5A1.5,1.5,0,0,1-19.5,13h5A1.5,1.5,0,0,1-13,14.5.5.5,0,0,1-13.5,15ZM-6,2.5v5A2.5,2.5,0,0,1-8.5,10h-2.793l-1.853,1.854A.5.5,0,0,1-13.5,12a.489.489,0,0,1-.191-.038A.5.5,0,0,1-14,11.5v-2a.5.5,0,0,1,.5-.5.5.5,0,0,1,.5.5v.793l1.146-1.147A.5.5,0,0,1-11.5,9h3A1.5,1.5,0,0,0-7,7.5v-5A1.5,1.5,0,0,0-8.5,1h-7A1.5,1.5,0,0,0-17,2.5v3a.5.5,0,0,1-.5.5.5.5,0,0,1-.5-.5v-3A2.5,2.5,0,0,1-15.5,0h7A2.5,2.5,0,0,1-6,2.5ZM-11.5,2V4.5H-9a.5.5,0,0,1,.5.5.5.5,0,0,1-.5.5h-2.5V8a.5.5,0,0,1-.5.5.5.5,0,0,1-.5-.5V5.5H-15a.5.5,0,0,1-.5-.5.5.5,0,0,1,.5-.5h2.5V2a.5.5,0,0,1,.5-.5A.5.5,0,0,1-11.5,2Z\" transform=\"translate(22)\"></path> </g></svg>",
+                $"/MentorshipMatching/PendingRequests"
+            );
         }
         public async Task<IActionResult> MenteeDashboard()
         {
@@ -526,12 +547,32 @@ namespace Freelancing.Controllers
                 // Clear any previous declined date since this is now accepted
                 mentorshipMatch.DeclinedDate = null;
 
+                // Create notification for the mentee about the accepted request
+                await _notificationService.CreateNotificationAsync(
+                    mentorshipMatch.MenteeId, // Mentee's ID
+                    "Mentorship Request Accepted!",
+                    $"Great news! {mentorshipMatch.Mentor.FirstName} {mentorshipMatch.Mentor.LastName} has accepted your mentorship request. Your mentorship is now active!",
+                    "mentorship_accepted",
+                    "<svg viewBox=\"0 0 24 24\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><g id=\"SVGRepo_bgCarrier\" stroke-width=\"0\"></g><g id=\"SVGRepo_tracerCarrier\" stroke-linecap=\"round\" stroke-linejoin=\"round\"></g><g id=\"SVGRepo_iconCarrier\"> <path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12ZM16.0303 8.96967C16.3232 9.26256 16.3232 9.73744 16.0303 10.0303L11.0303 15.0303C10.7374 15.3232 10.2626 15.3232 9.96967 15.0303L7.96967 13.0303C7.67678 12.7374 7.67678 12.2626 7.96967 11.9697C8.26256 11.6768 8.73744 11.6768 9.03033 11.9697L10.5 13.4393L12.7348 11.2045L14.9697 8.96967C15.2626 8.67678 15.7374 8.67678 16.0303 8.96967Z\" fill=\"#54c445\"></path> </g></svg>",
+                    $"/MentorshipMatching/MenteeDashboard"
+                );
+
                 TempData["Success"] = $"You've accepted the mentorship request from {mentorshipMatch.Mentee.FirstName} {mentorshipMatch.Mentee.LastName}!";
             }
             else if (response.ToLower() == "decline")
             {
                 mentorshipMatch.Status = "Declined";
                 mentorshipMatch.DeclinedDate = DateTime.UtcNow; // Set the declined date for re-request functionality
+
+                // Create notification for the mentee about the declined request
+                await _notificationService.CreateNotificationAsync(
+                    mentorshipMatch.MenteeId, // Mentee's ID
+                    "Mentorship Request Declined",
+                    $"{mentorshipMatch.Mentor.FirstName} {mentorshipMatch.Mentor.LastName} has declined your mentorship request. You can send a new request to the same mentor after 7 days.",
+                    "mentorship_declined",
+                    "<svg viewBox=\"0 0 24 24\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><g id=\"SVGRepo_bgCarrier\" stroke-width=\"0\"></g><g id=\"SVGRepo_tracerCarrier\" stroke-linecap=\"round\" stroke-linejoin=\"round\"></g><g id=\"SVGRepo_iconCarrier\"> <path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12ZM8.96963 8.96965C9.26252 8.67676 9.73739 8.67676 10.0303 8.96965L12 10.9393L13.9696 8.96967C14.2625 8.67678 14.7374 8.67678 15.0303 8.96967C15.3232 9.26256 15.3232 9.73744 15.0303 10.0303L13.0606 12L15.0303 13.9696C15.3232 14.2625 15.3232 14.7374 15.0303 15.0303C14.7374 15.3232 14.2625 15.3232 13.9696 15.0303L12 13.0607L10.0303 15.0303C9.73742 15.3232 9.26254 15.3232 8.96965 15.0303C8.67676 14.7374 8.67676 14.2625 8.96965 13.9697L10.9393 12L8.96963 10.0303C8.67673 9.73742 8.67673 9.26254 8.96963 8.96965Z\" fill=\"#f24a4a\"></path> </g></svg>",
+                    $"/MentorshipMatching/MenteeDashboard"
+                );
 
                 TempData["Info"] = $"You've declined the mentorship request from {mentorshipMatch.Mentee.FirstName} {mentorshipMatch.Mentee.LastName}.";
             }

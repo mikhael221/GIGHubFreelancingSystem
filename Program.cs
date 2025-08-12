@@ -23,6 +23,8 @@ builder.Services.AddScoped<IMentorshipMatchingService, MentorshipMatchingService
 builder.Services.AddScoped<IMessageEncryptionService, MessageEncryptionService>();
 builder.Services.AddScoped<IMentorshipSchedulingService, MentorshipSchedulingService>();
 
+builder.Services.AddScoped<INotificationService, NotificationService>();
+
 // Add SignalR
 builder.Services.AddSignalR(options =>
 {

@@ -14,11 +14,13 @@ namespace Freelancing.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly IMentorshipSchedulingService _schedulingService;
+        private readonly INotificationService _notificationService;
 
-        public MentorshipManageController(ApplicationDbContext context, IMentorshipSchedulingService schedulingService)
+        public MentorshipManageController(ApplicationDbContext context, IMentorshipSchedulingService schedulingService, INotificationService notificationService)
         {
             _context = context;
             _schedulingService = schedulingService;
+            _notificationService = notificationService;
         }
 
         [HttpGet]
@@ -167,9 +169,11 @@ namespace Freelancing.Controllers
         public async Task<IActionResult> CreateSession(Guid matchId, DateTime startUtc, string? title, string? notes, string? timeZone = null, int tzOffsetMinutes = 0)
         {
             var userId = GetCurrentUserId();
-            var auth = await _context.MentorshipMatches
-                .AnyAsync(mm => mm.Id == matchId && (mm.MentorId == userId || mm.MenteeId == userId) && (mm.Status == "Active" || mm.Status == "Completed"));
-            if (!auth)
+            var match = await _context.MentorshipMatches
+                .Include(mm => mm.Mentor)
+                .Include(mm => mm.Mentee)
+                .FirstOrDefaultAsync(mm => mm.Id == matchId && (mm.MentorId == userId || mm.MenteeId == userId) && (mm.Status == "Active" || mm.Status == "Completed"));
+            if (match == null)
             {
                 TempData["Error"] = "Access denied or mentorship not found";
                 return RedirectToAction("AvailableMentors", "MentorshipMatching");
@@ -184,6 +188,38 @@ namespace Freelancing.Controllers
             else
             {
                 TempData["Success"] = "Session proposed";
+                
+                // Send notification to the target mentor/mentee
+                var isCurrentUserMentor = match.MentorId == userId;
+                var targetUserId = isCurrentUserMentor ? match.MenteeId : match.MentorId;
+                var requestorName = isCurrentUserMentor 
+                    ? $"{match.Mentor.FirstName} {match.Mentor.LastName}"
+                    : $"{match.Mentee.FirstName} {match.Mentee.LastName}";
+                
+                // Determine the target user's role and appropriate redirect URL
+                var isTargetUserMentor = match.MentorId == targetUserId;
+                var redirectUrl = isTargetUserMentor 
+                    ? $"/MentorshipMatching/MentorDashboard?matchId={matchId}"
+                    : $"/MentorshipMatching/MenteeDashboard?matchId={matchId}";
+                
+                var calendarIconSvg = "<svg viewBox=\"0 0 24 24\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><g id=\"SVGRepo_bgCarrier\" stroke-width=\"0\"></g><g id=\"SVGRepo_tracerCarrier\" stroke-linecap=\"round\" stroke-linejoin=\"round\"></g><g id=\"SVGRepo_iconCarrier\"> <path d=\"M3 9H21M12 18V12M15 15.001L9 15M7 3V5M17 3V5M6.2 21H17.8C18.9201 21 19.4802 21 19.908 20.782C20.2843 20.5903 20.5903 20.2843 20.782 19.908C21 19.4802 21 18.9201 21 17.8V8.2C21 7.07989 21 6.51984 20.782 6.09202C20.5903 5.71569 20.2843 5.40973 19.908 5.21799C19.4802 5 18.9201 5 17.8 5H6.2C5.0799 5 4.51984 5 4.09202 5.21799C3.71569 5.40973 3.40973 5.71569 3.21799 6.09202C3 6.51984 3 7.07989 3 8.2V17.8C3 18.9201 3 19.4802 3.21799 19.908C3.40973 20.2843 3.71569 20.5903 4.09202 20.782C4.51984 21 5.07989 21 6.2 21Z\" stroke=\"#000000\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"></path> </g></svg>";
+                
+                var sessionDate = startUtc.ToString("MMMM dd, yyyy 'at' h:mm tt");
+                var notificationTitle = "New Session Proposal";
+                var notificationMessage = $"{requestorName} has proposed a new session for {sessionDate}";
+                if (!string.IsNullOrEmpty(title))
+                {
+                    notificationMessage += $": {title}";
+                }
+                
+                await _notificationService.CreateNotificationAsync(
+                    targetUserId,
+                    notificationTitle,
+                    notificationMessage,
+                    "session_proposal",
+                    calendarIconSvg,
+                    redirectUrl
+                );
             }
             return RedirectToAction("Sessions", new { matchId });
         }
@@ -203,7 +239,53 @@ namespace Freelancing.Controllers
             }
 
             var result = await _schedulingService.AcceptAsync(sessionId, userId);
-            TempData[result.ok ? "Success" : "Error"] = result.ok ? "Session confirmed" : result.error;
+            if (result.ok)
+            {
+                TempData["Success"] = "Session confirmed";
+                
+                // Send notification to the session creator
+                var match = await _context.MentorshipMatches
+                    .Include(mm => mm.Mentor)
+                    .Include(mm => mm.Mentee)
+                    .FirstOrDefaultAsync(mm => mm.Id == session.MentorshipMatchId);
+                
+                if (match != null)
+                {
+                    var responderName = match.MentorId == userId 
+                        ? $"{match.Mentor.FirstName} {match.Mentor.LastName}"
+                        : $"{match.Mentee.FirstName} {match.Mentee.LastName}";
+                    
+                    var sessionDate = session.ScheduledStartUtc.ToString("MMMM dd, yyyy 'at' h:mm tt");
+                    var notificationTitle = "Session Accepted";
+                    var notificationMessage = $"{responderName} has accepted your session proposal for {sessionDate}";
+                    if (!string.IsNullOrEmpty(session.Title))
+                    {
+                        notificationMessage += $": {session.Title}";
+                    }
+                    
+                    var acceptedIconSvg = "<svg viewBox=\"0 0 24 24\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><g id=\"SVGRepo_bgCarrier\" stroke-width=\"0\"></g><g id=\"SVGRepo_tracerCarrier\" stroke-linecap=\"round\" stroke-linejoin=\"round\"></g><g id=\"SVGRepo_iconCarrier\"> <path d=\"M3 9H21M9 15L11 17L15 13M7 3V5M17 3V5M6.2 21H17.8C18.9201 21 19.4802 21 19.908 20.782C20.2843 20.5903 20.5903 20.2843 20.782 19.908C21 19.4802 21 18.9201 21 17.8V8.2C21 7.07989 21 6.51984 20.782 6.09202C20.5903 5.71569 20.2843 5.40973 19.908 5.21799C19.4802 5 18.9201 5 17.8 5H6.2C5.0799 5 4.51984 5 4.09202 5.21799C3.71569 5.40973 3.40973 5.71569 3.21799 6.09202C3 6.51984 3 7.07989 3 8.2V17.8C3 18.9201 3 19.4802 3.21799 19.908C3.40973 20.2843 3.71569 20.5903 4.09202 20.782C4.51984 21 5.07989 21 6.2 21Z\" stroke=\"#000000\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"></path> </g></svg>";
+                    
+                    // Determine the target user's role and appropriate redirect URL
+                    var isTargetUserMentor = match.MentorId == session.CreatedByUserId;
+                    var redirectUrl = isTargetUserMentor 
+                        ? $"/MentorshipMatching/MentorDashboard?matchId={session.MentorshipMatchId}"
+                        : $"/MentorshipMatching/MenteeDashboard?matchId={session.MentorshipMatchId}";
+                    
+                    await _notificationService.CreateNotificationAsync(
+                        session.CreatedByUserId,
+                        notificationTitle,
+                        notificationMessage,
+                        "session_accepted",
+                        acceptedIconSvg,
+                        redirectUrl
+                    );
+                }
+            }
+            else
+            {
+                TempData["Error"] = result.error;
+            }
+            
             if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
                 return Redirect(returnUrl);
             return RedirectToAction("Sessions", new { matchId = session.MentorshipMatchId });
@@ -223,7 +305,53 @@ namespace Freelancing.Controllers
                 return RedirectToAction("AvailableMentors", "MentorshipMatching");
             }
             var result = await _schedulingService.DeclineAsync(sessionId, userId);
-            TempData[result.ok ? "Success" : "Error"] = result.ok ? "Session declined" : result.error;
+            if (result.ok)
+            {
+                TempData["Success"] = "Session declined";
+                
+                // Send notification to the session creator
+                var match = await _context.MentorshipMatches
+                    .Include(mm => mm.Mentor)
+                    .Include(mm => mm.Mentee)
+                    .FirstOrDefaultAsync(mm => mm.Id == session.MentorshipMatchId);
+                
+                if (match != null)
+                {
+                    var responderName = match.MentorId == userId 
+                        ? $"{match.Mentor.FirstName} {match.Mentor.LastName}"
+                        : $"{match.Mentee.FirstName} {match.Mentee.LastName}";
+                    
+                    var sessionDate = session.ScheduledStartUtc.ToString("MMMM dd, yyyy 'at' h:mm tt");
+                    var notificationTitle = "Session Declined";
+                    var notificationMessage = $"{responderName} has declined your session proposal for {sessionDate}";
+                    if (!string.IsNullOrEmpty(session.Title))
+                    {
+                        notificationMessage += $": {session.Title}";
+                    }
+                    
+                    var declinedIconSvg = "<svg viewBox=\"0 0 24 24\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><g id=\"SVGRepo_bgCarrier\" stroke-width=\"0\"></g><g id=\"SVGRepo_tracerCarrier\" stroke-linecap=\"round\" stroke-linejoin=\"round\"></g><g id=\"SVGRepo_iconCarrier\"> <path d=\"M10 13L14 17M14 13L10 17M3 9H21M7 3V5M17 3V5M6.2 21H17.8C18.9201 21 19.4802 21 19.908 20.782C20.2843 20.5903 20.5903 20.2843 20.782 19.908C21 19.4802 21 18.9201 21 17.8V8.2C21 7.07989 21 6.51984 20.782 6.09202C20.5903 5.71569 20.2843 5.40973 19.908 5.21799C19.4802 5 18.9201 5 17.8 5H6.2C5.0799 5 4.51984 5 4.09202 5.21799C3.71569 5.40973 3.40973 5.71569 3.21799 6.09202C3 6.51984 3 7.07989 3 8.2V17.8C3 18.9201 3 19.4802 3.21799 19.908C3.40973 20.2843 3.71569 20.5903 4.09202 20.782C4.51984 21 5.07989 21 6.2 21Z\" stroke=\"#000000\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"></path> </g></svg>";
+                    
+                    // Determine the target user's role and appropriate redirect URL
+                    var isTargetUserMentor = match.MentorId == session.CreatedByUserId;
+                    var redirectUrl = isTargetUserMentor 
+                        ? $"/MentorshipMatching/MentorDashboard?matchId={session.MentorshipMatchId}"
+                        : $"/MentorshipMatching/MenteeDashboard?matchId={session.MentorshipMatchId}";
+                    
+                    await _notificationService.CreateNotificationAsync(
+                        session.CreatedByUserId,
+                        notificationTitle,
+                        notificationMessage,
+                        "session_declined",
+                        declinedIconSvg,
+                        redirectUrl
+                    );
+                }
+            }
+            else
+            {
+                TempData["Error"] = result.error;
+            }
+            
             if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
                 return Redirect(returnUrl);
             return RedirectToAction("Sessions", new { matchId = session.MentorshipMatchId });
@@ -432,6 +560,16 @@ namespace Freelancing.Controllers
 
             _context.MentorReviews.Add(review);
             await _context.SaveChangesAsync();
+
+            // Send notification to the mentor about the review
+            await _notificationService.CreateNotificationAsync(
+                match.MentorId,
+                "New Review Received",
+                $"{match.Mentee.FirstName} {match.Mentee.LastName} has submitted a review for your mentorship.",
+                "mentor_review",
+                "<svg viewBox=\"0 0 24 24\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><g id=\"SVGRepo_bgCarrier\" stroke-width=\"0\"></g><g id=\"SVGRepo_tracerCarrier\" stroke-linecap=\"round\" stroke-linejoin=\"round\"></g><g id=\"SVGRepo_iconCarrier\"> <path d=\"M16 1C17.6569 1 19 2.34315 19 4C19 4.55228 18.5523 5 18 5C17.4477 5 17 4.55228 17 4C17 3.44772 16.5523 3 16 3H4C3.44772 3 3 3.44772 3 4V20C3 20.5523 3.44772 21 4 21H16C16.5523 21 17 20.5523 17 20V19C17 18.4477 17.4477 18 18 18C18.5523 18 19 18.4477 19 19V20C19 21.6569 17.6569 23 16 23H4C2.34315 23 1 21.6569 1 20V4C1 2.34315 2.34315 1 4 1H16Z\" fill=\"#0F0F0F\"></path> <path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M20.7991 8.20087C20.4993 7.90104 20.0132 7.90104 19.7133 8.20087L11.9166 15.9977C11.7692 16.145 11.6715 16.3348 11.6373 16.5404L11.4728 17.5272L12.4596 17.3627C12.6652 17.3285 12.855 17.2308 13.0023 17.0835L20.7991 9.28666C21.099 8.98682 21.099 8.5007 20.7991 8.20087ZM18.2991 6.78666C19.38 5.70578 21.1325 5.70577 22.2134 6.78665C23.2942 7.86754 23.2942 9.61999 22.2134 10.7009L14.4166 18.4977C13.9744 18.9398 13.4052 19.2327 12.7884 19.3355L11.8016 19.5C10.448 19.7256 9.2744 18.5521 9.50001 17.1984L9.66448 16.2116C9.76728 15.5948 10.0602 15.0256 10.5023 14.5834L18.2991 6.78666Z\" fill=\"#0F0F0F\"></path> <path d=\"M5 7C5 6.44772 5.44772 6 6 6H14C14.5523 6 15 6.44772 15 7C15 7.55228 14.5523 8 14 8H6C5.44772 8 5 7.55228 5 7Z\" fill=\"#0F0F0F\"></path> <path d=\"M5 11C5 10.4477 5.44772 10 6 10H10C10.5523 10 11 10.4477 11 11C11 11.5523 10.5523 12 10 12H6C5.44772 12 5 11.5523 5 11Z\" fill=\"#0F0F0F\"></path> <path d=\"M5 15C5 14.4477 5.44772 14 6 14H7C7.55228 14 8 14.4477 8 15C8 15.5523 7.55228 16 7 16H6C5.44772 16 5 15.5523 5 15Z\" fill=\"#0F0F0F\"></path> </g></svg>",
+                "/MentorshipManage/MyReviews"
+            );
 
             TempData["Success"] = "Thank you for your feedback! Your review has been submitted successfully.";
             return RedirectToAction("MenteeDashboard", "MentorshipMatching");

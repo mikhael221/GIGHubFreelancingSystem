@@ -453,6 +453,17 @@
   }
 }
 
+@keyframes slideInDown {
+  from {
+    transform: translateY(-20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
 .video-call-notification button {
   padding: 0.5rem 1rem;
   border-radius: 0.5rem;
@@ -464,6 +475,44 @@
 
 .video-call-notification button:hover {
   transform: scale(1.05);
+}
+
+/* Notification Dropdown */
+#dropdownNotification {
+  max-height: 80vh;
+  overflow: hidden;
+}
+
+#dropdownNotification .divide-y {
+  max-height: 16rem; /* 64 * 0.25rem = 16rem */
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #d1d5db #f9fafb;
+}
+
+#dropdownNotification .divide-y::-webkit-scrollbar {
+  width: 6px;
+}
+
+#dropdownNotification .divide-y::-webkit-scrollbar-track {
+  background: #f9fafb;
+  border-radius: 3px;
+}
+
+#dropdownNotification .divide-y::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 3px;
+}
+
+#dropdownNotification .divide-y::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+#dropdownNotification a[href="#"] {
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
+  border-top: 1px solid #e5e7eb;
 }
 
 /* Image Modal */

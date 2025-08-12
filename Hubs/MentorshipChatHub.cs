@@ -15,6 +15,7 @@ namespace Freelancing.Hubs
         private readonly IMessageEncryptionService _encryptionService;
         private static readonly Dictionary<string, string> UserConnections = new();
         private static readonly Dictionary<string, List<string>> RoomConnections = new();
+        private static readonly object _lockObject = new object();
 
         public MentorshipChatHub(ApplicationDbContext context, IMessageEncryptionService encryptionService)
         {
@@ -27,7 +28,10 @@ namespace Freelancing.Hubs
             var userId = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (!string.IsNullOrEmpty(userId))
             {
-                UserConnections[userId] = Context.ConnectionId;
+                lock (_lockObject)
+                {
+                    UserConnections[userId] = Context.ConnectionId;
+                }
                 await Clients.Caller.SendAsync("Connected", Context.ConnectionId);
             }
             await base.OnConnectedAsync();
@@ -38,25 +42,68 @@ namespace Freelancing.Hubs
             var userId = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (!string.IsNullOrEmpty(userId))
             {
-                UserConnections.Remove(userId);
+                lock (_lockObject)
+                {
+                    UserConnections.Remove(userId);
 
-                // Remove from all rooms
-                var roomsToRemove = RoomConnections
+                    // Remove from all rooms
+                    var roomsToRemove = RoomConnections
+                        .Where(kvp => kvp.Value.Contains(Context.ConnectionId))
+                        .Select(kvp => kvp.Key)
+                        .ToList();
+
+                    foreach (var room in roomsToRemove)
+                    {
+                        RoomConnections[room].Remove(Context.ConnectionId);
+                        if (!RoomConnections[room].Any())
+                        {
+                            RoomConnections.Remove(room);
+                        }
+                    }
+                }
+
+                // Remove from SignalR groups outside the lock
+                var roomsToRemoveForGroups = RoomConnections
                     .Where(kvp => kvp.Value.Contains(Context.ConnectionId))
                     .Select(kvp => kvp.Key)
                     .ToList();
 
-                foreach (var room in roomsToRemove)
+                foreach (var room in roomsToRemoveForGroups)
                 {
-                    RoomConnections[room].Remove(Context.ConnectionId);
-                    if (!RoomConnections[room].Any())
-                    {
-                        RoomConnections.Remove(room);
-                    }
                     await Groups.RemoveFromGroupAsync(Context.ConnectionId, room);
                 }
             }
             await base.OnDisconnectedAsync(exception);
+        }
+
+        // Add method to broadcast notifications
+        public static async Task BroadcastNotification(IHubContext<MentorshipChatHub> hubContext, Notification notification)
+        {
+            string connectionId = null;
+            lock (_lockObject)
+            {
+                UserConnections.TryGetValue(notification.UserId.ToString(), out connectionId);
+            }
+            
+            if (!string.IsNullOrEmpty(connectionId))
+            {
+                await hubContext.Clients.Client(connectionId).SendAsync("ReceiveNotification", notification);
+            }
+        }
+
+        // Add method to update notification count
+        public static async Task UpdateNotificationCount(IHubContext<MentorshipChatHub> hubContext, Guid userId, int count)
+        {
+            string connectionId = null;
+            lock (_lockObject)
+            {
+                UserConnections.TryGetValue(userId.ToString(), out connectionId);
+            }
+            
+            if (!string.IsNullOrEmpty(connectionId))
+            {
+                await hubContext.Clients.Client(connectionId).SendAsync("UpdateNotificationCount", count);
+            }
         }
 
         public async Task JoinMentorshipRoom(string mentorshipMatchId)
@@ -78,11 +125,14 @@ namespace Freelancing.Hubs
             var roomName = $"mentorship_{mentorshipMatchId}";
             await Groups.AddToGroupAsync(Context.ConnectionId, roomName);
 
-            if (!RoomConnections.ContainsKey(roomName))
+            lock (_lockObject)
             {
-                RoomConnections[roomName] = new List<string>();
+                if (!RoomConnections.ContainsKey(roomName))
+                {
+                    RoomConnections[roomName] = new List<string>();
+                }
+                RoomConnections[roomName].Add(Context.ConnectionId);
             }
-            RoomConnections[roomName].Add(Context.ConnectionId);
 
             await Clients.Caller.SendAsync("JoinedRoom", roomName);
             await Clients.OthersInGroup(roomName).SendAsync("UserJoined", Context.User.Identity.Name);
@@ -104,11 +154,14 @@ namespace Freelancing.Hubs
                 var roomName = $"user_{userId}";
                 await Groups.AddToGroupAsync(Context.ConnectionId, roomName);
 
-                if (!RoomConnections.ContainsKey(roomName))
+                lock (_lockObject)
                 {
-                    RoomConnections[roomName] = new List<string>();
+                    if (!RoomConnections.ContainsKey(roomName))
+                    {
+                        RoomConnections[roomName] = new List<string>();
+                    }
+                    RoomConnections[roomName].Add(Context.ConnectionId);
                 }
-                RoomConnections[roomName].Add(Context.ConnectionId);
 
                 await Clients.Caller.SendAsync("JoinedUserRoom", roomName);
             }

@@ -62,16 +62,21 @@ namespace Freelancing.Services
                 return (false, "Not authorized for this mentorship match", null);
             }
 
-            // Overlap check for both mentor and mentee against Confirmed sessions
+            // Check for confirmed sessions that are less than 5 hours apart
             var participantIds = new[] { match.MentorId, match.MenteeId };
-            var overlapping = await _context.Set<MentorshipSession>()
+            var fiveHoursFromStart = startUtc.AddHours(5);
+            var fiveHoursBeforeStart = startUtc.AddHours(-5);
+            
+            var conflictingSessions = await _context.Set<MentorshipSession>()
+                .Include(s => s.MentorshipMatch)
                 .Where(s => s.Status == "Confirmed")
                 .Where(s => participantIds.Contains(s.MentorshipMatch.MentorId) || participantIds.Contains(s.MentorshipMatch.MenteeId))
-                .AnyAsync();
+                .Where(s => s.ScheduledStartUtc >= fiveHoursBeforeStart && s.ScheduledStartUtc <= fiveHoursFromStart)
+                .ToListAsync();
 
-            if (overlapping)
+            if (conflictingSessions.Any())
             {
-                return (false, "Time overlaps with an existing confirmed session", null);
+                return (false, "New session must be at least 5 hours apart from existing confirmed sessions", null);
             }
 
             var entity = new MentorshipSession
@@ -107,13 +112,19 @@ namespace Freelancing.Services
             if (session.Status != "Proposed") return (false, "Only proposed sessions can be accepted");
             if (session.CreatedByUserId == userId) return (false, "You cannot accept your own proposal");
 
-            // Re-run overlap for current times
+            // Re-run 5-hour spacing check for current times
             var participantIds = new[] { match.MentorId, match.MenteeId };
-            var overlapping = await _context.Set<MentorshipSession>()
+            var fiveHoursFromStart = session.ScheduledStartUtc.AddHours(5);
+            var fiveHoursBeforeStart = session.ScheduledStartUtc.AddHours(-5);
+            
+            var conflictingSessions = await _context.Set<MentorshipSession>()
+                .Include(s => s.MentorshipMatch)
                 .Where(s => s.Id != session.Id && s.Status == "Confirmed")
                 .Where(s => participantIds.Contains(s.MentorshipMatch.MentorId) || participantIds.Contains(s.MentorshipMatch.MenteeId))
-                .AnyAsync();
-            if (overlapping) return (false, "Time overlaps with existing confirmed session");
+                .Where(s => s.ScheduledStartUtc >= fiveHoursBeforeStart && s.ScheduledStartUtc <= fiveHoursFromStart)
+                .ToListAsync();
+            
+            if (conflictingSessions.Any()) return (false, "Session must be at least 5 hours apart from existing confirmed sessions");
 
             session.Status = "Confirmed";
             session.UpdatedAtUtc = DateTime.UtcNow;
@@ -167,13 +178,19 @@ namespace Freelancing.Services
             if (match.MentorId != userId && match.MenteeId != userId) return (false, "Not authorized");
             if (session.Status == "Completed") return (false, "Cannot reschedule a completed session");
 
-            // Check overlapping against other confirmed sessions
+            // Check 5-hour spacing against other confirmed sessions
             var participantIds = new[] { match.MentorId, match.MenteeId };
-            var overlapping = await _context.Set<MentorshipSession>()
+            var fiveHoursFromStart = newStartUtc.AddHours(5);
+            var fiveHoursBeforeStart = newStartUtc.AddHours(-5);
+            
+            var conflictingSessions = await _context.Set<MentorshipSession>()
+                .Include(s => s.MentorshipMatch)
                 .Where(s => s.Id != session.Id && s.Status == "Confirmed")
                 .Where(s => participantIds.Contains(s.MentorshipMatch.MentorId) || participantIds.Contains(s.MentorshipMatch.MenteeId))
-                .AnyAsync();
-            if (overlapping) return (false, "Time overlaps with existing confirmed session");
+                .Where(s => s.ScheduledStartUtc >= fiveHoursBeforeStart && s.ScheduledStartUtc <= fiveHoursFromStart)
+                .ToListAsync();
+            
+            if (conflictingSessions.Any()) return (false, "Rescheduled session must be at least 5 hours apart from existing confirmed sessions");
 
             // Keep as provided (local semantics)
             session.ScheduledStartUtc = newStartUtc;

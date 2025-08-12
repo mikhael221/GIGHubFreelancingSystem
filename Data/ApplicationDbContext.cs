@@ -25,6 +25,9 @@ namespace Freelancing.Data
         // New chat-related entities
         public DbSet<MentorshipChatMessage> MentorshipChatMessages { get; set; }
         public DbSet<MentorshipChatFile> MentorshipChatFiles { get; set; }
+
+        // Notification entity
+        public DbSet<Notification> Notifications { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<Project>()
@@ -182,6 +185,30 @@ namespace Freelancing.Data
                 .WithMany()
                 .HasForeignKey(mgc => mgc.MentorshipMatchId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            // Notification relationships and configurations
+            modelBuilder.Entity<Notification>()
+                .HasOne(n => n.User)
+                .WithMany()
+                .HasForeignKey(n => n.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Notification>()
+                .HasIndex(n => n.UserId);
+
+            modelBuilder.Entity<Notification>()
+                .HasIndex(n => n.CreatedAt);
+
+            modelBuilder.Entity<Notification>()
+                .HasIndex(n => n.IsRead);
+
+            modelBuilder.Entity<Notification>()
+                .Property(n => n.CreatedAt)
+                .HasDefaultValueSql("GETUTCDATE()");
+
+            modelBuilder.Entity<Notification>()
+                .Property(n => n.IsRead)
+                .HasDefaultValue(false);
 
             modelBuilder.Entity<MentorshipGoalCompletion>()
                 .HasOne(mgc => mgc.Goal)
