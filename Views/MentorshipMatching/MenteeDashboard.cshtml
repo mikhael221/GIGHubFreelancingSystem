@@ -360,7 +360,60 @@
     </div>
 </div>
 
+<!-- Finish Mentorship Confirmation Modal -->
+<div id="finishMentorshipModal" tabindex="-1" class="hidden overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 flex justify-center items-center w-full md:inset-0 h-[calc(100%-1rem)] max-h-full">
+    <div class="modal-backdrop absolute inset-0 bg-opacity-50 bg-opacity-50"></div>
+    <div class="relative p-4 w-full max-w-md max-h-full">
+        <div class="relative bg-white rounded-lg shadow">
+            <button type="button" class="absolute top-3 end-2.5 text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center" data-modal-hide="finishMentorshipModal">
+                <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
+                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6" />
+                </svg>
+                <span class="sr-only">Close modal</span>
+            </button>
 
+            <div class="p-6 text-center">
+                <svg class="mx-auto mb-4 text-gray-500 w-12 h-12" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20">
+                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 11V6m0 8h.01M19 10a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                </svg>
+                <h3 class="mb-5 text-lg font-normal text-gray-800">Are you sure you want to finish this mentorship?</h3>
+
+                <button type="button"
+                        onclick="confirmFinishMentorship('@Model.RequestsSent.FirstOrDefault(r => r.Status == "Active")?.Id')"
+                        data-modal-hide="finishMentorshipModal"
+                        class="text-white bg-green-600 hover:bg-green-800 focus:ring-4 focus:outline-none focus:ring-green-300 font-medium rounded-lg text-sm inline-flex items-center px-5 py-2.5 text-center me-2">
+                    Yes, I'm sure
+                </button>
+                <button type="button"
+                        data-modal-hide="finishMentorshipModal"
+                        class="text-gray-500 bg-white hover:bg-gray-100 focus:ring-4 focus:outline-none focus:ring-gray-200 rounded-lg border border-gray-200 text-sm font-medium px-5 py-2.5 hover:text-gray-900 focus:z-10">
+                    No, cancel
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Confirmation Message Modal -->
+<div id="confirmationMessageModal" tabindex="-1" class="hidden overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 flex justify-center items-center w-full md:inset-0 h-[calc(100%-1rem)] max-h-full">
+    <div class="modal-backdrop absolute inset-0 bg-opacity-50 bg-opacity-50"></div>
+    <div class="relative p-4 w-full max-w-md max-h-full">
+        <div class="relative bg-white rounded-lg shadow">
+            <div class="p-6 text-center">
+                <svg class="mx-auto mb-4 text-green-500 w-12 h-12" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20">
+                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 11V6m0 8h.01M19 10a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                </svg>
+                <h3 class="mb-5 text-lg font-normal text-gray-800" id="confirmationMessage">Mentorship finished successfully!</h3>
+
+                <button type="button"
+                        onclick="closeConfirmationModal()"
+                        class="text-white bg-blue-600 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm inline-flex items-center px-5 py-2.5 text-center">
+                    OK
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
@@ -397,14 +450,18 @@
     }
 
     function finishMentorship(matchId) {
-        if (!confirm('Are you sure you want to finish this mentorship? This action cannot be undone.')) {
-            return;
+        // Show the confirmation modal
+        const modal = document.getElementById('finishMentorshipModal');
+        if (modal) {
+            modal.classList.remove('hidden');
         }
+    }
 
+    function confirmFinishMentorship(matchId) {
         // Get the anti-forgery token
         const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
         if (!token) {
-            alert('Security token not found. Please refresh the page and try again.');
+            showConfirmationMessage('Security token not found. Please refresh the page and try again.', 'error');
             return;
         }
 
@@ -425,20 +482,108 @@
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                alert(data.message);
-                window.location.reload();
+                showConfirmationMessage(data.message || 'Mentorship finished successfully!', 'success');
             } else {
-                alert(data.message || 'Failed to finish mentorship. Please try again.');
+                showConfirmationMessage(data.message || 'Failed to finish mentorship. Please try again.', 'error');
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            alert('Failed to finish mentorship. Please try again.');
+            showConfirmationMessage('Failed to finish mentorship. Please try again.', 'error');
         })
         .finally(() => {
             // Re-enable the button
             button.disabled = false;
             button.textContent = originalText;
+            // Hide the confirmation modal
+            const modal = document.getElementById('finishMentorshipModal');
+            if (modal) {
+                modal.classList.add('hidden');
+            }
         });
     }
+
+    function showConfirmationMessage(message, type) {
+        const modal = document.getElementById('confirmationMessageModal');
+        const messageElement = document.getElementById('confirmationMessage');
+        const icon = modal.querySelector('svg');
+        
+        if (messageElement) {
+            messageElement.textContent = message;
+        }
+        
+        // Update icon color based on message type
+        if (type === 'success') {
+            icon.classList.remove('text-red-500');
+            icon.classList.add('text-green-500');
+        } else {
+            icon.classList.remove('text-green-500');
+            icon.classList.add('text-red-500');
+        }
+        
+        if (modal) {
+            modal.classList.remove('hidden');
+        }
+    }
+
+    function closeConfirmationModal() {
+        const modal = document.getElementById('confirmationMessageModal');
+        if (modal) {
+            modal.classList.add('hidden');
+            // Reload the page after closing the confirmation modal
+            window.location.reload();
+        }
+    }
+
+    // Modal functionality
+    document.addEventListener('DOMContentLoaded', function () {
+        // Handle modal close buttons for finish mentorship modal
+        const closeButtons = document.querySelectorAll('[data-modal-hide="finishMentorshipModal"]');
+        closeButtons.forEach(button => {
+            button.addEventListener('click', function () {
+                const modal = document.getElementById('finishMentorshipModal');
+                if (modal) {
+                    modal.classList.add('hidden');
+                }
+            });
+        });
+
+        // Handle backdrop click to close modals
+        const finishModal = document.getElementById('finishMentorshipModal');
+        const confirmationModal = document.getElementById('confirmationMessageModal');
+        
+        if (finishModal) {
+            finishModal.addEventListener('click', function (event) {
+                if (event.target === finishModal) {
+                    finishModal.classList.add('hidden');
+                }
+            });
+        }
+        
+        if (confirmationModal) {
+            confirmationModal.addEventListener('click', function (event) {
+                if (event.target === confirmationModal) {
+                    confirmationModal.classList.add('hidden');
+                    window.location.reload();
+                }
+            });
+        }
+
+        // Handle escape key to close modals
+        document.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape') {
+                const finishModal = document.getElementById('finishMentorshipModal');
+                const confirmationModal = document.getElementById('confirmationMessageModal');
+                
+                if (finishModal && !finishModal.classList.contains('hidden')) {
+                    finishModal.classList.add('hidden');
+                }
+                
+                if (confirmationModal && !confirmationModal.classList.contains('hidden')) {
+                    confirmationModal.classList.add('hidden');
+                    window.location.reload();
+                }
+            }
+        });
+    });
 </script>
