@@ -31,6 +31,12 @@ namespace Freelancing.Models.Entities
 
         public string? RelatedUrl { get; set; }
 
+        // Encryption fields
+        public bool IsEncrypted { get; set; } = false;
+        public string? EncryptionMethod { get; set; }
+        public string? EncryptedTitle { get; set; }
+        public string? EncryptedMessage { get; set; }
+
         // Navigation property
         public virtual UserAccount User { get; set; }
     }

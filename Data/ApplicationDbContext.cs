@@ -16,6 +16,7 @@ namespace Freelancing.Data
         public DbSet<PeerMentorship> PeerMentorships { get; set; }
         public DbSet<UserSkill> UserSkills { get; set; }
         public DbSet<UserAccountSkill> UserAccountSkills { get; set; }
+        public DbSet<ProjectSkill> ProjectSkills { get; set; }
         public DbSet<MentorshipMatch> MentorshipMatches { get; set; }
         public DbSet<MentorshipSession> MentorshipSessions { get; set; }
         public DbSet<Goal> Goals { get; set; }
@@ -61,6 +62,24 @@ namespace Freelancing.Data
                 .WithMany()
                 .HasForeignKey(p => p.AcceptedBidId)
                 .OnDelete(DeleteBehavior.NoAction);
+
+            // ProjectSkill relationships
+            modelBuilder.Entity<ProjectSkill>()
+                .HasOne(ps => ps.Project)
+                .WithMany(p => p.ProjectSkills)
+                .HasForeignKey(ps => ps.ProjectId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<ProjectSkill>()
+                .HasOne(ps => ps.UserSkill)
+                .WithMany()
+                .HasForeignKey(ps => ps.UserSkillId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            // Ensure unique project-skill combinations
+            modelBuilder.Entity<ProjectSkill>()
+                .HasIndex(ps => new { ps.ProjectId, ps.UserSkillId })
+                .IsUnique();
 
             modelBuilder.Entity<PeerMentorship>()
                 .HasOne(u => u.User)

@@ -77,6 +77,7 @@ using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
     await Freelancing.SeedGoals.SeedGoalsData(context);
+    await Freelancing.SeedUserSkills.SeedUserSkillsData(context);
 }
 
 app.Run();

@@ -4,11 +4,12 @@ namespace Freelancing.Services
 {
     public interface INotificationService
     {
-        Task<Notification> CreateNotificationAsync(Guid userId, string title, string message, string type, string? iconSvg = null, string? relatedUrl = null);
+        Task<Notification> CreateNotificationAsync(Guid userId, string title, string message, string type, string? iconSvg = null, string? relatedUrl = null, bool encryptContent = false);
         Task<List<Notification>> GetUserNotificationsAsync(Guid userId, int count = 10);
         Task<int> GetUnreadNotificationCountAsync(Guid userId);
         Task MarkNotificationAsReadAsync(Guid notificationId);
         Task MarkAllNotificationsAsReadAsync(Guid userId);
+        Task<Notification> GetNotificationByIdAsync(Guid notificationId);
     }
 }
 

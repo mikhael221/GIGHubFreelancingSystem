@@ -54,6 +54,54 @@ namespace Freelancing.Controllers
             await _notificationService.MarkAllNotificationsAsReadAsync(userId);
             return Ok();
         }
+
+        // Example method to create an encrypted notification (for demonstration)
+        [HttpPost]
+        public async Task<IActionResult> CreateEncryptedNotification(string title, string message, string type = "encrypted")
+        {
+            var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out Guid userId))
+                return Unauthorized();
+
+            // Create an encrypted notification
+            var notification = await _notificationService.CreateNotificationAsync(
+                userId, 
+                title, 
+                message, 
+                type, 
+                encryptContent: true // This enables encryption
+            );
+
+            return Json(new { 
+                success = true, 
+                notificationId = notification.Id,
+                message = "Encrypted notification created successfully" 
+            });
+        }
+
+        // Example method to create a regular (non-encrypted) notification
+        [HttpPost]
+        public async Task<IActionResult> CreateRegularNotification(string title, string message, string type = "regular")
+        {
+            var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out Guid userId))
+                return Unauthorized();
+
+            // Create a regular notification (not encrypted)
+            var notification = await _notificationService.CreateNotificationAsync(
+                userId, 
+                title, 
+                message, 
+                type, 
+                encryptContent: false // This keeps it unencrypted
+            );
+
+            return Json(new { 
+                success = true, 
+                notificationId = notification.Id,
+                message = "Regular notification created successfully" 
+            });
+        }
     }
 }
 

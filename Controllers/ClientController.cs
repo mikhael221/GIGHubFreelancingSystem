@@ -21,7 +21,7 @@ namespace Freelancing.Controllers
             this.dbContext = context;
         }
         // Displays the client dashboard with project statistics and a list of projects.
-        public async Task<IActionResult> Dashboard()
+        public async Task<IActionResult> Dashboard(string message = null)
         {
             // Get the user ID from the claims to filter projects by the logged-in user.
             var userIdString = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
@@ -41,6 +41,11 @@ namespace Freelancing.Controllers
                 ClosedProjects = projects.Count(p => p.AcceptedBidId.HasValue)
             };
 
+            if (!string.IsNullOrEmpty(message))
+            {
+                ViewBag.Message = message;
+            }
+
             return View(viewModel);
         }
 
@@ -50,6 +55,8 @@ namespace Freelancing.Controllers
         {
             var project = await dbContext.Projects
                 .Include(p => p.User)
+                .Include(p => p.ProjectSkills)
+                .ThenInclude(ps => ps.UserSkill)
                 .ToListAsync();
             return View(project);
         }
@@ -59,6 +66,8 @@ namespace Freelancing.Controllers
             var projects = await dbContext.Projects
                 .Include(p => p.Biddings)
                 .ThenInclude(b => b.User)
+                .Include(p => p.ProjectSkills)
+                .ThenInclude(ps => ps.UserSkill)
                 .FirstOrDefaultAsync(p => p.Id == Id);
 
             if (projects == null)
@@ -71,15 +80,95 @@ namespace Freelancing.Controllers
         {
             return View();
         }
+
+        // Gets skills by category for the skills modal
+        [HttpGet]
+        public async Task<IActionResult> GetSkillsByCategory(string category)
+        {
+            var skills = await dbContext.UserSkills
+                .Where(s => string.IsNullOrEmpty(category) || s.Category == category)
+                .OrderBy(s => s.Name)
+                .ToListAsync();
+
+            return Json(skills);
+        }
+
         // Handles the submission of the project creation form, validating the input and saving the project to the database.
         [HttpPost]
         public async Task<IActionResult> Post(AddProject viewModel)
         {
+            // Debug: Log the incoming data
+            System.Diagnostics.Debug.WriteLine($"Post method called");
+            System.Diagnostics.Debug.WriteLine($"SelectedSkillIds count: {viewModel.SelectedSkillIds?.Count ?? 0}");
+            if (viewModel.SelectedSkillIds != null)
+            {
+                foreach (var skillId in viewModel.SelectedSkillIds)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Skill ID: {skillId}");
+                }
+            }
+            
             if (ModelState.IsValid)
             {
                 var userIdString = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
                 if (Guid.TryParse(userIdString, out Guid userId))
                 {
+                    List<string> imagePaths = new List<string>();
+                    
+                    // Handle multiple file uploads
+                    if (viewModel.ProjectImages != null && viewModel.ProjectImages.Any())
+                    {
+                        var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif", ".svg" };
+                        
+                        foreach (var file in viewModel.ProjectImages)
+                        {
+                            if (file != null && file.Length > 0)
+                            {
+                                // Validate file type
+                                var fileExtension = Path.GetExtension(file.FileName).ToLowerInvariant();
+                                
+                                if (!allowedExtensions.Contains(fileExtension))
+                                {
+                                    ModelState.AddModelError("ProjectImages", $"File {file.FileName} is not a valid image type. Only JPG, PNG, GIF, and SVG files are allowed.");
+                                    return View(viewModel);
+                                }
+                                
+                                // Validate file size (max 10MB)
+                                if (file.Length > 10 * 1024 * 1024)
+                                {
+                                    ModelState.AddModelError("ProjectImages", $"File {file.FileName} is too large. File size must be less than 10MB.");
+                                    return View(viewModel);
+                                }
+                            }
+                        }
+                        
+                        // Create project post uploads directory if it doesn't exist
+                        var uploadsDir = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "projectpost");
+                        if (!Directory.Exists(uploadsDir))
+                        {
+                            Directory.CreateDirectory(uploadsDir);
+                        }
+                        
+                        // Process each file
+                        foreach (var file in viewModel.ProjectImages)
+                        {
+                            if (file != null && file.Length > 0)
+                            {
+                                var fileExtension = Path.GetExtension(file.FileName).ToLowerInvariant();
+                                var fileName = $"{Guid.NewGuid()}{fileExtension}";
+                                var filePath = Path.Combine(uploadsDir, fileName);
+                                
+                                // Save file
+                                using (var stream = new FileStream(filePath, FileMode.Create))
+                                {
+                                    await file.CopyToAsync(stream);
+                                }
+                                
+                                imagePaths.Add($"/uploads/projectpost/{fileName}");
+                            }
+                        }
+                    }
+                    
                     var project = new Project
                     {
                         UserId = userId,
@@ -87,14 +176,36 @@ namespace Freelancing.Controllers
                         ProjectDescription = viewModel.ProjectDescription,
                         Budget = viewModel.Budget,
                         Category = viewModel.Category,
+                        ImagePaths = imagePaths.Count > 0 ? System.Text.Json.JsonSerializer.Serialize(imagePaths) : null,
+                        CreatedAt = DateTime.UtcNow.ToLocalTime()
                     };
                     await dbContext.Projects.AddAsync(project);
                     await dbContext.SaveChangesAsync();
 
-                    ModelState.Clear();
-                    ViewBag.Message = "Project posted successfully!";
+                    // Add selected skills to the project
+                    if (viewModel.SelectedSkillIds != null && viewModel.SelectedSkillIds.Any())
+                    {
+                        var projectSkills = viewModel.SelectedSkillIds.Select(skillId => new ProjectSkill
+                        {
+                            ProjectId = project.Id,
+                            UserSkillId = skillId
+                        }).ToList();
 
-                    return View(new AddProject());
+                        await dbContext.ProjectSkills.AddRangeAsync(projectSkills);
+                        await dbContext.SaveChangesAsync();
+                        
+                        // Log for debugging
+                        System.Diagnostics.Debug.WriteLine($"Added {projectSkills.Count} skills to project {project.Id}");
+                    }
+                    else
+                    {
+                        // Log for debugging
+                        System.Diagnostics.Debug.WriteLine("No skills selected or SelectedSkillIds is null/empty");
+                    }
+
+                    ModelState.Clear();
+
+                    return RedirectToAction("Dashboard", "Client", new { message = "Project posted successfully!" });
                 }
                 else
                 {
@@ -105,17 +216,30 @@ namespace Freelancing.Controllers
         }
         // Displays the form to edit an existing project.
         [HttpGet]
-        public async Task<IActionResult> EditPost(Guid Id)
+        public async Task<IActionResult> EditPost(Guid Id, string message = null)
         {
-            var project = await dbContext.Projects.FindAsync(Id);
+            var project = await dbContext.Projects
+                .Include(p => p.ProjectSkills)
+                .ThenInclude(ps => ps.UserSkill)
+                .FirstOrDefaultAsync(p => p.Id == Id);
+
+            if (project == null)
+                return NotFound();
+
+            if (!string.IsNullOrEmpty(message))
+            {
+                ViewBag.Message = message;
+            }
 
             return View(project);
         }
         // Handles the submission of the project editing form, allowing users to save changes or delete the project.
         [HttpPost]
-        public async Task<IActionResult> EditPost(Project viewModel, string action)
+        public async Task<IActionResult> EditPost(Project viewModel, string action, List<Guid> SelectedSkillIds, List<IFormFile> ProjectImages, List<string> ExistingImagePaths)
         {
-            var project = await dbContext.Projects.FindAsync(viewModel.Id);
+            var project = await dbContext.Projects
+                .Include(p => p.ProjectSkills)
+                .FirstOrDefaultAsync(p => p.Id == viewModel.Id);
 
             if (project == null)
                 return RedirectToAction("Dashboard", "Client");
@@ -127,20 +251,94 @@ namespace Freelancing.Controllers
                 project.Budget = viewModel.Budget;
                 project.Category = viewModel.Category;
 
+                // Handle images (existing + new)
+                List<string> allImagePaths = new List<string>();
+
+                // Add existing images that weren't removed
+                if (ExistingImagePaths != null && ExistingImagePaths.Any())
+                {
+                    allImagePaths.AddRange(ExistingImagePaths);
+                }
+
+                // Handle new images if uploaded
+                if (ProjectImages != null && ProjectImages.Any())
+                {
+                    var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif", ".svg" };
+
+                    // Create project post uploads directory if it doesn't exist
+                    var uploadsDir = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "projectpost");
+                    if (!Directory.Exists(uploadsDir))
+                    {
+                        Directory.CreateDirectory(uploadsDir);
+                    }
+
+                    foreach (var file in ProjectImages)
+                    {
+                        if (file != null && file.Length > 0)
+                        {
+                            // Validate file type
+                            var fileExtension = Path.GetExtension(file.FileName).ToLowerInvariant();
+                            if (!allowedExtensions.Contains(fileExtension))
+                            {
+                                ModelState.AddModelError("ProjectImages", $"File {file.FileName} is not a valid image type. Only JPG, PNG, GIF, and SVG files are allowed.");
+                                return View(project);
+                            }
+
+                            // Validate file size (max 10MB)
+                            if (file.Length > 10 * 1024 * 1024)
+                            {
+                                ModelState.AddModelError("ProjectImages", $"File {file.FileName} is too large. File size must be less than 10MB.");
+                                return View(project);
+                            }
+
+                            var fileName = $"{Guid.NewGuid()}{fileExtension}";
+                            var filePath = Path.Combine(uploadsDir, fileName);
+
+                            using (var stream = new FileStream(filePath, FileMode.Create))
+                            {
+                                await file.CopyToAsync(stream);
+                            }
+
+                            allImagePaths.Add($"/uploads/projectpost/{fileName}");
+                        }
+                    }
+                }
+
+                // Update project images
+                project.ImagePaths = allImagePaths.Any() ? System.Text.Json.JsonSerializer.Serialize(allImagePaths) : null;
+
+                // Update project skills
+                if (SelectedSkillIds != null && SelectedSkillIds.Any())
+                {
+                    // Remove existing project skills
+                    var existingSkills = project.ProjectSkills.ToList();
+                    dbContext.ProjectSkills.RemoveRange(existingSkills);
+
+                    // Add new project skills
+                    var newProjectSkills = SelectedSkillIds.Select(skillId => new ProjectSkill
+                    {
+                        ProjectId = project.Id,
+                        UserSkillId = skillId
+                    }).ToList();
+
+                    await dbContext.ProjectSkills.AddRangeAsync(newProjectSkills);
+                }
+
                 await dbContext.SaveChangesAsync();
 
-                ModelState.Clear();
-                ViewBag.Message = "Project edited successfully!";
+                // Redirect to prevent form resubmission on refresh
+                return RedirectToAction("EditPost", new { Id = project.Id, message = "Project edited successfully!" });
             }
             else if (action == "delete")
             {
                 dbContext.Projects.Remove(project);
                 await dbContext.SaveChangesAsync();
 
-                return RedirectToAction("Dashboard", "Client");
+                return RedirectToAction("Dashboard", "Client", new { message = "Project deleted successfully!" });
             }
 
-            return View(project);
+            // If we reach here, there was an error, so return the view with the model
+            return View(viewModel);
         }
         // Displays the bids for a specific project and allows the client to manage them.
         [HttpGet]
@@ -149,6 +347,8 @@ namespace Freelancing.Controllers
             var projects = await dbContext.Projects
                 .Include(p => p.Biddings)
                 .ThenInclude(b => b.User)
+                .Include(p => p.ProjectSkills)
+                .ThenInclude(ps => ps.UserSkill)
                 .FirstOrDefaultAsync(p => p.Id == Id);
 
             if (projects == null)

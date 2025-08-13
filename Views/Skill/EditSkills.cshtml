@@ -39,46 +39,105 @@
 					</div>
 				}
 
-				<!-- Search Form -->
+				<!-- Category Filter and Search Form -->
 				<div class="max-w-lg mx-auto mb-6">
-					<div class="flex">
-						<label for="search-input" class="mb-2 text-sm font-medium text-gray-900 sr-only">Search Skills</label>
-						<div class="relative w-full">
-							<input type="search" id="search-input" name="searchTerm" value="@Model.SearchTerm"
-								   class="block p-2.5 w-full z-20 text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500"
-								   placeholder="Search skills to find more options..." />
-							<button type="button" id="clear-search" class="absolute top-0 end-0 p-2.5 text-sm font-medium h-full text-gray-400 hover:text-gray-600 focus:outline-none" style="display: none;">
-								<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-								</svg>
-							</button>
+					<form class="max-w-lg mx-auto">
+						<div class="flex">
+							<label for="search-dropdown" class="mb-2 text-sm font-medium text-gray-900 sr-only">Search Skills</label>
+							<button id="dropdown-button" data-dropdown-toggle="dropdown" class="shrink-0 z-10 inline-flex items-center py-2.5 px-4 text-sm font-medium text-center text-gray-900 bg-gray-100 border border-gray-300 rounded-s-lg hover:bg-gray-200 focus:ring-4 focus:outline-none focus:ring-gray-100" type="button">All categories <svg class="w-2.5 h-2.5 ms-2.5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 10 6">
+								<path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 4 4 4-4"/>
+							</svg></button>
+							<div id="dropdown" class="z-10 hidden bg-white divide-y divide-gray-100 rounded-lg shadow-sm w-44">
+								<ul class="py-2 text-sm text-gray-700" aria-labelledby="dropdown-button">
+									<li>
+										<button type="button" class="category-filter inline-flex w-full px-4 py-2 hover:bg-gray-100" data-category="">All categories</button>
+									</li>
+									<li>
+										<button type="button" class="category-filter inline-flex text-start w-full px-4 py-2 hover:bg-gray-100" data-category="Websites, IT & Software">Websites, IT & Software</button>
+									</li>
+									<li>
+										<button type="button" class="category-filter inline-flex w-full px-4 py-2 hover:bg-gray-100" data-category="Writing & Content">Writing & Content</button>
+									</li>
+									<li>
+										<button type="button" class="category-filter inline-flex w-full px-4 py-2 hover:bg-gray-100" data-category="Design & Media">Design & Media</button>
+									</li>
+									<li>
+										<button type="button" class="category-filter inline-flex w-full px-4 py-2 hover:bg-gray-100" data-category="Data Entry & Admin">Data Entry & Admin</button>
+									</li>
+									<li>
+										<button type="button" class="category-filter inline-flex text-start w-full px-4 py-2 hover:bg-gray-100" data-category="Translation & Languages">Translation & Languages</button>
+									</li>
+									<li>
+										<button type="button" class="category-filter inline-flex w-full px-4 py-2 hover:bg-gray-100" data-category="Sales & Marketing">Sales & Marketing</button>
+									</li>
+								</ul>
+							</div>
+							<div class="relative w-full">
+								<input type="search" id="search-dropdown" name="searchTerm" value="@Model.SearchTerm" class="block p-2.5 w-full z-20 text-sm text-gray-900 bg-gray-50 rounded-e-lg border-s-gray-50 border-s-2 border border-gray-300 focus:ring-blue-500 focus:border-blue-500" placeholder="Search skills..." required />
+								<button type="submit" class="absolute top-0 end-0 p-2.5 text-sm font-medium h-full text-white bg-blue-700 rounded-e-lg border border-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300">
+									<svg class="w-4 h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20">
+										<path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0114 0Z"/>
+									</svg>
+									<span class="sr-only">Search</span>
+								</button>
+							</div>
 						</div>
-					</div>
+					</form>
 				</div>
 
 				<!-- Skills Selection Form -->
 				<form asp-action="EditSkills" method="post" class="max-w-6xl mx-auto" id="skillsForm">
 
 					<!-- Available Skills Section -->
-					<div class="mb-6">
+					<div class="mb-4">
 						<h3 class="text-xl font-bold text-gray-900 mb-4">Available Skills</h3>
-						<div id="skills-container" class="flex flex-wrap gap-2">
+						<div id="skills-container" class="space-y-6">
 							@{
 								var availableSkills = Model.AllUserSkills.Where(s => !Model.SelectedSkillIds.Contains(s.Id)).ToList();
-								var displaySkills = availableSkills.Take(20).ToList();
+								var skillsByCategory = availableSkills
+									.GroupBy(s => s.Category)
+									.OrderBy(g => g.Key)
+									.ToList();
 							}
-							@foreach (var skill in displaySkills)
+							@foreach (var categoryGroup in skillsByCategory)
 							{
-								<button type="button"
-										class="skill-btn initial-skill text-gray-900 bg-white border border-gray-300 focus:outline-none hover:bg-gray-100 focus:ring-4 focus:ring-gray-100 font-medium rounded-lg text-sm px-4 py-2 transition-all duration-200"
-										data-skill-id="@skill.Id"
-										data-skill-name="@skill.Name">
-									@skill.Name
-								</button>
+								var categorySkills = categoryGroup.OrderBy(s => s.Name).ToList();
+								var initialSkills = categorySkills.Take(15).ToList();
+								var remainingSkills = categorySkills.Skip(15).ToList();
+								<div class="category-section" data-category="@categoryGroup.Key">
+									<h4 class="text-lg font-semibold text-gray-800 mb-3 border-b border-gray-200 pb-2" style="display: none;">@categoryGroup.Key</h4>
+									<div class="flex flex-wrap gap-2">
+										@foreach (var skill in initialSkills)
+										{
+											<button type="button"
+													class="skill-btn initial-skill text-gray-900 bg-white border border-gray-300 focus:outline-none hover:bg-gray-100 focus:ring-4 focus:ring-gray-100 font-medium rounded-lg text-sm px-4 py-2 transition-all duration-200"
+													data-skill-id="@skill.Id"
+													data-skill-name="@skill.Name"
+													data-skill-category="@skill.Category">
+												@skill.Name
+											</button>
+										}
+										@foreach (var skill in remainingSkills)
+										{
+											<button type="button"
+													class="skill-btn hidden-skill text-gray-900 bg-white border border-gray-300 focus:outline-none hover:bg-gray-100 focus:ring-4 focus:ring-gray-100 font-medium rounded-lg text-sm px-4 py-2 transition-all duration-200"
+													data-skill-id="@skill.Id"
+													data-skill-name="@skill.Name"
+													data-skill-category="@skill.Category"
+													style="display: none;">
+												@skill.Name
+											</button>
+										}
+									</div>
+									@if (remainingSkills.Any())
+									{
+										<div class="mt-3 text-sm text-gray-500">
+											<span class="remaining-count">@remainingSkills.Count</span> more skills available - use search to find them
+										</div>
+									}
+								</div>
 							}
 						</div>
-
-
 
 						<div id="no-results" class="text-gray-500 text-center py-8" style="display: none;">
 							<svg class="mx-auto h-12 w-12 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -90,7 +149,7 @@
 					</div>
 
 					<!-- Selected Skills Section -->
-					<div class="mb-8 p-4 bg-blue-50 rounded-lg border border-blue-200">
+					<div class="mb-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
 						<h3 class="text-xl font-bold text-gray-900 mb-4 flex items-center">
 							<svg class="w-5 h-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
@@ -125,101 +184,316 @@
 		const selectedSkills = new Set(@Html.Raw(Json.Serialize(Model.SelectedSkillIds)));
 		const selectedSkillsContainer = document.getElementById('selected-skills-container');
 		const hiddenInputsContainer = document.getElementById('hidden-inputs');
-		const searchInput = document.getElementById('search-input');
-		const clearSearchBtn = document.getElementById('clear-search');
+		const searchInput = document.getElementById('search-dropdown');
 		const selectedCountElement = document.getElementById('selected-count');
 		const noResultsDiv = document.getElementById('no-results');
 		const skillsContainer = document.getElementById('skills-container');
+		const dropdownButton = document.getElementById('dropdown-button');
+		const dropdown = document.getElementById('dropdown');
+		let currentCategory = '';
 
 		// All skills data for searching
-		const allSkills = @Html.Raw(Json.Serialize(Model.AllUserSkills.ToDictionary(s => s.Id, s => s.Name)));
+		const allSkills = @Html.Raw(Json.Serialize(Model.AllUserSkills.ToDictionary(s => s.Id, s => new { s.Name, s.Category })));
 		const totalSkillsCount = Object.keys(allSkills).length;
 		const selectedSkillsCount = selectedSkills.size;
 		const availableSkillsCount = totalSkillsCount - selectedSkillsCount;
 
-		// Track which skills are currently being searched vs initially displayed
-		let isSearchActive = false;
+		// Auto-cleanup missing skills
+		const missingSkills = [];
+		selectedSkills.forEach(skillId => {
+			if (!allSkills[skillId]) {
+				missingSkills.push(skillId);
+			}
+		});
+		
+		// Remove missing skills automatically
+		missingSkills.forEach(skillId => {
+			selectedSkills.delete(skillId);
+		});
+
+		// Helper function to find skill name by ID
+		function findSkillNameById(skillId) {
+			// Try direct lookup
+			if (allSkills[skillId] && allSkills[skillId].name) {
+				return allSkills[skillId].name;
+			}
+			
+			// Try searching through all skills (in case of ID format mismatch)
+			for (const [id, skillData] of Object.entries(allSkills)) {
+				if (id === skillId || id.toLowerCase() === skillId.toLowerCase()) {
+					if (skillData.name) {
+						return skillData.name;
+					}
+				}
+			}
+			
+			// Try to find in DOM
+			const skillButton = document.querySelector(`[data-skill-id="${skillId}"]`);
+			if (skillButton) {
+				return skillButton.getAttribute('data-skill-name');
+			}
+			
+			// Return a special indicator for missing skills
+			return `[Missing Skill - ${skillId.substring(0, 8)}...]`;
+		}
 
 		// Initialize
-		initializeSelectedSkills();
+		initializeSkillDisplay();
 		updateSelectedCount();
+		// Display saved skills immediately
+		updateSelectedSkillsDisplay();
+		updateHiddenInputs();
+		
+		// Also update after a short delay to ensure everything is ready
+		setTimeout(() => {
+			updateSelectedSkillsDisplay();
+			updateHiddenInputs();
+		}, 100);
+
+		// Initialize skill display to show only 15 skills per category
+		function initializeSkillDisplay() {
+			// Use the filter function to show "All categories" by default
+			filterSkillsByCategory('');
+		}
+
+		// Dropdown toggle
+		dropdownButton.addEventListener('click', function() {
+			dropdown.classList.toggle('hidden');
+		});
+
+		// Close dropdown when clicking outside
+		document.addEventListener('click', function(event) {
+			if (!dropdownButton.contains(event.target) && !dropdown.contains(event.target)) {
+				dropdown.classList.add('hidden');
+			}
+		});
+
+		// Category filter functionality
+		document.querySelectorAll('.category-filter').forEach(button => {
+			button.addEventListener('click', function() {
+				const category = this.getAttribute('data-category');
+				currentCategory = category;
+				
+				// Update dropdown button text
+				dropdownButton.textContent = category || 'All categories';
+				dropdownButton.appendChild(createDropdownArrow());
+				
+				// Hide dropdown
+				dropdown.classList.add('hidden');
+				
+				// Filter skills by category
+				filterSkillsByCategory(category);
+			});
+		});
+
+		function createDropdownArrow() {
+			const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+			svg.setAttribute("class", "w-2.5 h-2.5 ms-2.5");
+			svg.setAttribute("aria-hidden", "true");
+			svg.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+			svg.setAttribute("fill", "none");
+			svg.setAttribute("viewBox", "0 0 10 6");
+			
+			const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+			path.setAttribute("stroke", "currentColor");
+			path.setAttribute("stroke-linecap", "round");
+			path.setAttribute("stroke-linejoin", "round");
+			path.setAttribute("stroke-width", "2");
+			path.setAttribute("d", "m1 1 4 4 4-4");
+			
+			svg.appendChild(path);
+			return svg;
+		}
+
+		function filterSkillsByCategory(category) {
+			const categorySections = document.querySelectorAll('.category-section');
+			let visibleCount = 0;
+			let allSkillsArray = [];
+
+			// If no category selected (All categories), collect all skills
+			if (!category) {
+				categorySections.forEach(section => {
+					const skillButtons = section.querySelectorAll('.skill-btn');
+					skillButtons.forEach(button => {
+						const skillId = button.getAttribute('data-skill-id');
+						const isSelected = selectedSkills.has(skillId);
+						if (!isSelected) {
+							allSkillsArray.push({
+								button: button,
+								section: section
+							});
+						}
+					});
+				});
+
+				// Show only first 30 skills from all categories
+				allSkillsArray.slice(0, 30).forEach(item => {
+					item.button.style.display = 'inline-block';
+					visibleCount++;
+				});
+
+				// Hide the rest
+				allSkillsArray.slice(30).forEach(item => {
+					item.button.style.display = 'none';
+				});
+
+				// Show "more skills available" message if there are more than 30
+				if (allSkillsArray.length > 30) {
+					// Create or update the message
+					let moreSkillsMessage = document.getElementById('more-skills-message');
+					if (!moreSkillsMessage) {
+						moreSkillsMessage = document.createElement('div');
+						moreSkillsMessage.id = 'more-skills-message';
+						moreSkillsMessage.className = 'mt-3 text-sm text-gray-500';
+						skillsContainer.appendChild(moreSkillsMessage);
+					}
+					moreSkillsMessage.innerHTML = `<span>${allSkillsArray.length - 30}</span> more skills available - use search to find them`;
+					moreSkillsMessage.style.display = 'block';
+				} else {
+					// Hide the message if not needed
+					const moreSkillsMessage = document.getElementById('more-skills-message');
+					if (moreSkillsMessage) {
+						moreSkillsMessage.style.display = 'none';
+					}
+				}
+
+				// Hide all category headers
+				categorySections.forEach(section => {
+					const header = section.querySelector('h4');
+					if (header) {
+						header.style.display = 'none';
+					}
+					section.style.display = 'block';
+				});
+
+				// Hide remaining skills messages
+				categorySections.forEach(section => {
+					const remainingCountElement = section.querySelector('.remaining-count');
+					if (remainingCountElement) {
+						remainingCountElement.parentElement.style.display = 'none';
+					}
+				});
+			} else {
+				// Specific category selected
+				// Hide the global "more skills" message
+				const moreSkillsMessage = document.getElementById('more-skills-message');
+				if (moreSkillsMessage) {
+					moreSkillsMessage.style.display = 'none';
+				}
+				categorySections.forEach(section => {
+					const sectionCategory = section.getAttribute('data-category');
+					const skillButtons = section.querySelectorAll('.skill-btn');
+					const remainingCountElement = section.querySelector('.remaining-count');
+					const header = section.querySelector('h4');
+					let sectionVisibleCount = 0;
+					let categorySkillsArray = [];
+
+					// Keep headers hidden
+					if (header) {
+						header.style.display = 'none';
+					}
+
+					// Collect skills for this category
+					skillButtons.forEach(button => {
+						const skillId = button.getAttribute('data-skill-id');
+						const isSelected = selectedSkills.has(skillId);
+						
+						if (sectionCategory === category && !isSelected) {
+							categorySkillsArray.push(button);
+						} else {
+							button.style.display = 'none';
+						}
+					});
+
+					// Show only first 30 skills from this category
+					if (sectionCategory === category) {
+						categorySkillsArray.slice(0, 30).forEach(button => {
+							button.style.display = 'inline-block';
+							sectionVisibleCount++;
+						});
+
+						// Hide the rest
+						categorySkillsArray.slice(30).forEach(button => {
+							button.style.display = 'none';
+						});
+
+						section.style.display = 'block';
+						visibleCount += sectionVisibleCount;
+
+						// Show the "more skills" message if there are more than 30
+						if (remainingCountElement && categorySkillsArray.length > 30) {
+							remainingCountElement.parentElement.style.display = 'block';
+							remainingCountElement.textContent = categorySkillsArray.length - 30;
+						} else if (remainingCountElement) {
+							remainingCountElement.parentElement.style.display = 'none';
+						}
+					} else {
+						section.style.display = 'none';
+					}
+				});
+			}
+
+			// Show/hide no results message
+			if (visibleCount === 0) {
+				noResultsDiv.style.display = 'block';
+			} else {
+				noResultsDiv.style.display = 'none';
+			}
+		}
 
 		// Search functionality
 		searchInput.addEventListener('input', function() {
 			const searchTerm = this.value.toLowerCase().trim();
-
-			if (searchTerm) {
-				isSearchActive = true;
-				performSearch(searchTerm);
-				clearSearchBtn.style.display = 'block';
-				if (moreSkillsHint) moreSkillsHint.style.display = 'none';
-			} else {
-				isSearchActive = false;
-				clearSearchBtn.style.display = 'none';
-				showInitialSkills();
-				noResultsDiv.style.display = 'none';
-			}
+			performSearch(searchTerm, currentCategory);
 		});
 
-		// Clear search
-		clearSearchBtn.addEventListener('click', function() {
-			searchInput.value = '';
-			clearSearchBtn.style.display = 'none';
-			isSearchActive = false;
-			showInitialSkills();
-			noResultsDiv.style.display = 'none';
-		});
-
-		// Skill button event listeners (delegated for dynamically added buttons)
-		skillsContainer.addEventListener('click', function(e) {
-			if (e.target.classList.contains('skill-btn')) {
-				const skillId = e.target.dataset.skillId;
-				const skillName = e.target.dataset.skillName;
-
-				if (selectedSkills.has(skillId)) {
-					removeSkill(skillId);
-				} else {
-					addSkill(skillId, skillName);
-				}
-
-				updateUI();
-			}
-		});
-
-		function showInitialSkills() {
-			// Remove any search-added skills
-			const searchAddedSkills = skillsContainer.querySelectorAll('.skill-btn:not(.initial-skill)');
-			searchAddedSkills.forEach(skill => skill.remove());
-
-			// Show initial skills that aren't selected
-			const initialSkills = skillsContainer.querySelectorAll('.initial-skill');
-			initialSkills.forEach(skill => {
-				const skillId = skill.dataset.skillId;
-				if (!selectedSkills.has(skillId)) {
-					skill.style.display = 'inline-block';
-					skill.classList.remove('hidden');
-				} else {
-					skill.style.display = 'none';
-					skill.classList.add('hidden');
-				}
-			});
-		}
-
-		function performSearch(searchTerm) {
-			// Clear the container and rebuild with search results
-			skillsContainer.innerHTML = '';
+		function performSearch(searchTerm, category) {
+			const categorySections = document.querySelectorAll('.category-section');
 			let visibleCount = 0;
 
-			// Search through all available skills
-			Object.keys(allSkills).forEach(skillId => {
-				const skillName = allSkills[skillId];
-				const isSelected = selectedSkills.has(skillId);
-				const matchesSearch = skillName.toLowerCase().includes(searchTerm);
+			categorySections.forEach(section => {
+				const sectionCategory = section.getAttribute('data-category');
+				const skillButtons = section.querySelectorAll('.skill-btn');
+				const remainingCountElement = section.querySelector('.remaining-count');
+				const header = section.querySelector('h4');
+				let sectionVisibleCount = 0;
 
-				if (matchesSearch && !isSelected) {
-					const skillButton = createSkillButton(skillId, skillName, 'search-result');
-					skillsContainer.appendChild(skillButton);
-					visibleCount++;
+				// Keep headers hidden
+				if (header) {
+					header.style.display = 'none';
+				}
+
+				skillButtons.forEach(button => {
+					const skillId = button.getAttribute('data-skill-id');
+					const skillName = button.getAttribute('data-skill-name');
+					const isSelected = selectedSkills.has(skillId);
+					const matchesCategory = !category || sectionCategory === category;
+					const matchesSearch = !searchTerm || skillName.toLowerCase().includes(searchTerm);
+
+					if (matchesCategory && matchesSearch && !isSelected) {
+						button.style.display = 'inline-block';
+						sectionVisibleCount++;
+					} else if (matchesCategory && isSelected) {
+						// Always show selected skills
+						button.style.display = 'inline-block';
+						sectionVisibleCount++;
+					} else {
+						button.style.display = 'none';
+					}
+				});
+
+				if (sectionVisibleCount > 0 && (!category || sectionCategory === category)) {
+					section.style.display = 'block';
+					visibleCount += sectionVisibleCount;
+					
+					// Hide the "more skills" message when searching
+					if (searchTerm && remainingCountElement) {
+						remainingCountElement.parentElement.style.display = 'none';
+					} else if (!searchTerm && remainingCountElement) {
+						remainingCountElement.parentElement.style.display = 'block';
+					}
+				} else {
+					section.style.display = 'none';
 				}
 			});
 
@@ -231,15 +505,21 @@
 			}
 		}
 
-		function createSkillButton(skillId, skillName, className = '') {
-			const button = document.createElement('button');
-			button.type = 'button';
-			button.className = `skill-btn ${className} text-gray-900 bg-white border border-gray-300 focus:outline-none hover:bg-gray-100 focus:ring-4 focus:ring-gray-100 font-medium rounded-lg text-sm px-4 py-2 transition-all duration-200`;
-			button.setAttribute('data-skill-id', skillId);
-			button.setAttribute('data-skill-name', skillName);
-			button.textContent = skillName;
-			return button;
-		}
+		// Skill button event listeners (delegated for dynamically added buttons)
+		skillsContainer.addEventListener('click', function(e) {
+			if (e.target.classList.contains('skill-btn')) {
+				const skillId = e.target.getAttribute('data-skill-id');
+				const skillName = e.target.getAttribute('data-skill-name');
+
+				if (selectedSkills.has(skillId)) {
+					removeSkill(skillId);
+				} else {
+					addSkill(skillId, skillName);
+				}
+
+				updateUI();
+			}
+		});
 
 		function addSkill(skillId, skillName) {
 			selectedSkills.add(skillId);
@@ -254,12 +534,14 @@
 			updateHiddenInputs();
 			updateSelectedCount();
 
-			if (isSearchActive) {
-				// Re-apply current search filter
-				const currentSearch = searchInput.value.toLowerCase().trim();
-				performSearch(currentSearch);
+			// Re-apply current filters or initialize display
+			const currentSearch = searchInput.value.toLowerCase().trim();
+			if (currentSearch) {
+				performSearch(currentSearch, currentCategory);
+			} else if (currentCategory) {
+				filterSkillsByCategory(currentCategory);
 			} else {
-				showInitialSkills();
+				initializeSkillDisplay();
 			}
 		}
 
@@ -275,9 +557,19 @@
 			skillsGrid.className = 'flex flex-wrap gap-2';
 
 			selectedSkills.forEach(skillId => {
-				const skillName = allSkills[skillId];
+				
+				const skillName = findSkillNameById(skillId);
 				if (skillName) {
-					const skillElement = createSelectedSkillElement(skillId, skillName);
+					// Check if it's a missing skill
+					if (skillName.startsWith('[Missing Skill -')) {
+						const skillElement = createMissingSkillElement(skillId, skillName);
+						skillsGrid.appendChild(skillElement);
+					} else {
+						const skillElement = createSelectedSkillElement(skillId, skillName);
+						skillsGrid.appendChild(skillElement);
+					}
+				} else {
+					const skillElement = createSelectedSkillElement(skillId, `Skill ${skillId.substring(0, 8)}...`);
 					skillsGrid.appendChild(skillElement);
 				}
 			});
@@ -299,23 +591,36 @@
 			return div;
 		}
 
+		function createMissingSkillElement(skillId, skillName) {
+			const div = document.createElement('div');
+			div.className = 'inline-flex items-center bg-red-100 text-red-800 text-sm font-medium px-3 py-1 rounded-full border border-red-300';
+			div.innerHTML = `
+				<span class="mr-2">${skillName}</span>
+				<button type="button" class="text-red-600 hover:text-red-800 focus:outline-none transition-colors duration-200" onclick="removeSkillFromSelected('${skillId}')">
+					<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+					</svg>
+				</button>
+			`;
+			return div;
+		}
+
 		function updateHiddenInputs() {
 			hiddenInputsContainer.innerHTML = '';
 			selectedSkills.forEach(skillId => {
-				const input = document.createElement('input');
-				input.type = 'hidden';
-				input.name = 'SelectedSkillIds';
-				input.value = skillId;
-				hiddenInputsContainer.appendChild(input);
+				// Only add valid skills (ones that exist in allSkills)
+				if (allSkills[skillId]) {
+					const input = document.createElement('input');
+					input.type = 'hidden';
+					input.name = 'SelectedSkillIds';
+					input.value = skillId;
+					hiddenInputsContainer.appendChild(input);
+				}
 			});
 		}
 
 		function updateSelectedCount() {
 			selectedCountElement.textContent = selectedSkills.size;
-		}
-
-		function initializeSelectedSkills() {
-			updateUI();
 		}
 
 		// Global function for removing skills
@@ -326,9 +631,7 @@
 
 		// Initialize search on page load if there's a search term
 		if (searchInput.value) {
-			isSearchActive = true;
-			performSearch(searchInput.value.toLowerCase().trim());
-			clearSearchBtn.style.display = 'block';
+			performSearch(searchInput.value.toLowerCase().trim(), currentCategory);
 		}
 	});
 </script>

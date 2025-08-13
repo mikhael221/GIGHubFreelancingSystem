@@ -374,7 +374,12 @@ namespace Freelancing.Controllers
 
         private Guid GetCurrentUserId()
         {
-            return Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+            var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out Guid userId))
+            {
+                throw new InvalidOperationException("Invalid user ID");
+            }
+            return userId;
         }
 
         // Temporary action to fix existing mentorship matches

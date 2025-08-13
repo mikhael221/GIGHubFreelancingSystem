@@ -404,8 +404,20 @@ namespace Freelancing.Migrations
                         .HasColumnType("datetime2")
                         .HasDefaultValueSql("GETUTCDATE()");
 
+                    b.Property<string>("EncryptedMessage")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("EncryptedTitle")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("EncryptionMethod")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("IconSvg")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsEncrypted")
+                        .HasColumnType("bit");
 
                     b.Property<bool>("IsRead")
                         .ValueGeneratedOnAdd()
@@ -497,6 +509,12 @@ namespace Freelancing.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ImagePaths")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("ProjectDescription")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -515,6 +533,28 @@ namespace Freelancing.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("Projects");
+                });
+
+            modelBuilder.Entity("Freelancing.Models.Entities.ProjectSkill", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ProjectId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("UserSkillId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserSkillId");
+
+                    b.HasIndex("ProjectId", "UserSkillId")
+                        .IsUnique();
+
+                    b.ToTable("ProjectSkills");
                 });
 
             modelBuilder.Entity("Freelancing.Models.Entities.UserAccount", b =>
@@ -584,6 +624,10 @@ namespace Freelancing.Migrations
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -783,6 +827,25 @@ namespace Freelancing.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("Freelancing.Models.Entities.ProjectSkill", b =>
+                {
+                    b.HasOne("Freelancing.Models.Entities.Project", "Project")
+                        .WithMany("ProjectSkills")
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Freelancing.Models.Entities.UserSkill", "UserSkill")
+                        .WithMany()
+                        .HasForeignKey("UserSkillId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("Project");
+
+                    b.Navigation("UserSkill");
+                });
+
             modelBuilder.Entity("Freelancing.Models.Entities.UserAccountSkill", b =>
                 {
                     b.HasOne("Freelancing.Models.Entities.UserAccount", "UserAccount")
@@ -805,6 +868,8 @@ namespace Freelancing.Migrations
             modelBuilder.Entity("Freelancing.Models.Entities.Project", b =>
                 {
                     b.Navigation("Biddings");
+
+                    b.Navigation("ProjectSkills");
                 });
 
             modelBuilder.Entity("Freelancing.Models.Entities.UserAccount", b =>

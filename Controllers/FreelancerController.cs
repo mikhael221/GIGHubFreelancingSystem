@@ -61,6 +61,8 @@ namespace Freelancing.Controllers
         {
             var project = await dbContext.Projects
                 .Include(p => p.User)
+                .Include(p => p.ProjectSkills)
+                .ThenInclude(ps => ps.UserSkill)
                 .ToListAsync();
             return View(project);
         }
@@ -71,6 +73,8 @@ namespace Freelancing.Controllers
             var projects = await dbContext.Projects
                 .Include(p => p.Biddings)
                 .ThenInclude(b => b.User)
+                .Include(p => p.ProjectSkills)
+                .ThenInclude(ps => ps.UserSkill)
                 .FirstOrDefaultAsync(p => p.Id == Id);
 
             if (projects == null)

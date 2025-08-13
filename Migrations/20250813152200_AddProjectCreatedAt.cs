@@ -6,24 +6,25 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Freelancing.Migrations
 {
     /// <inheritdoc />
-    public partial class adddeclineddate : Migration
+    public partial class AddProjectCreatedAt : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.AddColumn<DateTime>(
-                name: "DeclinedDate",
-                table: "MentorshipMatches",
+                name: "CreatedAt",
+                table: "Projects",
                 type: "datetime2",
-                nullable: true);
+                nullable: false,
+                defaultValue: new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified));
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropColumn(
-                name: "DeclinedDate",
-                table: "MentorshipMatches");
+                name: "CreatedAt",
+                table: "Projects");
         }
     }
 }
