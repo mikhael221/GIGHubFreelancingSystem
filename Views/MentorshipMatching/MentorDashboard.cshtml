@@ -219,15 +219,14 @@
                                 <li class="py-3 sm:py-4">
                                     <div class="flex items-center space-x-4">
                                         <div class="flex-shrink-0">
-                                            <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
-                                                <span class="text-white text-sm font-medium">
-                                                    @{
-                                                        var nameParts = request.MenteeName.Split(' ');
-                                                        var initials = nameParts[0].Substring(0, 1) + (nameParts.Length > 1 ? nameParts[1].Substring(0, 1) : "");
-                                                    }
-                                                    @initials
-                                                </span>
-                                            </div>
+                                            @if (!string.IsNullOrEmpty(request.MenteePhoto))
+                                            {
+                                                <img src="@request.MenteePhoto" alt="Profile" class="w-8 h-8 rounded-full object-cover">
+                                            }
+                                            else
+                                            {
+                                                <img src="https://ik.imagekit.io/6txj3mofs/GIGHub%20(11).png?updatedAt=1750552804497" alt="Profile" class="w-8 h-8 rounded-full object-cover">
+                                            }
                                         </div>
                                         <div class="flex-1 min-w-0">
                                             <p class="text-sm font-medium text-gray-900 truncate">

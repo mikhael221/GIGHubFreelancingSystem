@@ -458,7 +458,7 @@ namespace Freelancing.Controllers
                 MentorshipMatchId = matchId,
                 GoalId = goalId,
                 CompletedByUserId = userId,
-                CompletedAt = DateTime.Now,
+                CompletedAt = DateTime.UtcNow.ToLocalTime(),
                 CompletionType = completionType
             };
 
@@ -555,7 +555,7 @@ namespace Freelancing.Controllers
                 Strengths = model.Strengths,
                 AreasForImprovement = model.AreasForImprovement,
 
-                CreatedAt = DateTime.Now
+                CreatedAt = DateTime.UtcNow.ToLocalTime()
             };
 
             _context.MentorReviews.Add(review);
