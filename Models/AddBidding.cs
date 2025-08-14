@@ -10,8 +10,8 @@ namespace Freelancing.Models
         public int Budget { get; set; }
         public string Delivery { get; set; }
         public string Proposal { get; set; }
-        public List<IFormFile> PreviousWorksFiles { get; set; } = new List<IFormFile>();
-        public string PreviousWorksPaths { get; set; } // For existing files when editing
-        public string RepositoryLinks { get; set; } // JSON array of repository/drive links
+        public List<IFormFile>? PreviousWorksFiles { get; set; } = new List<IFormFile>();
+        public string? PreviousWorksPaths { get; set; } // For existing files when editing
+        public string? RepositoryLinks { get; set; } // JSON array of repository/drive links
     }
 }

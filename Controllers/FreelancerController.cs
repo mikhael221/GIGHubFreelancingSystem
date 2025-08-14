@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Freelancing.Data;
 using Freelancing.Models;
 using Freelancing.Models.Entities;
+using Freelancing.Services;
 using System;
 using Microsoft.CodeAnalysis;
 using System.Security.Claims;
@@ -18,9 +19,12 @@ namespace Freelancing.Controllers
     public class FreelancerController : Controller
     {
         private readonly ApplicationDbContext dbContext;
-        public FreelancerController(ApplicationDbContext context)
+        private readonly INotificationService notificationService;
+        
+        public FreelancerController(ApplicationDbContext context, INotificationService notificationService)
         {
             this.dbContext = context;
+            this.notificationService = notificationService;
         }
 
         // Helper method to generate unique filename while preserving original name
@@ -212,6 +216,24 @@ namespace Freelancing.Controllers
 
             dbContext.Biddings.Add(bidding);
             await dbContext.SaveChangesAsync();
+
+            // Get the freelancer's information for the notification
+            var freelancer = await dbContext.UserAccounts.FindAsync(userId);
+            
+            // Create notification for the project owner
+            var notificationTitle = "New Bid Received";
+            var notificationMessage = $"You received a new bid from {freelancer?.FirstName} {freelancer?.LastName} on your project '{project.ProjectName}'";
+            var notificationIconSvg = "<svg fill=\"currentColor\" height=\"20px\" width=\"20px\" version=\"1.1\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 512 512\"><g><g><path d=\"M475.542,203.546c-15.705-15.707-38.776-18.531-57.022-9.796L296.42,71.648c8.866-18.614,5.615-41.609-9.775-56.999 c-19.528-19.531-51.307-19.531-70.837,0L144.97,85.486c-19.529,19.529-19.529,51.307,0,70.836 c15.351,15.353,38.31,18.678,56.999,9.775l25.645,25.645L14.902,404.454c-19.575,19.574-19.578,51.259,0,70.836 c19.575,19.576,51.259,19.579,70.837,0l212.712-212.711l25.642,25.641c-8.868,18.615-5.617,41.609,9.774,57 c9.46,9.46,22.039,14.672,35.419,14.672s25.957-5.21,35.418-14.672l70.837-70.837 C495.072,254.853,495.072,223.077,475.542,203.546z M192.196,132.71c-6.51,6.509-17.103,6.507-23.613,0 c-6.509-6.511-6.509-17.102,0-23.612l70.837-70.837c6.509-6.509,17.1-6.512,23.612,0c6.51,6.51,6.51,17.102,0.001,23.612 L192.196,132.71z M62.127,451.676c-6.526,6.525-17.086,6.526-23.612,0c-6.525-6.525-6.526-17.087,0-23.612l212.712-212.712 l23.612,23.613L62.127,451.676z M227.614,144.516l11.805-11.807l35.419-35.419L392.9,215.353l-47.224,47.225L227.614,144.516z M451.931,250.772l-70.837,70.837c-6.526,6.526-17.086,6.526-23.612,0c-6.51-6.51-6.51-17.103,0-23.613l70.838-70.837 c6.524-6.526,17.086-6.525,23.611,0C458.457,233.684,458.457,244.245,451.931,250.772z\"></path></g></g><g><g><path d=\"M461.691,411.822H328.12c-27.619,0-50.089,22.47-50.089,50.089v33.393c0,9.221,7.476,16.696,16.696,16.696h200.357 c9.221,0,16.696-7.476,16.696-16.696v-33.393C511.781,434.292,489.311,411.822,461.691,411.822z M478.388,478.607H311.424v-16.696 c0-9.206,7.49-16.696,16.696-16.696h133.571c9.206,0,16.696,7.49,16.696,16.696V478.607z\"></path></g></g></g></svg>";
+            var relatedUrl = $"/Client/ManageBid/{project.Id}";
+            
+            await notificationService.CreateNotificationAsync(
+                project.UserId, 
+                notificationTitle, 
+                notificationMessage, 
+                "bid", 
+                notificationIconSvg, 
+                relatedUrl
+            );
 
             ModelState.Clear();
             ViewBag.Message = "Bidded successfully!";
