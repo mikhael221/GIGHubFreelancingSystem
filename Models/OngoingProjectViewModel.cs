@@ -32,7 +32,7 @@ namespace Freelancing.Models
         public DateTime? BiddingAcceptedDate { get; set; }
         
         // Project Status
-        public string ProjectStatus { get; set; } = "Active";
+        public string ProjectStatus { get; set; } = "Open";
         
         // Additional Details
         public List<UserSkill> ProjectRequiredSkills { get; set; } = new();

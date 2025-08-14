@@ -43,7 +43,7 @@ namespace Freelancing.Controllers
                 ProjectBudget = project.Budget,
                 ProjectCategory = project.Category,
                 ProjectCreatedAt = project.CreatedAt,
-                ProjectStatus = project.AcceptedBidId.HasValue ? "Active" : "Open",
+                ProjectStatus = project.Status,
                 ProjectImageUrls = ParseJsonArray(project.ImagePaths),
                 
                 Client = new
@@ -197,7 +197,7 @@ namespace Freelancing.Controllers
                 FreelancerName = project.AcceptedBid?.User != null 
                     ? $"{project.AcceptedBid.User.FirstName} {project.AcceptedBid.User.LastName}" 
                     : "Not Assigned",
-                ProjectStatus = project.AcceptedBidId.HasValue ? "Active" : "Open",
+                ProjectStatus = project.Status,
                 Budget = project.Budget,
                 AcceptedBidAmount = project.AcceptedBid?.Budget.ToString() ?? "N/A",
                 CreatedAt = project.CreatedAt.ToString("yyyy-MM-dd"),

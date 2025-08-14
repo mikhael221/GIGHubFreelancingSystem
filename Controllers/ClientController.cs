@@ -401,6 +401,7 @@ namespace Freelancing.Controllers
             }
 
             project.AcceptedBidId = bidId;
+            project.Status = "Active"; // Set project status to Active when bid is accepted
 
             await dbContext.SaveChangesAsync();
 

@@ -76,10 +76,10 @@ namespace Freelancing.Controllers
                     
                     AcceptedBidAmount = project.AcceptedBid.Budget,
                     AcceptedBidDelivery = project.AcceptedBid.Delivery,
-                    AcceptedBidProposal = project.AcceptedBid.Proposal,
-                    BiddingAcceptedDate = project.AcceptedBid.BiddingAcceptedDate,
-                    
-                    ProjectStatus = "Active",
+                                    AcceptedBidProposal = project.AcceptedBid.Proposal,
+                BiddingAcceptedDate = project.AcceptedBid.BiddingAcceptedDate,
+                
+                ProjectStatus = project.AcceptedBidId.HasValue ? "Active" : "Open",
                     ProjectRequiredSkills = project.ProjectSkills?.Select(ps => ps.UserSkill).ToList() ?? new List<UserSkill>(),
                     FreelancerSkills = freelancerSkills
                 };
@@ -156,12 +156,38 @@ namespace Freelancing.Controllers
                 AcceptedBidProposal = project.AcceptedBid.Proposal,
                 BiddingAcceptedDate = project.AcceptedBid.BiddingAcceptedDate,
                 
-                ProjectStatus = "Active",
+                ProjectStatus = project.Status,
                 ProjectRequiredSkills = project.ProjectSkills?.Select(ps => ps.UserSkill).ToList() ?? new List<UserSkill>(),
                 FreelancerSkills = freelancerSkills
             };
 
             return View(viewModel);
+        }
+
+        // POST: ManageProjectFreelancer/MarkAsCompleted/5
+        [HttpPost]
+        public async Task<IActionResult> MarkAsCompleted(Guid id)
+        {
+            var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!Guid.TryParse(userIdString, out Guid userId))
+            {
+                return Unauthorized();
+            }
+
+            var project = await dbContext.Projects
+                .Where(p => p.Id == id && p.AcceptedBidId != null && 
+                           p.Biddings.Any(b => b.UserId == userId && b.IsAccepted))
+                .FirstOrDefaultAsync();
+
+            if (project == null)
+            {
+                return NotFound();
+            }
+
+            project.Status = "Completed";
+            await dbContext.SaveChangesAsync();
+
+            return RedirectToAction(nameof(Index));
         }
 
         // Helper method to parse JSON arrays stored as strings
