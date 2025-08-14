@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Freelancing.Data;
 using Freelancing.Models;
 using Freelancing.Models.Entities;
+using Freelancing.Services;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using System.Text.Json;
@@ -13,10 +14,12 @@ namespace Freelancing.Controllers
     public class ManageProjectClientController : Controller
     {
         private readonly ApplicationDbContext dbContext;
+        private readonly IContractService contractService;
 
-        public ManageProjectClientController(ApplicationDbContext context)
+        public ManageProjectClientController(ApplicationDbContext context, IContractService contractService)
         {
             this.dbContext = context;
+            this.contractService = contractService;
         }
 
         // GET: ManageProjectClient
@@ -156,6 +159,42 @@ namespace Freelancing.Controllers
                 ProjectRequiredSkills = project.ProjectSkills?.Select(ps => ps.UserSkill).ToList() ?? new List<UserSkill>(),
                 FreelancerSkills = freelancerSkills
             };
+
+            // Get contract information
+            var contract = await contractService.GetContractByProjectIdAsync(id);
+            if (contract != null)
+            {
+                ViewBag.ContractId = contract.Id;
+                ViewBag.ContractStatus = contract.Status;
+                
+                // Check if current user (client) needs to sign
+                var needsSignature = !contract.ClientSignedAt.HasValue && 
+                                   contract.Status == "Draft";
+                ViewBag.NeedsSignature = needsSignature;
+                
+                // Add status information for better UX
+                ViewBag.ContractCreatedAt = contract.CreatedAt;
+                ViewBag.ClientHasSigned = contract.ClientSignedAt.HasValue;
+                ViewBag.FreelancerHasSigned = contract.FreelancerSignedAt.HasValue;
+            }
+            else
+            {
+                ViewBag.ContractId = null;
+                ViewBag.ContractStatus = null;
+                ViewBag.NeedsSignature = false;
+                ViewBag.ClientHasSigned = false;
+                ViewBag.FreelancerHasSigned = false;
+            }
+
+            // Pass through any success/error messages from contract operations
+            if (TempData["Message"] != null)
+            {
+                ViewBag.Message = TempData["Message"];
+            }
+            if (TempData["ErrorMessage"] != null)
+            {
+                ViewBag.ErrorMessage = TempData["ErrorMessage"];
+            }
 
             return View(viewModel);
         }

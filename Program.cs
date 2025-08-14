@@ -24,6 +24,8 @@ builder.Services.AddScoped<IMessageEncryptionService, MessageEncryptionService>(
 builder.Services.AddScoped<IMentorshipSchedulingService, MentorshipSchedulingService>();
 
 builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddScoped<IContractService, ContractService>();
+builder.Services.AddScoped<IPdfGenerationService, PdfGenerationService>();
 
 // Add SignalR
 builder.Services.AddSignalR(options =>
@@ -72,12 +74,13 @@ app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
 
-// Seed goals data
+// Seed data
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
     await Freelancing.SeedGoals.SeedGoalsData(context);
     await Freelancing.SeedUserSkills.SeedUserSkillsData(context);
+    await Freelancing.SeedContractTemplates.SeedAsync(context);
 }
 
 app.Run();

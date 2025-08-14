@@ -1,0 +1,219 @@
+@model List<Freelancing.Models.ContractViewModel>
+@{
+    Layout = User.IsInRole("Client") ? "_LayoutClient" : "_LayoutFreelancer";
+    ViewData["Title"] = "My Contracts";
+    var currentStatus = ViewBag.CurrentStatus as string ?? "";
+    var statusOptions = ViewBag.StatusOptions as IEnumerable<dynamic>;
+}
+
+<div class="p-4 sm:ml-64">
+    <div class="p-4 mt-20">
+        <div class="max-w-6xl mx-auto">
+            <!-- Header -->
+            <div class="flex items-center justify-between mb-6">
+                <h1 class="text-3xl font-bold text-gray-900">My Contracts</h1>
+                <div class="flex items-center space-x-4">
+                    <!-- Status Filter -->
+                    <div class="relative">
+                        <select onchange="filterByStatus(this.value)" class="appearance-none bg-white border border-gray-300 rounded-md pl-3 pr-10 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            @foreach (var option in statusOptions)
+                            {
+                                @Html.Raw($"<option value=\"{option.Value}\" {(option.Value == currentStatus ? "selected" : "")}>{option.Text}</option>")
+                            }
+                        </select>
+                        <div class="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
+                            <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            @if (Model.Any())
+            {
+                <!-- Contracts Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    @foreach (var contract in Model)
+                    {
+                        <div class="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200 overflow-hidden">
+                            <!-- Contract Header -->
+                            <div class="p-4 border-b border-gray-200">
+                                <div class="flex items-center justify-between mb-2">
+                                    <h3 class="text-lg font-semibold text-gray-900 truncate">@contract.ProjectName</h3>
+                                    @{
+                                        var statusBadgeClass = contract.Status switch
+                                        {
+                                            "Draft" => "bg-yellow-100 text-yellow-800",
+                                            "AwaitingFreelancer" => "bg-orange-100 text-orange-800",
+                                            "Active" => "bg-green-100 text-green-800",
+                                            "Completed" => "bg-blue-100 text-blue-800",
+                                            _ => "bg-gray-100 text-gray-800"
+                                        };
+                                    }
+                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium @statusBadgeClass">
+                                        @contract.Status
+                                    </span>
+                                </div>
+                                <p class="text-sm text-gray-600">Contract ID: @contract.Id.ToString().Substring(0, 8)</p>
+                            </div>
+
+                            <!-- Contract Details -->
+                            <div class="p-4">
+                                <div class="space-y-3">
+                                    <!-- Project Info -->
+                                    <div>
+                                        <p class="text-sm text-gray-500">Project Category</p>
+                                        <p class="font-medium text-gray-900">@contract.ProjectCategory</p>
+                                    </div>
+
+                                    <!-- Amount -->
+                                    <div>
+                                        <p class="text-sm text-gray-500">Agreed Amount</p>
+                                        <p class="font-semibold text-green-600">₱@contract.AgreedAmount</p>
+                                    </div>
+
+                                    <!-- Parties -->
+                                    <div>
+                                        <p class="text-sm text-gray-500">
+                                            @(User.IsInRole("Client") ? "Freelancer" : "Client")
+                                        </p>
+                                        <p class="font-medium text-gray-900">
+                                            @(User.IsInRole("Client") ? contract.FreelancerName : contract.ClientName)
+                                        </p>
+                                    </div>
+
+                                    <!-- Signature Status -->
+                                    <div class="pt-2 border-t border-gray-100">
+                                        <p class="text-sm text-gray-500 mb-2">Signature Status</p>
+                                        <div class="flex items-center space-x-4">
+                                            <div class="flex items-center">
+                                                @if (contract.ClientHasSigned)
+                                                {
+                                                    <svg class="w-4 h-4 text-green-500 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                                    </svg>
+                                                }
+                                                else
+                                                {
+                                                    <svg class="w-4 h-4 text-gray-400 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                                    </svg>
+                                                }
+                                                <span class="text-xs @(contract.ClientHasSigned ? "text-green-600" : "text-gray-500")">Client</span>
+                                            </div>
+                                            <div class="flex items-center">
+                                                @if (contract.FreelancerHasSigned)
+                                                {
+                                                    <svg class="w-4 h-4 text-green-500 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                                    </svg>
+                                                }
+                                                else
+                                                {
+                                                    <svg class="w-4 h-4 text-gray-400 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                                    </svg>
+                                                }
+                                                <span class="text-xs @(contract.FreelancerHasSigned ? "text-green-600" : "text-gray-500")">Freelancer</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Created Date -->
+                                    <div class="pt-2 border-t border-gray-100">
+                                        <p class="text-xs text-gray-500">Created @contract.CreatedAt.ToString("MMM dd, yyyy")</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Contract Actions -->
+                            <div class="px-4 py-3 bg-gray-50 border-t border-gray-200">
+                                @{
+                                    var currentUserId = Guid.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value!);
+                                    var isCurrentUserClient = contract.ClientId == currentUserId;
+                                    var isCurrentUserFreelancer = contract.FreelancerId == currentUserId;
+                                    var needsCurrentUserSignature = (isCurrentUserClient && !contract.ClientHasSigned) || 
+                                                                   (isCurrentUserFreelancer && !contract.FreelancerHasSigned);
+                                }
+
+                                <div class="flex space-x-2">
+                                    @if (needsCurrentUserSignature && (contract.Status == "Draft" || contract.Status == "AwaitingFreelancer"))
+                                    {
+                                        <a href="@Url.Action("Sign", new { id = contract.Id })" class="flex-1 inline-flex items-center justify-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-orange-600 hover:bg-orange-700">
+                                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
+                                            </svg>
+                                            Sign
+                                        </a>
+                                    }
+                                    
+                                    <a href="@Url.Action("Details", new { id = contract.Id })" class="flex-1 inline-flex items-center justify-center px-3 py-2 border border-gray-300 text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                        </svg>
+                                        View
+                                    </a>
+
+                                    @if (contract.HasSignedDocument)
+                                    {
+                                        <a href="@Url.Action("Download", new { id = contract.Id })" class="inline-flex items-center justify-center px-3 py-2 border border-gray-300 text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50" title="Download PDF">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                            </svg>
+                                        </a>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <!-- Empty State -->
+                <div class="text-center py-12">
+                    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                    <h3 class="mt-2 text-sm font-medium text-gray-900">No contracts found</h3>
+                    <p class="mt-1 text-sm text-gray-500">
+                        @if (string.IsNullOrEmpty(currentStatus))
+                        {
+                            <span>You don't have any contracts yet.</span>
+                        }
+                        else
+                        {
+                            <span>No contracts found with status "@currentStatus".</span>
+                        }
+                    </p>
+                    @if (User.IsInRole("Client"))
+                    {
+                        <div class="mt-6">
+                            <a href="@(User.IsInRole("Client") ? Url.Action("Index", "ManageProjectClient") : Url.Action("Index", "ManageProjectFreelancer"))" 
+                               class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                </svg>
+                                Go to Projects
+                            </a>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<script>
+function filterByStatus(status) {
+    const currentUrl = new URL(window.location);
+    if (status) {
+        currentUrl.searchParams.set('status', status);
+    } else {
+        currentUrl.searchParams.delete('status');
+    }
+    window.location.href = currentUrl.toString();
+}
+</script>

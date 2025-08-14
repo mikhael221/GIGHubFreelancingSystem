@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Freelancing.Data;
 using Freelancing.Models;
 using Freelancing.Models.Entities;
+using Freelancing.Services;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using System.Text.Json;
@@ -13,10 +14,12 @@ namespace Freelancing.Controllers
     public class ManageProjectFreelancerController : Controller
     {
         private readonly ApplicationDbContext dbContext;
+        private readonly IContractService contractService;
 
-        public ManageProjectFreelancerController(ApplicationDbContext context)
+        public ManageProjectFreelancerController(ApplicationDbContext context, IContractService contractService)
         {
             this.dbContext = context;
+            this.contractService = contractService;
         }
 
         // GET: ManageProjectFreelancer
@@ -144,12 +147,12 @@ namespace Freelancing.Controllers
                 ClientId = client.Id,
                 ClientName = $"{client.FirstName} {client.LastName}",
                 ClientEmail = client.Email,
-                                    ClientPhoto = client.Photo ?? "https://ik.imagekit.io/6txj3mofs/GIGHub%20(11).png?updatedAt=1750552804497",
+                ClientPhoto = client.Photo ?? "https://ik.imagekit.io/6txj3mofs/GIGHub%20(11).png?updatedAt=1750552804497",
                 
                 FreelancerId = freelancer.Id,
                 FreelancerName = $"{freelancer.FirstName} {freelancer.LastName}",
                 FreelancerEmail = freelancer.Email,
-                                    FreelancerPhoto = freelancer.Photo ?? "https://ik.imagekit.io/6txj3mofs/GIGHub%20(11).png?updatedAt=1750552804497",
+                FreelancerPhoto = freelancer.Photo ?? "https://ik.imagekit.io/6txj3mofs/GIGHub%20(11).png?updatedAt=1750552804497",
                 
                 AcceptedBidAmount = project.AcceptedBid.Budget,
                 AcceptedBidDelivery = project.AcceptedBid.Delivery,
@@ -160,6 +163,26 @@ namespace Freelancing.Controllers
                 ProjectRequiredSkills = project.ProjectSkills?.Select(ps => ps.UserSkill).ToList() ?? new List<UserSkill>(),
                 FreelancerSkills = freelancerSkills
             };
+
+            // Get contract information
+            var contract = await contractService.GetContractByProjectIdAsync(id);
+            if (contract != null)
+            {
+                ViewBag.ContractId = contract.Id;
+                ViewBag.ContractStatus = contract.Status;
+                
+                // Check if current user (freelancer) needs to sign
+                var needsSignature = !contract.FreelancerSignedAt.HasValue && 
+                                   (contract.Status == "AwaitingFreelancer" || 
+                                    (contract.Status == "Draft" && contract.ClientSignedAt.HasValue));
+                ViewBag.NeedsSignature = needsSignature;
+            }
+            else
+            {
+                ViewBag.ContractId = null;
+                ViewBag.ContractStatus = null;
+                ViewBag.NeedsSignature = false;
+            }
 
             return View(viewModel);
         }

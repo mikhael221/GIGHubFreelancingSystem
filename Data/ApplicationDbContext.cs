@@ -29,6 +29,12 @@ namespace Freelancing.Data
 
         // Notification entity
         public DbSet<Notification> Notifications { get; set; }
+        
+        // Contract entities
+        public DbSet<Contract> Contracts { get; set; }
+        public DbSet<ContractAuditLog> ContractAuditLogs { get; set; }
+        public DbSet<ContractRevision> ContractRevisions { get; set; }
+        public DbSet<ContractTemplate> ContractTemplates { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<Project>()
@@ -295,7 +301,92 @@ namespace Freelancing.Data
                 .Property(mr => mr.CreatedAt)
                 .HasDefaultValueSql("GETUTCDATE()");
 
+            // Contract relationships and configurations
+            modelBuilder.Entity<Contract>()
+                .HasOne(c => c.Project)
+                .WithOne(p => p.Contract)
+                .HasForeignKey<Contract>(c => c.ProjectId)
+                .OnDelete(DeleteBehavior.Cascade);
 
+            modelBuilder.Entity<Contract>()
+                .HasOne(c => c.Bidding)
+                .WithMany()
+                .HasForeignKey(c => c.BiddingId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            // Contract indexes
+            modelBuilder.Entity<Contract>()
+                .HasIndex(c => c.ProjectId)
+                .IsUnique();
+
+            modelBuilder.Entity<Contract>()
+                .HasIndex(c => c.Status);
+
+            modelBuilder.Entity<Contract>()
+                .HasIndex(c => c.CreatedAt);
+
+            // ContractAuditLog relationships
+            modelBuilder.Entity<ContractAuditLog>()
+                .HasOne(cal => cal.Contract)
+                .WithMany(c => c.AuditLogs)
+                .HasForeignKey(cal => cal.ContractId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<ContractAuditLog>()
+                .HasOne(cal => cal.User)
+                .WithMany()
+                .HasForeignKey(cal => cal.UserId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<ContractAuditLog>()
+                .HasIndex(cal => cal.ContractId);
+
+            modelBuilder.Entity<ContractAuditLog>()
+                .HasIndex(cal => cal.Timestamp);
+
+            // ContractRevision relationships
+            modelBuilder.Entity<ContractRevision>()
+                .HasOne(cr => cr.Contract)
+                .WithMany(c => c.Revisions)
+                .HasForeignKey(cr => cr.ContractId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<ContractRevision>()
+                .HasOne(cr => cr.CreatedByUser)
+                .WithMany()
+                .HasForeignKey(cr => cr.CreatedByUserId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<ContractRevision>()
+                .HasIndex(cr => new { cr.ContractId, cr.RevisionNumber })
+                .IsUnique();
+
+            // ContractTemplate indexes
+            modelBuilder.Entity<ContractTemplate>()
+                .HasIndex(ct => ct.Category);
+
+            modelBuilder.Entity<ContractTemplate>()
+                .HasIndex(ct => ct.IsActive);
+
+            modelBuilder.Entity<ContractTemplate>()
+                .HasIndex(ct => ct.IsDefault);
+
+            // Configure default values for contracts
+            modelBuilder.Entity<Contract>()
+                .Property(c => c.CreatedAt)
+                .HasDefaultValueSql("GETUTCDATE()");
+
+            modelBuilder.Entity<ContractAuditLog>()
+                .Property(cal => cal.Timestamp)
+                .HasDefaultValueSql("GETUTCDATE()");
+
+            modelBuilder.Entity<ContractRevision>()
+                .Property(cr => cr.CreatedAt)
+                .HasDefaultValueSql("GETUTCDATE()");
+
+            modelBuilder.Entity<ContractTemplate>()
+                .Property(ct => ct.CreatedAt)
+                .HasDefaultValueSql("GETUTCDATE()");
 
             base.OnModelCreating(modelBuilder);
         }
