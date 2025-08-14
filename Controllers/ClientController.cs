@@ -394,6 +394,10 @@ namespace Freelancing.Controllers
             foreach (var bid in project.Biddings)
             {
                 bid.IsAccepted = (bid.Id == bidId);
+                if (bid.Id == bidId)
+                {
+                    bid.BiddingAcceptedDate = DateTime.UtcNow.ToLocalTime();
+                }
             }
 
             project.AcceptedBidId = bidId;

@@ -11,6 +11,7 @@
         public string Delivery { get; set; }
         public string Proposal { get; set; }
         public bool IsAccepted { get; set; }
+        public DateTime? BiddingAcceptedDate { get; set; }
         public string? PreviousWorksPaths { get; set; } // JSON array of file paths
         public string? RepositoryLinks { get; set; } // JSON array of repository/drive links
     }

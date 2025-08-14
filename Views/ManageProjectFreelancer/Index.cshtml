@@ -1,4 +1,90 @@
-﻿@{
-	Layout = "_LayoutFreelancer";
-	ViewData["Title"] = "Manage Projects";
+﻿@model Freelancing.Models.OngoingProjectListViewModel
+@{
+    Layout = "_LayoutFreelancer";
+    ViewData["Title"] = "Manage Projects";
 }
+
+<div class="p-4 sm:ml-64">
+    <div class="p-4 mt-20">
+        <div class="mt-4">
+            <div class="block w-full p-6">
+                <h2 class="mb-4 text-2xl font-bold text-gray-900">My Active Projects</h2>
+                
+                @if (Model.OngoingProjects.Any())
+                {
+                    <div class="mb-4">
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                            @Model.TotalActiveProjects Active Project(s)
+                        </span>
+                    </div>
+
+                    <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                        @foreach (var project in Model.OngoingProjects)
+                        {
+                            <div class="bg-white rounded-lg shadow-md p-6 border border-gray-200">
+                                <div class="flex items-start justify-between mb-4">
+                                    <h3 class="text-lg font-semibold text-gray-900 truncate">@project.ProjectName</h3>
+                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                        @project.ProjectStatus
+                                    </span>
+                                </div>
+                                
+                                <div class="space-y-3">
+                                    
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-sm text-gray-500">My Bid Amount:</span>
+                                        <span class="text-sm font-medium text-green-600">₱@project.AcceptedBidAmount</span>
+                                    </div>
+                                    
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-sm text-gray-500">Category:</span>
+                                        <span class="text-sm font-medium text-gray-900">@project.ProjectCategory</span>
+                                    </div>
+                                    
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-sm text-gray-500">Delivery:</span>
+                                        <span class="text-sm font-medium text-gray-900">@project.AcceptedBidDelivery</span>
+                                    </div>
+
+                                </div>
+                                
+                                <div class="mt-4 pt-4 border-t border-gray-100">
+                                    <div class="flex items-center space-x-2">
+                                        <img src="@project.ClientPhoto" alt="@project.ClientName" class="w-8 h-8 rounded-full">
+                                        <div>
+                                            <p class="text-sm font-medium text-gray-900">@project.ClientName</p>
+                                            <p class="text-xs text-gray-500">Client</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="mt-4 flex space-x-2">
+                                    <a href="@Url.Action("Details", new { id = project.ProjectId })" 
+                                       class="flex-1 bg-blue-600 text-white text-center py-2 px-4 rounded-md text-sm font-medium hover:bg-blue-700 transition duration-200">
+                                        View Details
+                                    </a>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center py-12">
+                        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <h3 class="mt-2 text-sm font-medium text-gray-900">No active projects</h3>
+                        <p class="mt-1 text-sm text-gray-500">You don't have any accepted bids or active projects yet.</p>
+                        <div class="mt-6">
+                            <a href="@Url.Action("Feed", "Freelancer")" 
+                               class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">
+                                Browse Available Projects
+                            </a>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
