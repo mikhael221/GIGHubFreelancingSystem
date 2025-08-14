@@ -20,6 +20,24 @@ namespace Freelancing.Controllers
         {
             this.dbContext = context;
         }
+
+        // Helper method to generate unique filename while preserving original name
+        private string GenerateUniqueFileName(string originalFileName, string uploadsFolder)
+        {
+            var fileNameWithoutExtension = Path.GetFileNameWithoutExtension(originalFileName);
+            var fileExtension = Path.GetExtension(originalFileName);
+            var uniqueFileName = originalFileName;
+            var counter = 1;
+
+            // Keep trying until we find a unique filename
+            while (System.IO.File.Exists(Path.Combine(uploadsFolder, uniqueFileName)))
+            {
+                uniqueFileName = $"{fileNameWithoutExtension}_{counter}{fileExtension}";
+                counter++;
+            }
+
+            return uniqueFileName;
+        }
         // Displays the client dashboard with project statistics and a list of projects.
         public async Task<IActionResult> Dashboard(string message = null)
         {
@@ -154,8 +172,7 @@ namespace Freelancing.Controllers
                         {
                             if (file != null && file.Length > 0)
                             {
-                                var fileExtension = Path.GetExtension(file.FileName).ToLowerInvariant();
-                                var fileName = $"{Guid.NewGuid()}{fileExtension}";
+                                var fileName = GenerateUniqueFileName(file.FileName, uploadsDir);
                                 var filePath = Path.Combine(uploadsDir, fileName);
                                 
                                 // Save file
@@ -291,7 +308,7 @@ namespace Freelancing.Controllers
                                 return View(project);
                             }
 
-                            var fileName = $"{Guid.NewGuid()}{fileExtension}";
+                            var fileName = GenerateUniqueFileName(file.FileName, uploadsDir);
                             var filePath = Path.Combine(uploadsDir, fileName);
 
                             using (var stream = new FileStream(filePath, FileMode.Create))
@@ -492,8 +509,7 @@ namespace Freelancing.Controllers
                     return View(viewModel);
                 }
 
-                // Generate a unique file name and save the uploaded photo
-                var fileName = $"{userId}_{Guid.NewGuid()}{fileExtension}";
+                // Generate a unique file name while preserving original name
                 var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "profiles");
 
                 if (!Directory.Exists(uploadsFolder))
@@ -501,6 +517,7 @@ namespace Freelancing.Controllers
                     Directory.CreateDirectory(uploadsFolder);
                 }
 
+                var fileName = GenerateUniqueFileName(PhotoFile.FileName, uploadsFolder);
                 var filePath = Path.Combine(uploadsFolder, fileName);
 
                 // Delete old photo if exists

@@ -94,6 +94,77 @@
 							<span class="ms-2 text-md font-light tracking-tight text-gray-900">@bid.Delivery</span>
 						</div>
 						<p class="text-md font-light tracking-tight text-gray-900 mr-2">@bid.Proposal</p>
+						
+						@if (!string.IsNullOrEmpty(bid.PreviousWorksPaths))
+						{
+							<div class="mt-4">
+								<h6 class="text-sm font-semibold text-gray-700 mb-2">Previous Works:</h6>
+								<div class="flex flex-wrap gap-2">
+									@try
+									{
+										var filePaths = System.Text.Json.JsonSerializer.Deserialize<List<string>>(bid.PreviousWorksPaths);
+										foreach (var filePath in filePaths)
+										{
+											var fileName = System.IO.Path.GetFileName(filePath);
+											var fileExtension = System.IO.Path.GetExtension(filePath).ToLowerInvariant();
+											var isImage = new[] { ".jpg", ".jpeg", ".png", ".gif", ".svg" }.Contains(fileExtension);
+											
+											<div class="flex items-center space-x-2 p-2 bg-gray-50 rounded border border-gray-300">
+												@if (isImage)
+												{
+													<img src="@filePath" alt="@fileName" class="w-8 h-8 object-cover rounded cursor-pointer" onclick="openImageModal('@filePath')" title="Click to view">
+												}
+												else
+												{
+													<div class="w-8 h-8 bg-blue-100 rounded flex items-center justify-center">
+														<svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+															<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+														</svg>
+													</div>
+												}
+												<a href="@filePath" target="_blank" class="text-sm text-blue-600 hover:text-blue-800 truncate max-w-32" title="@fileName">
+													@fileName
+												</a>
+											</div>
+										}
+									}
+									catch
+									{
+										<span class="text-sm text-gray-500">Error loading files</span>
+									}
+								</div>
+							</div>
+						}
+						
+						@if (!string.IsNullOrEmpty(bid.RepositoryLinks))
+						{
+							<div class="mt-4">
+								<h6 class="text-sm font-semibold text-gray-700 mb-2">Repository/Drive Links:</h6>
+								<div class="flex flex-wrap gap-2">
+									@try
+									{
+										var links = System.Text.Json.JsonSerializer.Deserialize<List<string>>(bid.RepositoryLinks);
+										foreach (var link in links)
+										{
+											<div class="flex items-center space-x-2 p-2 bg-blue-50 rounded border border-gray-300">
+												<div class="w-6 h-6 bg-blue-100 rounded flex items-center justify-center">
+													<svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+														<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+													</svg>
+												</div>
+												<a href="@link" target="_blank" class="text-sm text-blue-600 hover:text-blue-800 truncate max-w-48" title="@link">
+													@link
+												</a>
+											</div>
+										}
+									}
+									catch
+									{
+										<span class="text-sm text-gray-500">Error loading links</span>
+									}
+								</div>
+							</div>
+						}
 					</div>
 				}
 				@if (Model.AcceptedBidId != null)

@@ -9,6 +9,7 @@ using Freelancing.Models.Entities;
 using System;
 using Microsoft.CodeAnalysis;
 using System.Security.Claims;
+using System.Text.Json;
 
 namespace Freelancing.Controllers
 {
@@ -20,6 +21,24 @@ namespace Freelancing.Controllers
         public FreelancerController(ApplicationDbContext context)
         {
             this.dbContext = context;
+        }
+
+        // Helper method to generate unique filename while preserving original name
+        private string GenerateUniqueFileName(string originalFileName, string uploadsFolder)
+        {
+            var fileNameWithoutExtension = Path.GetFileNameWithoutExtension(originalFileName);
+            var fileExtension = Path.GetExtension(originalFileName);
+            var uniqueFileName = originalFileName;
+            var counter = 1;
+
+            // Keep trying until we find a unique filename
+            while (System.IO.File.Exists(Path.Combine(uploadsFolder, uniqueFileName)))
+            {
+                uniqueFileName = $"{fileNameWithoutExtension}_{counter}{fileExtension}";
+                counter++;
+            }
+
+            return uniqueFileName;
         }
         public IActionResult Index()
         {
@@ -128,6 +147,58 @@ namespace Freelancing.Controllers
                 return View(viewModel);
             }
 
+            // Handle file uploads for previous works
+            var uploadedFilePaths = new List<string>();
+            
+            // Process newly uploaded files
+            if (viewModel.Bidding.PreviousWorksFiles != null && viewModel.Bidding.PreviousWorksFiles.Any())
+            {
+                var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif", ".svg", ".pdf", ".doc", ".docx", ".txt", ".zip", ".mp4", ".mov", ".avi" };
+                const int maxFileSize = 10 * 1024 * 1024; // 10MB
+
+                foreach (var file in viewModel.Bidding.PreviousWorksFiles)
+                {
+                    if (file.Length > 0)
+                    {
+                        // Validate file type
+                        var fileExtension = Path.GetExtension(file.FileName).ToLowerInvariant();
+                        if (!allowedExtensions.Contains(fileExtension))
+                        {
+                            ModelState.AddModelError("PreviousWorksFiles", $"File {file.FileName} is not a valid file type. Allowed types: {string.Join(", ", allowedExtensions)}");
+                            viewModel.Project = project;
+                            return View(viewModel);
+                        }
+
+                        // Validate file size
+                        if (file.Length > maxFileSize)
+                        {
+                            ModelState.AddModelError("PreviousWorksFiles", $"File {file.FileName} is too large. File size must be less than 10MB.");
+                            viewModel.Project = project;
+                            return View(viewModel);
+                        }
+
+                        // Generate unique filename while preserving original name
+                        var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "previous-works");
+
+                        if (!Directory.Exists(uploadsFolder))
+                        {
+                            Directory.CreateDirectory(uploadsFolder);
+                        }
+
+                        var fileName = GenerateUniqueFileName(file.FileName, uploadsFolder);
+                        var filePath = Path.Combine(uploadsFolder, fileName);
+                        using (var stream = new FileStream(filePath, FileMode.Create))
+                        {
+                            await file.CopyToAsync(stream);
+                        }
+
+                        uploadedFilePaths.Add($"/uploads/previous-works/{fileName}");
+                    }
+                }
+            }
+            
+
+
             var bidding = new Bidding
             {
                 UserId = userId,
@@ -135,6 +206,8 @@ namespace Freelancing.Controllers
                 Budget = viewModel.Bidding.Budget,
                 Delivery = viewModel.Bidding.Delivery,
                 Proposal = viewModel.Bidding.Proposal,
+                PreviousWorksPaths = uploadedFilePaths.Any() ? JsonSerializer.Serialize(uploadedFilePaths) : null,
+                RepositoryLinks = !string.IsNullOrEmpty(viewModel.Bidding.RepositoryLinks) ? viewModel.Bidding.RepositoryLinks : null
             };
 
             dbContext.Biddings.Add(bidding);
@@ -165,14 +238,16 @@ namespace Freelancing.Controllers
                     ProjectId = bidding.ProjectId,
                     Budget = bidding.Budget,
                     Delivery = bidding.Delivery,
-                    Proposal = bidding.Proposal
+                    Proposal = bidding.Proposal,
+                    PreviousWorksPaths = bidding.PreviousWorksPaths,
+                    RepositoryLinks = bidding.RepositoryLinks
                 }
             };
             return View(viewModel);
         }
         // Handles the submission of an edited bid on a project. It allows saving changes or deleting the bid.
         [HttpPost]
-        public async Task<IActionResult> EditBid(Guid id, ViewProjectandBidding viewModel, string action)
+        public async Task<IActionResult> EditBid(Guid id, ViewProjectandBidding viewModel, string action, string removedFiles)
         {
             var bidding = await dbContext.Biddings.FindAsync(id);
             if (bidding == null)
@@ -187,6 +262,111 @@ namespace Freelancing.Controllers
                 bidding.Budget = viewModel.Bidding.Budget;
                 bidding.Delivery = viewModel.Bidding.Delivery;
                 bidding.Proposal = viewModel.Bidding.Proposal;
+                bidding.RepositoryLinks = !string.IsNullOrEmpty(viewModel.Bidding.RepositoryLinks) ? viewModel.Bidding.RepositoryLinks : null;
+
+                // Handle file uploads for previous works
+                var existingFilePaths = new List<string>();
+                if (!string.IsNullOrEmpty(bidding.PreviousWorksPaths))
+                {
+                    try
+                    {
+                        existingFilePaths = JsonSerializer.Deserialize<List<string>>(bidding.PreviousWorksPaths) ?? new List<string>();
+                    }
+                    catch
+                    {
+                        existingFilePaths = new List<string>();
+                    }
+                }
+
+                // Handle file removal
+                var filesToRemove = new List<string>();
+                if (!string.IsNullOrEmpty(removedFiles))
+                {
+                    try
+                    {
+                        filesToRemove = JsonSerializer.Deserialize<List<string>>(removedFiles) ?? new List<string>();
+                    }
+                    catch
+                    {
+                        filesToRemove = new List<string>();
+                    }
+                }
+
+                // Remove files from existing paths and delete from disk
+                foreach (var filePath in filesToRemove)
+                {
+                    if (existingFilePaths.Contains(filePath))
+                    {
+                        existingFilePaths.Remove(filePath);
+                        
+                        // Delete the physical file
+                        var fullPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", filePath.TrimStart('/'));
+                        if (System.IO.File.Exists(fullPath))
+                        {
+                            try
+                            {
+                                System.IO.File.Delete(fullPath);
+                            }
+                            catch (Exception ex)
+                            {
+                                // Log the error but don't fail the operation
+                                Console.WriteLine($"Error deleting file {fullPath}: {ex.Message}");
+                            }
+                        }
+                    }
+                }
+
+                var uploadedFilePaths = new List<string>();
+                
+                if (viewModel.Bidding.PreviousWorksFiles != null && viewModel.Bidding.PreviousWorksFiles.Any())
+                {
+                    var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif", ".svg", ".pdf", ".doc", ".docx", ".txt", ".zip", ".mp4", ".mov", ".avi" };
+                    const int maxFileSize = 10 * 1024 * 1024; // 10MB
+
+                    foreach (var file in viewModel.Bidding.PreviousWorksFiles)
+                    {
+                        if (file.Length > 0)
+                        {
+                            // Validate file type
+                            var fileExtension = Path.GetExtension(file.FileName).ToLowerInvariant();
+                            if (!allowedExtensions.Contains(fileExtension))
+                            {
+                                ModelState.AddModelError("PreviousWorksFiles", $"File {file.FileName} is not a valid file type. Allowed types: {string.Join(", ", allowedExtensions)}");
+                                viewModel.Project = bidding.Project;
+                                return View(viewModel);
+                            }
+
+                            // Validate file size
+                            if (file.Length > maxFileSize)
+                            {
+                                ModelState.AddModelError("PreviousWorksFiles", $"File {file.FileName} is too large. File size must be less than 10MB.");
+                                viewModel.Project = bidding.Project;
+                                return View(viewModel);
+                            }
+
+                            // Generate unique filename while preserving original name
+                            var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "previous-works");
+
+                            if (!Directory.Exists(uploadsFolder))
+                            {
+                                Directory.CreateDirectory(uploadsFolder);
+                            }
+
+                            var fileName = GenerateUniqueFileName(file.FileName, uploadsFolder);
+                            var filePath = Path.Combine(uploadsFolder, fileName);
+                            using (var stream = new FileStream(filePath, FileMode.Create))
+                            {
+                                await file.CopyToAsync(stream);
+                            }
+
+                            uploadedFilePaths.Add($"/uploads/previous-works/{fileName}");
+                        }
+                    }
+                }
+
+                // Combine existing and new file paths
+                var allFilePaths = existingFilePaths.Concat(uploadedFilePaths).ToList();
+                bidding.PreviousWorksPaths = allFilePaths.Any() ? JsonSerializer.Serialize(allFilePaths) : null;
 
                 await dbContext.SaveChangesAsync();
                 ViewBag.Message = "Bid edited successfully!";
@@ -196,10 +376,40 @@ namespace Freelancing.Controllers
                     .FirstOrDefaultAsync(b => b.Id == id);
 
                 viewModel.Project = updatedBidding.Project;
+                viewModel.Bidding.PreviousWorksPaths = updatedBidding.PreviousWorksPaths;
+                viewModel.Bidding.RepositoryLinks = updatedBidding.RepositoryLinks;
                 return View(viewModel);
             }
             else if (action == "delete")
             {
+                // Delete all associated files before removing the bidding
+                if (!string.IsNullOrEmpty(bidding.PreviousWorksPaths))
+                {
+                    try
+                    {
+                        var filePaths = JsonSerializer.Deserialize<List<string>>(bidding.PreviousWorksPaths) ?? new List<string>();
+                        foreach (var filePath in filePaths)
+                        {
+                            var fullPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", filePath.TrimStart('/'));
+                            if (System.IO.File.Exists(fullPath))
+                            {
+                                try
+                                {
+                                    System.IO.File.Delete(fullPath);
+                                }
+                                catch (Exception ex)
+                                {
+                                    Console.WriteLine($"Error deleting file {fullPath}: {ex.Message}");
+                                }
+                            }
+                        }
+                    }
+                    catch
+                    {
+                        // Continue with deletion even if file cleanup fails
+                    }
+                }
+
                 dbContext.Biddings.Remove(bidding);
                 await dbContext.SaveChangesAsync();
             }
@@ -331,8 +541,7 @@ namespace Freelancing.Controllers
                     return View(viewModel);
                 }
 
-                // Generate a unique file name and save the uploaded photo
-                var fileName = $"{userId}_{Guid.NewGuid()}{fileExtension}";
+                // Generate a unique file name while preserving original name
                 var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "profiles");
 
                 if (!Directory.Exists(uploadsFolder))
@@ -340,6 +549,7 @@ namespace Freelancing.Controllers
                     Directory.CreateDirectory(uploadsFolder);
                 }
 
+                var fileName = GenerateUniqueFileName(PhotoFile.FileName, uploadsFolder);
                 var filePath = Path.Combine(uploadsFolder, fileName);
 
                 // Delete old photo if exists

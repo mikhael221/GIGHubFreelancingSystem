@@ -91,7 +91,6 @@
                                             <div class="mb-4">
                                                 <div class="flex justify-between text-sm text-gray-600 mb-1">
                                                     <span id="upload-status">Uploading...</span>
-                                                    <span id="upload-percentage">0%</span>
                                                 </div>
                                                 <div class="w-full bg-gray-200 rounded-full h-2">
                                                     <div id="progress-bar" class="bg-blue-600 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
@@ -209,7 +208,6 @@
         const uploadProgress = document.getElementById('upload-progress');
         const fileList = document.getElementById('file-list');
         const uploadStatus = document.getElementById('upload-status');
-        const uploadPercentage = document.getElementById('upload-percentage');
         const progressBar = document.getElementById('progress-bar');
         const uploadedImagesContainer = document.getElementById('uploaded-images-container');
 
@@ -245,26 +243,24 @@
             }
         });
 
-                 // Handle multiple file selection
-         function handleMultipleFileSelect(files) {
-             // Clear previous files from list only, keep existing uploaded files
-             fileList.innerHTML = '';
-
-             // Show progress area
-             uploadPlaceholder.classList.add('hidden');
-             uploadProgress.classList.remove('hidden');
-
+        // Handle multiple file selection
+        function handleMultipleFileSelect(files) {
+            fileList.innerHTML = '';
+            
+            uploadPlaceholder.classList.add('hidden');
+            uploadProgress.classList.remove('hidden');
+            
             let totalFiles = files.length;
             let processedFiles = 0;
-
+            
             files.forEach((file, index) => {
                 handleFileSelect(file, index, () => {
                     processedFiles++;
                     const progress = Math.round((processedFiles / totalFiles) * 100);
                     updateProgress(progress, `Processing ${processedFiles} of ${totalFiles} files...`);
-
+                    
                     if (processedFiles === totalFiles) {
-                        uploadStatus.textContent = 'Upload complete!';
+                        uploadStatus.textContent = 'Upload Complete!';
                         setTimeout(() => {
                             uploadProgress.classList.add('hidden');
                             uploadPlaceholder.classList.remove('hidden');
@@ -287,22 +283,6 @@
                 alert(`File ${file.name} is too large. File size must be less than 10MB.`);
                 return;
             }
-
-            // Create file item element
-            const fileItem = document.createElement('div');
-            fileItem.classList.add('flex', 'items-center', 'justify-between', 'p-2', 'bg-gray-100', 'rounded-lg', 'mb-2');
-            fileItem.innerHTML = `
-                <div class="flex-1 min-w-0">
-                    <p class="text-sm font-medium text-gray-900 truncate">${file.name}</p>
-                    <p class="text-xs text-gray-600">${(file.size / 1024).toFixed(2)} KB</p>
-                </div>
-                <button type="button" class="text-red-600 hover:text-red-800 focus:outline-none transition-colors duration-200" onclick="removeFile(${index})">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                    </svg>
-                </button>
-            `;
-            fileList.appendChild(fileItem);
 
             // Simulate file processing
             setTimeout(() => {
@@ -333,10 +313,11 @@
         }
 
         function updateProgress(percentage, status) {
-            uploadPercentage.textContent = `${percentage}%`;
             progressBar.style.width = `${percentage}%`;
             uploadStatus.textContent = status;
         }
+
+
 
         function updateUploadedImagesDisplay() {
             if (uploadedFiles.length === 0) {
@@ -369,19 +350,7 @@
             `;
         }
 
-        // Remove file from upload list
-        window.removeFile = function(index) {
-            const fileItems = fileList.children;
-            if (fileItems[index]) {
-                fileItems[index].remove();
-            }
 
-            // If no files left, show placeholder
-            if (fileList.children.length === 0) {
-                uploadPlaceholder.classList.remove('hidden');
-                uploadProgress.classList.add('hidden');
-            }
-        };
 
         // Remove uploaded file
         window.removeUploadedFile = function(index) {
