@@ -211,7 +211,7 @@
 
                             @if (canSubmitDeliverables)
                             {
-                                <button class="text-white inline-flex items-center justify-center bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-3 me-2 mb-2 text-center mt-4 w-full">
+                                <a href="@Url.Action("Index", "Deliverable", new { id = ViewBag.ContractId })" class="text-white inline-flex items-center justify-center bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-3 me-2 mb-2 text-center mt-4 w-full">
                                     <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-1">
                                         <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
                                         <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
@@ -220,7 +220,7 @@
                                         </g>
                                     </svg>
                                     Submit Deliverables
-                                </button>
+                                </a>
                             }
                             else
                             {

@@ -35,6 +35,9 @@ namespace Freelancing.Data
         public DbSet<ContractAuditLog> ContractAuditLogs { get; set; }
         public DbSet<ContractRevision> ContractRevisions { get; set; }
         public DbSet<ContractTemplate> ContractTemplates { get; set; }
+        
+        // Deliverable entity
+        public DbSet<Deliverable> Deliverables { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<Project>()
@@ -385,6 +388,49 @@ namespace Freelancing.Data
 
             modelBuilder.Entity<ContractTemplate>()
                 .Property(ct => ct.CreatedAt)
+                .HasDefaultValueSql("GETUTCDATE()");
+
+            // Deliverable relationships and configurations
+            modelBuilder.Entity<Deliverable>()
+                .HasOne(d => d.Contract)
+                .WithMany()
+                .HasForeignKey(d => d.ContractId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Deliverable>()
+                .HasOne(d => d.SubmittedByUser)
+                .WithMany()
+                .HasForeignKey(d => d.SubmittedByUserId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<Deliverable>()
+                .HasOne(d => d.ReviewedByUser)
+                .WithMany()
+                .HasForeignKey(d => d.ReviewedByUserId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<Deliverable>()
+                .HasOne(d => d.PreviousVersion)
+                .WithMany()
+                .HasForeignKey(d => d.PreviousVersionId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            // Deliverable indexes
+            modelBuilder.Entity<Deliverable>()
+                .HasIndex(d => d.ContractId);
+
+            modelBuilder.Entity<Deliverable>()
+                .HasIndex(d => d.SubmittedByUserId);
+
+            modelBuilder.Entity<Deliverable>()
+                .HasIndex(d => d.Status);
+
+            modelBuilder.Entity<Deliverable>()
+                .HasIndex(d => d.SubmittedAt);
+
+            // Configure default values for deliverables
+            modelBuilder.Entity<Deliverable>()
+                .Property(d => d.SubmittedAt)
                 .HasDefaultValueSql("GETUTCDATE()");
 
             base.OnModelCreating(modelBuilder);
