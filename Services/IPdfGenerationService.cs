@@ -2,7 +2,7 @@ using Freelancing.Models.Entities;
 
 namespace Freelancing.Services
 {
-    public interface IPdfGenerationService
+    public interface IPdfGenerationService : IDisposable
     {
         /// <summary>
         /// Generates a PDF document from a contract with signatures embedded

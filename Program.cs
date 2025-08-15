@@ -83,4 +83,11 @@ using (var scope = app.Services.CreateScope())
     await Freelancing.SeedContractTemplates.SeedAsync(context);
 }
 
+// Register cleanup for PDF generation service
+app.Lifetime.ApplicationStopping.Register(() =>
+{
+    var pdfService = app.Services.GetService<IPdfGenerationService>();
+    pdfService?.Dispose();
+});
+
 app.Run();

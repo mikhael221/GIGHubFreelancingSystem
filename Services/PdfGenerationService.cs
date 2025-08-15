@@ -1,10 +1,15 @@
 using Freelancing.Models.Entities;
 using System.Text;
+using PuppeteerSharp;
 
 namespace Freelancing.Services
 {
-    public class PdfGenerationService : IPdfGenerationService
+    public class PdfGenerationService : IPdfGenerationService, IDisposable
     {
+        private static bool _browserInitialized = false;
+        private static IBrowser? _browser;
+        private bool _disposed = false;
+
         public async Task<byte[]> GenerateContractPdfAsync(Contract contract)
         {
             var htmlContent = BuildContractHtml(contract);
@@ -13,38 +18,79 @@ namespace Freelancing.Services
 
         public async Task<byte[]> GenerateFromHtmlAsync(string htmlContent)
         {
-            // For now, we'll use a simple HTML to PDF conversion
-            // In a real implementation, you would use libraries like:
-            // - PuppeteerSharp (requires Node.js)
-            // - DinkToPdf (requires wkhtmltopdf)
-            // - IronPdf (commercial)
-            // - SelectPdf (commercial)
-            
-            // This is a placeholder implementation for demonstration
-            // You'll need to implement this based on your chosen PDF library
-            
-            var htmlBytes = Encoding.UTF8.GetBytes(htmlContent);
-            
-            // Simulate PDF generation delay
-            await Task.Delay(100);
-            
-            return htmlBytes; // This should return actual PDF bytes
+            try
+            {
+                // Initialize browser if not already done
+                if (!_browserInitialized)
+                {
+                    await InitializeBrowserAsync();
+                }
+
+                if (_browser == null)
+                {
+                    throw new InvalidOperationException("Browser failed to initialize");
+                }
+
+                // Create a new page
+                using var page = await _browser.NewPageAsync();
+                
+                // Set content and wait for it to load
+                await page.SetContentAsync(htmlContent);
+                await page.WaitForTimeoutAsync(1000); // Wait for any dynamic content
+
+                // Generate PDF with proper settings
+                var pdfBytes = await page.PdfDataAsync();
+                
+                // Validate the generated PDF
+                if (pdfBytes == null || pdfBytes.Length == 0)
+                {
+                    throw new InvalidOperationException("Generated PDF is empty");
+                }
+
+                // Basic PDF validation - check for PDF header
+                if (pdfBytes.Length >= 4)
+                {
+                    var header = System.Text.Encoding.ASCII.GetString(pdfBytes, 0, 4);
+                    if (header != "%PDF")
+                    {
+                        throw new InvalidOperationException("Generated content is not a valid PDF");
+                    }
+                }
+
+                return pdfBytes;
+            }
+            catch (Exception ex)
+            {
+                // Log the error (you might want to use a proper logging framework)
+                Console.WriteLine($"Error generating PDF: {ex.Message}");
+                Console.WriteLine($"Stack trace: {ex.StackTrace}");
+                throw new InvalidOperationException($"Failed to generate PDF: {ex.Message}", ex);
+            }
         }
 
         public async Task<byte[]> AddSignaturesToPdfAsync(byte[] pdfData, string? clientSignature, string? freelancerSignature)
         {
             // This would modify the existing PDF to add signature images
-            // Implementation depends on your PDF library choice
-            
+            // For now, we'll return the original PDF data
+            // In a full implementation, you might want to use a PDF manipulation library
             await Task.Delay(50); // Simulate processing
-            return pdfData; // Return modified PDF
+            return pdfData;
         }
 
         public async Task<bool> ValidatePdfIntegrityAsync(byte[] pdfData)
         {
             // Validate PDF structure and integrity
-            await Task.Delay(10);
-            return pdfData != null && pdfData.Length > 0;
+            if (pdfData == null || pdfData.Length == 0)
+                return false;
+
+            // Check if the data starts with PDF magic number
+            if (pdfData.Length >= 4)
+            {
+                var pdfHeader = System.Text.Encoding.ASCII.GetString(pdfData, 0, 4);
+                return pdfHeader == "%PDF";
+            }
+
+            return false;
         }
 
         private string BuildContractHtml(Contract contract)
@@ -58,66 +104,227 @@ namespace Freelancing.Services
             html.AppendLine("<title>Freelance Contract</title>");
             html.AppendLine("<style>");
             html.AppendLine(@"
-                body { font-family: Arial, sans-serif; margin: 40px; line-height: 1.6; color: #333; }
-                .header { text-align: center; margin-bottom: 40px; border-bottom: 2px solid #333; padding-bottom: 20px; }
-                .contract-title { font-size: 24px; font-weight: bold; margin-bottom: 10px; }
-                .contract-date { font-size: 14px; color: #666; }
-                .section { margin: 30px 0; }
-                .section-title { font-size: 18px; font-weight: bold; margin-bottom: 15px; color: #2c3e50; }
-                .content { margin-bottom: 20px; }
-                .signature-section { margin-top: 60px; }
-                .signature-box { border: 1px solid #ccc; padding: 20px; margin: 20px 0; min-height: 80px; }
-                .signature-label { font-weight: bold; margin-bottom: 10px; }
-                .signature-image { max-width: 200px; max-height: 60px; }
-                .signature-details { font-size: 12px; color: #666; margin-top: 10px; }
-                .terms-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 20px 0; }
-                .term-item { padding: 10px; background: #f8f9fa; border-left: 4px solid #007bff; }
+                @page { margin: 1in; }
+                * {
+                    margin: 0;
+                    padding: 0;
+                    box-sizing: border-box;
+                }
+                html, body { 
+                    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+                    margin: 0; 
+                    padding: 20px; 
+                    line-height: 1.6; 
+                    color: #333; 
+                    font-size: 12pt;
+                    background: white;
+                    overflow-x: hidden;
+                }
+                .contract-container {
+                    max-width: 800px;
+                    margin: 0 auto;
+                    background: white;
+                    padding: 0;
+                }
+                .mb-6 { margin-bottom: 1.5rem; }
+                .mb-2 { margin-bottom: 0.5rem; }
+                .mb-1 { margin-bottom: 0.25rem; }
+                .mt-4 { margin-top: 1rem; }
+                .text-center { text-align: center; }
+                .font-bold { font-weight: bold; }
+                .italic { font-style: italic; }
+                .rounded-lg { border-radius: 0.5rem; }
+                .bg-blue-700 { background-color: #1d4ed8; }
+                .text-white { color: white; }
+                .p-2 { padding: 0.5rem; }
+                .parties-container { 
+                    display: flex; 
+                    justify-content: space-between; 
+                    gap: 20px; 
+                    margin: 15px 0;
+                }
+                .party-info { 
+                    flex: 1; 
+                    padding: 15px;
+                    border: 1px solid #e5e7eb;
+                    border-radius: 0.375rem;
+                    background: #f9fafb;
+                }
+                .project-description {
+                    margin: 10px 0;
+                    padding: 10px;
+                    background: #f3f4f6;
+                    border-left: 4px solid #3b82f6;
+                    border-radius: 0.25rem;
+                }
+                .terms-section h3 {
+                    font-weight: bold;
+                    margin-bottom: 0.5rem;
+                    margin-top: 1rem;
+                    color: #1f2937;
+                    font-size: 13pt;
+                }
+                .terms-section ul {
+                    margin: 10px 0;
+                    padding-left: 20px;
+                }
+                .terms-section li {
+                    margin: 5px 0;
+                }
+                .agreement-section {
+                    margin-top: 30px;
+                    padding: 20px;
+                    background: #f8fafc;
+                    border: 1px solid #e2e8f0;
+                    border-radius: 0.5rem;
+                    text-align: center;
+                }
+                .signature-section { 
+                    margin-top: 50px; 
+                    page-break-inside: avoid;
+                }
+                .signature-box { 
+                    border: 1px solid #d1d5db; 
+                    padding: 20px; 
+                    margin: 20px 0; 
+                    min-height: 80px; 
+                    background: #f9fafb;
+                    border-radius: 0.375rem;
+                }
+                .signature-label { 
+                    font-weight: bold; 
+                    margin-bottom: 10px; 
+                    color: #374151;
+                    font-size: 13pt;
+                }
+                .signature-image { 
+                    max-width: 200px; 
+                    max-height: 60px; 
+                    border: 1px solid #d1d5db;
+                    padding: 5px;
+                    background: white;
+                    border-radius: 0.25rem;
+                }
+                .signature-details { 
+                    font-size: 10pt; 
+                    color: #6b7280; 
+                    margin-top: 10px; 
+                    font-style: italic;
+                }
+                .document-footer {
+                    margin-top: 40px;
+                    font-size: 9pt;
+                    color: #6b7280;
+                    border-top: 1px solid #e5e7eb;
+                    padding-top: 10px;
+                    text-align: center;
+                }
+                @media print {
+                    body { margin: 0.5in; }
+                    .signature-section { page-break-inside: avoid; }
+                }
             ");
             html.AppendLine("</style>");
             html.AppendLine("</head>");
             html.AppendLine("<body>");
+            html.AppendLine("<div class='contract-container'>");
             
-            // Header
-            html.AppendLine("<div class='header'>");
-            html.AppendLine($"<div class='contract-title'>{contract.ContractTitle}</div>");
-            html.AppendLine($"<div class='contract-date'>Generated on {DateTime.Now:MMMM dd, yyyy}</div>");
-            html.AppendLine("</div>");
-            
-            // Contract content
-            html.AppendLine("<div class='section'>");
-            html.AppendLine(contract.ContractContent);
-            html.AppendLine("</div>");
-            
-            // Contract terms summary
-            if (!string.IsNullOrEmpty(contract.PaymentTerms) || !string.IsNullOrEmpty(contract.Timeline))
+            // Use the contract content that contains the proper "DESIGN & MEDIA SERVICE AGREEMENT" structure
+            if (!string.IsNullOrEmpty(contract.ContractContent))
             {
-                html.AppendLine("<div class='section'>");
-                html.AppendLine("<div class='section-title'>Contract Terms Summary</div>");
-                html.AppendLine("<div class='terms-grid'>");
+                html.AppendLine(contract.ContractContent);
+            }
+            else
+            {
+                // Fallback to basic structure if no contract content is available
+                html.AppendLine("<div class='contract-header mb-6'>");
+                html.AppendLine($"<h1 class='text-center font-bold mb-2'>{contract.ContractTitle}</h1>");
+                html.AppendLine($"<p>This {contract.ContractTitle} (\"Agreement\") is entered into on <strong>{DateTime.Now:MMMM dd, yyyy}</strong> by and between:</p>");
+                html.AppendLine("</div>");
                 
+                // Parties Section
+                html.AppendLine("<div class='parties-section mb-6'>");
+                html.AppendLine("<div class='rounded-lg bg-blue-700 p-2 mb-2'>");
+                html.AppendLine("<h2 class='text-center text-white font-bold'>PARTIES</h2>");
+                html.AppendLine("</div>");
+                
+                html.AppendLine("<div class='parties-container'>");
+                html.AppendLine("<div class='party-info'>");
+                html.AppendLine("<h3 class='italic'>Client:</h3>");
+                html.AppendLine($"<p><strong>Name:</strong> {contract.Project?.User?.FirstName} {contract.Project?.User?.LastName}</p>");
+                html.AppendLine($"<p><strong>Email:</strong> {contract.Project?.User?.Email}</p>");
+                html.AppendLine("</div>");
+                
+                html.AppendLine("<div class='party-info'>");
+                html.AppendLine("<h3 class='italic'>Freelancer:</h3>");
+                html.AppendLine($"<p><strong>Name:</strong> {contract.Bidding?.User?.FirstName} {contract.Bidding?.User?.LastName}</p>");
+                html.AppendLine($"<p><strong>Email:</strong> {contract.Bidding?.User?.Email}</p>");
+                html.AppendLine("</div>");
+                html.AppendLine("</div>");
+                html.AppendLine("</div>");
+                
+                // Project Section
+                html.AppendLine("<div class='project-section mb-6'>");
+                html.AppendLine("<div class='rounded-lg bg-blue-700 p-2 mb-2'>");
+                html.AppendLine("<h2 class='text-center text-white font-bold'>PROJECT DETAILS</h2>");
+                html.AppendLine("</div>");
+                
+                html.AppendLine($"<p><strong>Project Name:</strong> {contract.Project?.ProjectName}</p>");
+                html.AppendLine("<p><strong>Description:</strong></p>");
+                html.AppendLine($"<div class='project-description'>{contract.Project?.ProjectDescription}</div>");
+                html.AppendLine("</div>");
+                
+                // Terms Section
+                html.AppendLine("<div class='terms-section mb-6'>");
+                html.AppendLine("<div class='rounded-lg bg-blue-700 p-2 mb-2'>");
+                html.AppendLine("<h2 class='text-center text-white font-bold'>TERMS AND CONDITIONS</h2>");
+                html.AppendLine("</div>");
+                
+                // Payment Terms
+                html.AppendLine("<h3 class='mb-1 italic'>1. Payment Terms</h3>");
+                html.AppendLine($"<p><strong>Total Development Cost:</strong> ₱{contract.Project?.Budget:N0}</p>");
                 if (!string.IsNullOrEmpty(contract.PaymentTerms))
                 {
-                    html.AppendLine("<div class='term-item'>");
-                    html.AppendLine("<strong>Payment Terms:</strong><br>");
-                    html.AppendLine($"{contract.PaymentTerms}");
-                    html.AppendLine("</div>");
+                    html.AppendLine($"<div class='project-description'>{contract.PaymentTerms}</div>");
                 }
                 
+                // Timeline
+                html.AppendLine("<h3 class='mb-1 mt-4 italic'>2. Development Timeline</h3>");
                 if (!string.IsNullOrEmpty(contract.Timeline))
                 {
-                    html.AppendLine("<div class='term-item'>");
-                    html.AppendLine("<strong>Timeline:</strong><br>");
-                    html.AppendLine($"{contract.Timeline}");
-                    html.AppendLine("</div>");
+                    html.AppendLine($"<div class='project-description'>{contract.Timeline}</div>");
                 }
+                html.AppendLine("<p>Timeline includes development, testing, and deployment phases.</p>");
+                
+                // Revision Policy
+                html.AppendLine("<h3 class='mb-1 mt-4 italic'>3. Revision Policy</h3>");
+                html.AppendLine("<p>Standard revision policy includes 3 rounds of revisions. Additional revisions may incur additional charges.</p>");
+                
+                // Technical Deliverables
+                html.AppendLine("<h3 class='mb-1 mt-4 italic'>4. Technical Deliverables</h3>");
+                html.AppendLine("<ul>");
+                html.AppendLine("<li>Fully functional website/application/software/other IT related projects</li>");
+                html.AppendLine("<li>Source code and documentation</li>");
+                html.AppendLine("<li>Testing and quality assurance</li>");
+                html.AppendLine("<li>Deployment and launch support</li>");
+                html.AppendLine("</ul>");
                 
                 html.AppendLine("</div>");
+                
+                // Agreement Section
+                html.AppendLine("<div class='agreement-section mb-6'>");
+                html.AppendLine("<div class='rounded-lg bg-blue-700 p-2 mb-2'>");
+                html.AppendLine("<h2 class='text-center text-white font-bold'>AGREEMENT</h2>");
+                html.AppendLine("</div>");
+                html.AppendLine("<p>By signing below, both parties agree to the terms and conditions set forth in this agreement.</p>");
                 html.AppendLine("</div>");
             }
             
-            // Signatures section
+            // Signatures section - Always include signatures regardless of content source
             html.AppendLine("<div class='signature-section'>");
-            html.AppendLine("<div class='section-title'>Signatures</div>");
+            html.AppendLine("<div class='rounded-lg bg-blue-700 p-2 mb-2'>");
+            html.AppendLine("<h2 class='text-center text-white font-bold'>SIGNATURES</h2>");
+            html.AppendLine("</div>");
             
             // Client signature
             html.AppendLine("<div class='signature-box'>");
@@ -166,17 +373,97 @@ namespace Freelancing.Services
             // Document integrity
             if (!string.IsNullOrEmpty(contract.DocumentHash))
             {
-                html.AppendLine("<div style='margin-top: 40px; font-size: 10px; color: #666; border-top: 1px solid #eee; padding-top: 10px;'>");
+                html.AppendLine("<div class='document-footer'>");
                 html.AppendLine($"Document Hash: {contract.DocumentHash}<br>");
                 html.AppendLine($"Contract ID: {contract.Id}<br>");
                 html.AppendLine($"Generated: {DateTime.Now:yyyy-MM-dd HH:mm:ss} UTC");
                 html.AppendLine("</div>");
             }
             
+            html.AppendLine("</div>"); // Close contract-container
             html.AppendLine("</body>");
             html.AppendLine("</html>");
             
             return html.ToString();
+        }
+
+        private async Task InitializeBrowserAsync()
+        {
+            try
+            {
+                Console.WriteLine("Starting browser initialization...");
+                
+                // Download browser if not exists
+                var fetcher = new BrowserFetcher();
+                await fetcher.DownloadAsync();
+                Console.WriteLine("Browser downloaded successfully");
+
+                // Launch browser with appropriate settings
+                _browser = await Puppeteer.LaunchAsync(new LaunchOptions
+                {
+                    Headless = true,
+                    Args = new[]
+                    {
+                        "--no-sandbox",
+                        "--disable-setuid-sandbox",
+                        "--disable-dev-shm-usage",
+                        "--disable-gpu",
+                        "--no-first-run",
+                        "--no-zygote",
+                        "--single-process",
+                        "--disable-web-security",
+                        "--disable-features=VizDisplayCompositor"
+                    }
+                });
+
+                Console.WriteLine("Browser launched successfully");
+                _browserInitialized = true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error initializing browser: {ex.Message}");
+                Console.WriteLine($"Stack trace: {ex.StackTrace}");
+                
+                // Try alternative launch options
+                try
+                {
+                    Console.WriteLine("Attempting alternative browser launch...");
+                    _browser = await Puppeteer.LaunchAsync(new LaunchOptions
+                    {
+                        Headless = true,
+                        Args = new[]
+                        {
+                            "--no-sandbox",
+                            "--disable-setuid-sandbox"
+                        }
+                    });
+                    
+                    Console.WriteLine("Alternative browser launch successful");
+                    _browserInitialized = true;
+                }
+                catch (Exception fallbackEx)
+                {
+                    Console.WriteLine($"Alternative browser launch also failed: {fallbackEx.Message}");
+                    throw new InvalidOperationException("Failed to initialize PDF generation browser after multiple attempts", ex);
+                }
+            }
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!_disposed && disposing)
+            {
+                _browser?.Dispose();
+                _browser = null;
+                _browserInitialized = false;
+                _disposed = true;
+            }
         }
     }
 }

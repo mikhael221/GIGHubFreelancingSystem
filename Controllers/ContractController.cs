@@ -262,17 +262,32 @@ namespace Freelancing.Controllers
         [HttpGet]
         public async Task<IActionResult> Download(Guid id)
         {
-            var contract = await _contractService.GetContractByIdAsync(id);
-            if (contract == null)
-                return NotFound();
-
-            var userId = GetCurrentUserId();
-            if (!CanUserAccessContract(contract, userId))
-                return Forbid();
-
             try
             {
+                var contract = await _contractService.GetContractByIdAsync(id);
+                if (contract == null)
+                    return NotFound("Contract not found");
+
+                var userId = GetCurrentUserId();
+                if (!CanUserAccessContract(contract, userId))
+                    return Forbid("You are not authorized to access this contract");
+
+                // Validate that PDF data can be generated
                 var pdfData = await _contractService.GenerateContractPdfAsync(id);
+                
+                if (pdfData == null || pdfData.Length == 0)
+                {
+                    TempData["ErrorMessage"] = "Failed to generate PDF content";
+                    return RedirectToAction("Details", new { id });
+                }
+
+                // Validate PDF integrity
+                var isValid = await _contractService.VerifyDocumentIntegrityAsync(id);
+                if (!isValid)
+                {
+                    TempData["ErrorMessage"] = "Contract document integrity check failed";
+                    return RedirectToAction("Details", new { id });
+                }
                 
                 // Log download
                 await _contractService.LogContractActionAsync(id, userId, "Downloaded", "Contract PDF downloaded", GetClientIpAddress(), Request.Headers["User-Agent"]);
@@ -280,9 +295,14 @@ namespace Freelancing.Controllers
                 var fileName = $"Contract_{contract.Project.ProjectName}_{DateTime.Now:yyyyMMdd}.pdf";
                 return File(pdfData, "application/pdf", fileName);
             }
+            catch (InvalidOperationException ex)
+            {
+                TempData["ErrorMessage"] = $"PDF generation failed: {ex.Message}";
+                return RedirectToAction("Details", new { id });
+            }
             catch (Exception ex)
             {
-                TempData["ErrorMessage"] = $"Error generating PDF: {ex.Message}";
+                TempData["ErrorMessage"] = $"Unexpected error generating PDF: {ex.Message}";
                 return RedirectToAction("Details", new { id });
             }
         }
