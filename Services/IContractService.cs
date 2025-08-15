@@ -5,10 +5,11 @@ namespace Freelancing.Services
     public interface IContractService
     {
         // Contract Creation & Management
-        Task<Contract> CreateContractFromBiddingAsync(Guid projectId, Guid biddingId);
+        Task<Contract> CreateContractFromBiddingAsync(Guid projectId, Guid biddingId, Guid? selectedTemplateId = null);
         Task<Contract?> GetContractByProjectIdAsync(Guid projectId);
         Task<Contract?> GetContractByIdAsync(Guid contractId);
         Task<Contract> UpdateContractContentAsync(Guid contractId, string newContent, Guid userId);
+        Task UpdateContractContentWithTermsAsync(Guid contractId, string paymentTermsJson, string revisionPolicyJson, string timelineJson);
         
         // Contract Template Management
         Task<ContractTemplate?> GetContractTemplateAsync(string category);

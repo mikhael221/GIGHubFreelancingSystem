@@ -18,7 +18,7 @@ namespace Freelancing.Services
             _pdfService = pdfService;
         }
 
-        public async Task<Contract> CreateContractFromBiddingAsync(Guid projectId, Guid biddingId)
+        public async Task<Contract> CreateContractFromBiddingAsync(Guid projectId, Guid biddingId, Guid? selectedTemplateId = null)
         {
             var project = await _context.Projects
                 .Include(p => p.User)
@@ -33,8 +33,20 @@ namespace Freelancing.Services
             if (project == null || bidding == null)
                 throw new ArgumentException("Project or bidding not found");
 
-            // Get appropriate template
-            var template = await GetContractTemplateAsync(project.Category);
+            // Get template - use selected template if provided, otherwise fall back to category-based selection
+            ContractTemplate? template = null;
+            if (selectedTemplateId.HasValue)
+            {
+                template = await _context.ContractTemplates
+                    .Where(ct => ct.Id == selectedTemplateId.Value && ct.IsActive)
+                    .FirstOrDefaultAsync();
+            }
+            
+            if (template == null)
+            {
+                template = await GetContractTemplateAsync(project.Category);
+            }
+            
             if (template == null)
                 throw new InvalidOperationException("No contract template found for this category");
 
@@ -59,6 +71,100 @@ namespace Freelancing.Services
             await LogContractActionAsync(contract.Id, project.UserId, "Created", "Contract created from accepted bidding");
 
             return contract;
+        }
+
+        public async Task UpdateContractContentWithTermsAsync(Guid contractId, string paymentTermsJson, string revisionPolicyJson, string timelineJson)
+        {
+            var contract = await _context.Contracts.FindAsync(contractId);
+            if (contract == null)
+                throw new ArgumentException("Contract not found");
+
+            // Parse the JSON data
+            var paymentTerms = JsonSerializer.Deserialize<JsonElement>(paymentTermsJson);
+            var revisionPolicy = JsonSerializer.Deserialize<JsonElement>(revisionPolicyJson);
+            var timeline = JsonSerializer.Deserialize<JsonElement>(timelineJson);
+
+            // Generate the actual content sections
+            var paymentTermsSection = GeneratePaymentTermsSection(paymentTerms);
+            var revisionPolicySection = GenerateRevisionPolicySection(revisionPolicy);
+            var timelineSection = GenerateTimelineSection(timeline);
+
+            // Update the contract content with actual sections
+            var updatedContent = contract.ContractContent
+                .Replace("<p><strong>Payment Structure:</strong></p><ul><li>Payment terms will be specified in the contract details</li></ul>", paymentTermsSection)
+                .Replace("<p><strong>Revision Terms:</strong></p><ul><li>Revision policy will be specified in the contract details</li></ul>", revisionPolicySection)
+                .Replace("<p><strong>Project Schedule:</strong></p><ul><li>Project timeline will be specified in the contract details</li></ul>", timelineSection);
+
+            contract.ContractContent = updatedContent;
+            contract.LastModifiedAt = DateTime.UtcNow.ToLocalTime();
+
+            await _context.SaveChangesAsync();
+        }
+
+        private string GeneratePaymentTermsSection(JsonElement paymentTerms)
+        {
+            var upfront = paymentTerms.GetProperty("upfront").GetInt32();
+            var final = paymentTerms.GetProperty("final").GetInt32();
+            var milestones = paymentTerms.GetProperty("milestones");
+
+            var section = $"<p><strong>Payment Structure:</strong></p><ul>";
+            section += $"<li>Upfront Payment: {upfront}% - Due upon contract signing</li>";
+            
+            if (milestones.GetArrayLength() > 0)
+            {
+                foreach (var milestone in milestones.EnumerateArray())
+                {
+                    var name = milestone.GetProperty("name").GetString();
+                    var percentage = milestone.GetProperty("percentage").GetInt32();
+                    var dueDate = milestone.GetProperty("dueDate").GetString();
+                    section += $"<li>{name}: {percentage}% - Due {dueDate}</li>";
+                }
+            }
+            
+            section += $"<li>Final Payment: {final}% - Due upon project completion</li>";
+            section += "</ul><p>All payments will be made according to the agreed schedule. Late payments may incur additional charges.</p>";
+
+            return section;
+        }
+
+        private string GenerateRevisionPolicySection(JsonElement revisionPolicy)
+        {
+            var freeRevisions = revisionPolicy.GetProperty("freeRevisions").GetInt32();
+            var additionalCost = revisionPolicy.GetProperty("additionalCost").GetDecimal();
+            var scope = revisionPolicy.GetProperty("scope").GetString();
+
+            var section = $"<p><strong>Revision Terms:</strong></p><ul>";
+            section += $"<li>Free Revisions: {freeRevisions} revision round(s) included in the project cost</li>";
+            section += $"<li>Additional Revisions: ₱{additionalCost:N0} per additional revision round</li>";
+            section += $"<li>Revision Scope: {scope}</li>";
+            section += "</ul><p>Each revision round includes feedback incorporation and refinements as agreed upon by both parties.</p>";
+
+            return section;
+        }
+
+        private string GenerateTimelineSection(JsonElement timeline)
+        {
+            var startDate = timeline.GetProperty("startDate").GetString();
+            var deadline = timeline.GetProperty("deadline").GetString();
+            var milestones = timeline.GetProperty("milestones");
+
+            var section = $"<p><strong>Project Schedule:</strong></p><ul>";
+            section += $"<li>Project Start Date: {startDate}</li>";
+            section += $"<li>Project Deadline: {deadline}</li>";
+            
+            if (milestones.GetArrayLength() > 0)
+            {
+                foreach (var milestone in milestones.EnumerateArray())
+                {
+                    var name = milestone.GetProperty("name").GetString();
+                    var dueDate = milestone.GetProperty("dueDate").GetString();
+                    section += $"<li>{name}: Due {dueDate}</li>";
+                }
+            }
+            
+            section += "</ul><p>Timeline is subject to timely feedback and approvals from the Client. Delays in client feedback may extend the project timeline accordingly.</p>";
+
+            return section;
         }
 
         public async Task<Contract?> GetContractByProjectIdAsync(Guid projectId)
@@ -106,17 +212,16 @@ namespace Freelancing.Services
 
         public async Task<ContractTemplate?> GetContractTemplateAsync(string category)
         {
-            // First try to find category-specific template
+            // Try to find category-specific template
             var template = await _context.ContractTemplates
                 .Where(ct => ct.Category.ToLower() == category.ToLower() && ct.IsActive)
-                .OrderBy(ct => ct.IsDefault ? 0 : 1)
                 .FirstOrDefaultAsync();
 
-            // If not found, get default template
+            // If not found, get any active template
             if (template == null)
             {
                 template = await _context.ContractTemplates
-                    .Where(ct => ct.IsDefault && ct.IsActive)
+                    .Where(ct => ct.IsActive)
                     .FirstOrDefaultAsync();
             }
 
@@ -148,6 +253,25 @@ namespace Freelancing.Services
             {
                 content = content.Replace(replacement.Key, replacement.Value);
             }
+
+            // Replace section placeholders with default content (will be updated later)
+            content = content.Replace("{{PAYMENT_TERMS_SECTION}}", 
+                "<p><strong>Payment Structure:</strong></p>" +
+                "<ul>" +
+                "<li>Payment terms will be specified in the contract details</li>" +
+                "</ul>");
+
+            content = content.Replace("{{REVISION_POLICY_SECTION}}", 
+                "<p><strong>Revision Terms:</strong></p>" +
+                "<ul>" +
+                "<li>Revision policy will be specified in the contract details</li>" +
+                "</ul>");
+
+            content = content.Replace("{{PROJECT_TIMELINE_SECTION}}", 
+                "<p><strong>Project Schedule:</strong></p>" +
+                "<ul>" +
+                "<li>Project timeline will be specified in the contract details</li>" +
+                "</ul>");
 
             return content;
         }

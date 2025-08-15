@@ -55,12 +55,6 @@ namespace Freelancing.Controllers
                 return RedirectToAction("Details", new { id = existingContract.Id });
 
             var availableTemplates = await GetAvailableTemplatesAsync(project.Category);
-            
-            // Ensure we have a default selection if no template is marked as default
-            if (availableTemplates.Any() && !availableTemplates.Any(t => t.IsDefault))
-            {
-                availableTemplates.First().IsDefault = true;
-            }
 
             var viewModel = new CreateContractViewModel
             {
@@ -98,7 +92,7 @@ namespace Freelancing.Controllers
             {
                 System.Diagnostics.Debug.WriteLine($"Creating contract for Project: {model.ProjectId}, Bidding: {model.BiddingId}");
                 
-                var contract = await _contractService.CreateContractFromBiddingAsync(model.ProjectId, model.BiddingId);
+                var contract = await _contractService.CreateContractFromBiddingAsync(model.ProjectId, model.BiddingId, model.SelectedTemplateId);
                 System.Diagnostics.Debug.WriteLine($"Contract created with ID: {contract.Id}");
                 
                 // Update contract with custom terms
@@ -315,6 +309,37 @@ namespace Freelancing.Controllers
             return View(viewModels);
         }
 
+        // GET: Contract/GetTemplateContent/{id}
+        [HttpGet]
+        public async Task<IActionResult> GetTemplateContent(Guid id)
+        {
+            try
+            {
+                var template = await _context.ContractTemplates
+                    .Where(ct => ct.Id == id && ct.IsActive)
+                    .Select(ct => new { ct.Id, ct.Name, ct.TemplateContent })
+                    .FirstOrDefaultAsync();
+
+                if (template == null)
+                    return NotFound(new { error = "Template not found" });
+
+                return Json(new { 
+                    success = true, 
+                    templateId = template.Id,
+                    templateName = template.Name,
+                    templateContent = template.TemplateContent 
+                });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, error = ex.Message });
+            }
+        }
+
+
+
+
+
         #region Helper Methods
 
         private Guid GetCurrentUserId()
@@ -342,16 +367,14 @@ namespace Freelancing.Controllers
                     Name = ct.Name,
                     Description = ct.Description,
                     Category = ct.Category,
-                    IsDefault = ct.IsDefault,
                     PreviewImagePath = ct.PreviewImagePath
                 })
                 .ToListAsync();
 
-            // Order templates: exact category match first, then default, then others
+            // Order templates: exact category match first, then others
             return templates
                 .OrderBy(ct => !string.IsNullOrEmpty(category) && 
-                              ct.Category?.ToLower() == category.ToLower() ? 0 : 
-                              ct.IsDefault ? 1 : 2)
+                              ct.Category?.ToLower() == category.ToLower() ? 0 : 1)
                 .ThenBy(ct => ct.Name)
                 .ToList();
         }
@@ -383,7 +406,8 @@ namespace Freelancing.Controllers
                     dueDate = m.DueDate
                 }).ToList()
             };
-            contract.PaymentTerms = JsonSerializer.Serialize(paymentTerms);
+            var paymentTermsJson = JsonSerializer.Serialize(paymentTerms);
+            contract.PaymentTerms = paymentTermsJson;
 
             // Update revision policy
             var revisionPolicy = new
@@ -392,25 +416,30 @@ namespace Freelancing.Controllers
                 additionalCost = model.AdditionalRevisionCost,
                 scope = model.RevisionScope
             };
-            contract.RevisionPolicy = JsonSerializer.Serialize(revisionPolicy);
+            var revisionPolicyJson = JsonSerializer.Serialize(revisionPolicy);
+            contract.RevisionPolicy = revisionPolicyJson;
 
             // Update timeline
             var timeline = new
             {
-                startDate = model.StartDate,
-                deadline = model.Deadline,
+                startDate = model.StartDate.ToString("MMMM dd, yyyy"),
+                deadline = model.Deadline.ToString("MMMM dd, yyyy"),
                 milestones = model.Milestones.Where(m => m.DueDate.HasValue).Select(m => new
                 {
                     name = m.Name,
-                    dueDate = m.DueDate
+                    dueDate = m.DueDate.Value.ToString("MMMM dd, yyyy")
                 }).ToList()
             };
-            contract.Timeline = JsonSerializer.Serialize(timeline);
+            var timelineJson = JsonSerializer.Serialize(timeline);
+            contract.Timeline = timelineJson;
 
             // Update deliverable requirements
             contract.DeliverableRequirements = JsonSerializer.Serialize(model.DeliverableRequirements);
 
             await _context.SaveChangesAsync();
+
+            // Update the contract content with the actual terms
+            await _contractService.UpdateContractContentWithTermsAsync(contractId, paymentTermsJson, revisionPolicyJson, timelineJson);
         }
 
         private ContractViewModel MapToContractViewModel(Contract contract)
@@ -468,6 +497,28 @@ namespace Freelancing.Controllers
                 try
                 {
                     viewModel.DeliverableRequirements = JsonSerializer.Deserialize<List<string>>(contract.DeliverableRequirements);
+                }
+                catch { }
+            }
+
+            if (!string.IsNullOrEmpty(contract.Timeline))
+            {
+                try
+                {
+                    var timelineJson = JsonSerializer.Deserialize<JsonElement>(contract.Timeline);
+                    var startDateStr = timelineJson.GetProperty("startDate").GetString();
+                    var deadlineStr = timelineJson.GetProperty("deadline").GetString();
+                    
+                    // Parse the formatted date strings
+                    if (DateTime.TryParse(startDateStr, out DateTime startDate) && 
+                        DateTime.TryParse(deadlineStr, out DateTime deadline))
+                    {
+                        viewModel.Timeline = new TimelineViewModel
+                        {
+                            StartDate = startDate,
+                            Deadline = deadline
+                        };
+                    }
                 }
                 catch { }
             }

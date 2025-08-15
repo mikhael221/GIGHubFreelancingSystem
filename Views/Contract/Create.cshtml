@@ -31,30 +31,21 @@
                 <!-- Contract Template Selection -->
                 <div class="bg-white rounded-lg shadow p-6">
                     <h2 class="text-xl font-semibold text-gray-900 mb-4">Contract Template</h2>
+                    <p class="text-sm text-gray-600 mb-4">Please select a contract template to proceed:</p>
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
                         @foreach (var template in Model.AvailableTemplates)
                         {
-                            <div class="border border-gray-200 rounded-lg p-4 cursor-pointer hover:border-blue-500 template-option" data-template-id="@template.Id">
-                                @if (template.IsDefault)
-                                {
-                                    <input type="radio" asp-for="SelectedTemplateId" value="@template.Id" class="hidden template-radio" checked />
-                                }
-                                else
-                                {
-                                    <input type="radio" asp-for="SelectedTemplateId" value="@template.Id" class="hidden template-radio" />
-                                }
+                            <div class="border-1 border-gray-300 rounded-lg p-4 cursor-pointer hover:border-blue-500 hover:border-solid template-option transition-all duration-200" data-template-id="@template.Id">
+                                <input type="radio" asp-for="SelectedTemplateId" value="@template.Id" class="hidden template-radio" />
                                 <div class="flex items-center justify-between mb-2">
                                     <h3 class="font-medium text-gray-900">@template.Name</h3>
-                                    @if (template.IsDefault)
-                                    {
-                                        <span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">Default</span>
-                                    }
                                 </div>
                                 <p class="text-sm text-gray-600">@template.Description</p>
                                 <p class="text-xs text-gray-500 mt-2">Category: @template.Category</p>
                             </div>
                         }
                     </div>
+                    <span asp-validation-for="SelectedTemplateId" class="text-red-600 text-sm"></span>
                     <!-- Project Summary -->
                     <hr class="border-gray-300 mb-6">
                     <h2 class="text-xl font-semibold text-gray-900 mb-4">Project Summary</h2>
@@ -79,7 +70,7 @@
                     <!-- Payment Terms -->
                     <hr class="border-gray-300 mb-6">
                     <h2 class="text-xl font-semibold text-gray-900 mb-4">Payment Terms</h2>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                         <div>
                             <label asp-for="UpfrontPercentage" class="block text-sm font-medium text-gray-700 mb-2">Upfront Payment (%)</label>
                             <input asp-for="UpfrontPercentage" type="number" min="0" max="100" class="w-full p-2 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500" />
@@ -89,6 +80,12 @@
                             <label asp-for="FinalPercentage" class="block text-sm font-medium text-gray-700 mb-2">Final Payment (%)</label>
                             <input asp-for="FinalPercentage" type="number" min="0" max="100" class="w-full p-2 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500" />
                             <span asp-validation-for="FinalPercentage" class="text-red-600 text-sm"></span>
+                        </div>
+                    </div>
+                    <div class="mb-6">
+                        <div id="paymentTotal" class="text-sm text-gray-600 bg-gray-100 p-2 rounded">
+                            Total: <span id="totalPercentage">0</span>% 
+                            <span id="totalStatus" class="ml-2"></span>
                         </div>
                     </div>
                     <!-- Revision Policy -->
@@ -170,10 +167,14 @@
         templateOptions.forEach(option => {
             option.addEventListener('click', function() {
                 // Remove active class from all options
-                templateOptions.forEach(opt => opt.classList.remove('border-blue-500', 'bg-blue-50'));
+                templateOptions.forEach(opt => {
+                    opt.classList.remove('border-blue-500', 'bg-blue-50', 'border-solid');
+                    opt.classList.add('border', 'border-gray-300');
+                });
 
                 // Add active class to clicked option
-                this.classList.add('border-blue-500', 'bg-blue-50');
+                this.classList.remove('border', 'border-gray-300');
+                this.classList.add('border-blue-500', 'bg-blue-50', 'border-solid');
 
                 // Check the corresponding radio button
                 const templateId = this.dataset.templateId;
@@ -186,13 +187,14 @@
             });
         });
 
-        // Set initial active state for default template
-        const defaultTemplate = document.querySelector('.template-radio:checked');
-        if (defaultTemplate) {
-            const templateId = defaultTemplate.value;
-            const defaultOption = document.querySelector(`[data-template-id="${templateId}"]`);
-            if (defaultOption) {
-                defaultOption.classList.add('border-blue-500', 'bg-blue-50');
+        // Set initial active state for selected template only
+        const selectedTemplate = document.querySelector('.template-radio:checked');
+        if (selectedTemplate) {
+            const templateId = selectedTemplate.value;
+            const selectedOption = document.querySelector(`[data-template-id="${templateId}"]`);
+            if (selectedOption) {
+                selectedOption.classList.remove('border-dashed', 'border-gray-300');
+                selectedOption.classList.add('border-blue-500', 'bg-blue-50', 'border-solid');
             }
         }
 
@@ -202,18 +204,92 @@
             generateContractPreview();
         });
 
+        // Payment terms auto-adjustment
+        const upfrontInput = document.getElementById('UpfrontPercentage');
+        const finalInput = document.getElementById('FinalPercentage');
+        
+        // Function to adjust payment percentages
+        function adjustPaymentPercentages(changedField) {
+            const upfront = parseInt(upfrontInput.value) || 0;
+            const final = parseInt(finalInput.value) || 0;
+            
+            if (changedField === 'upfront') {
+                // If upfront payment changed, adjust final payment
+                const newFinal = Math.max(0, 100 - upfront);
+                finalInput.value = newFinal;
+            } else if (changedField === 'final') {
+                // If final payment changed, adjust upfront payment
+                const newUpfront = Math.max(0, 100 - final);
+                upfrontInput.value = newUpfront;
+            }
+            
+            // Ensure values don't exceed 100%
+            if (upfront + final > 100) {
+                if (changedField === 'upfront') {
+                    finalInput.value = Math.max(0, 100 - upfront);
+                } else {
+                    upfrontInput.value = Math.max(0, 100 - final);
+                }
+            }
+            
+            // Update total display
+            updatePaymentTotal();
+            
+            // Update preview
+            generateContractPreview();
+        }
+        
+        // Function to update payment total display
+        function updatePaymentTotal() {
+            const upfront = parseInt(upfrontInput.value) || 0;
+            const final = parseInt(finalInput.value) || 0;
+            const total = upfront + final;
+            
+            const totalElement = document.getElementById('totalPercentage');
+            const statusElement = document.getElementById('totalStatus');
+            const totalContainer = document.getElementById('paymentTotal');
+            
+            totalElement.textContent = total;
+            
+            if (total === 100) {
+                statusElement.className = 'ml-2 text-green-600 font-medium';
+                totalContainer.className = 'text-sm text-gray-600 bg-green-100 p-2 rounded';
+            } else if (total > 100) {
+                statusElement.className = 'ml-2 text-red-600 font-medium';
+                totalContainer.className = 'text-sm text-gray-600 bg-red-100 p-2 rounded';
+            } else {
+                statusElement.className = 'ml-2 text-yellow-600 font-medium';
+                totalContainer.className = 'text-sm text-gray-600 bg-yellow-100 p-2 rounded';
+            }
+        }
+        
+        // Add event listeners for payment percentage inputs
+        upfrontInput.addEventListener('input', function() {
+            adjustPaymentPercentages('upfront');
+        });
+        
+        finalInput.addEventListener('input', function() {
+            adjustPaymentPercentages('final');
+        });
+        
         // Auto-refresh preview when form fields change
         const formInputs = document.querySelectorAll('input, select, textarea');
         formInputs.forEach(input => {
-            input.addEventListener('change', function() {
-                generateContractPreview();
-            });
+            // Skip payment percentage inputs as they have their own handlers
+            if (input.id !== 'UpfrontPercentage' && input.id !== 'FinalPercentage') {
+                input.addEventListener('change', function() {
+                    generateContractPreview();
+                });
+            }
         });
 
+        // Initialize payment total display
+        updatePaymentTotal();
+        
         // Generate initial preview
         generateContractPreview();
 
-        function generateContractPreview() {
+        async function generateContractPreview() {
             const previewContainer = document.getElementById('contractPreview');
 
             // Get form values
@@ -239,12 +315,16 @@
             };
 
             if (!selectedTemplate) {
-                previewContainer.innerHTML = '<p class="text-gray-600">Please select a contract template first...</p>';
+                previewContainer.innerHTML = '<div class="text-center py-8"><div class="text-gray-600"><svg class="mx-auto h-12 w-12 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg><p class="text-lg font-medium">No Template Selected</p><p class="text-sm">Please select a contract template above to preview the contract content.</p></div></div>';
                 return;
             }
 
+            // Show loading state
+            previewContainer.innerHTML = '<div class="text-center py-8"><div class="inline-flex items-center"><svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Loading contract preview...</div></div>';
+
+            try {
             // Generate contract content based on template and form data
-            const contractContent = generateContractContent(selectedTemplate.value, projectData, {
+                const contractContent = await generateContractContent(selectedTemplate.value, projectData, {
                 upfrontPayment: parseInt(upfrontPayment),
                 finalPayment: parseInt(finalPayment),
                 freeRevisions: parseInt(freeRevisions),
@@ -254,66 +334,96 @@
             });
 
             previewContainer.innerHTML = contractContent;
+            } catch (error) {
+                console.error('Error generating contract preview:', error);
+                previewContainer.innerHTML = '<p class="text-red-600">Please click refresh preview to view contract.</p>';
+            }
         }
 
-        function generateContractContent(templateId, projectData, formData) {
-            const templateName = document.querySelector(`[data-template-id="${templateId}"] h3`).textContent;
+        // Cache for template contents to avoid repeated API calls
+        let templateCache = {};
+
+        async function generateContractContent(templateId, projectData, formData) {
+            // Check if we have the template content cached
+            if (!templateCache[templateId]) {
+                try {
+                    const response = await fetch(`/Contract/GetTemplateContent/${templateId}`);
+                    const result = await response.json();
+                    
+                    if (!result.success) {
+                        throw new Error(result.error || 'Failed to fetch template content');
+                    }
+                    
+                    templateCache[templateId] = {
+                        name: result.templateName,
+                        content: result.templateContent
+                    };
+                } catch (error) {
+                    console.error('Error fetching template content:', error);
+                    // Fall back to basic template
+                    return generateFallbackContent(templateId, projectData, formData);
+                }
+            }
+
+            const template = templateCache[templateId];
+            let content = template.content;
+
+            // Generate dynamic sections
+            const paymentTermsSection = `
+                <p><strong>Payment Structure:</strong></p>
+                <ul>
+                    <li>Upfront Payment: ${formData.upfrontPayment}% (₱${(projectData.agreedAmount * formData.upfrontPayment / 100).toLocaleString()}) - Due upon contract signing</li>
+                    <li>Final Payment: ${formData.finalPayment}% (₱${(projectData.agreedAmount * formData.finalPayment / 100).toLocaleString()}) - Due upon project completion</li>
+                </ul>
+                <p>All payments will be made according to the agreed schedule. Late payments may incur additional charges.</p>
+            `;
+
+            const revisionPolicySection = `
+                <p><strong>Revision Terms:</strong></p>
+                <ul>
+                    <li>Free Revisions: ${formData.freeRevisions} revision round(s) included in the project cost</li>
+                    <li>Additional Revisions: ₱${formData.additionalCost.toLocaleString()} per additional revision round</li>
+                    <li>Revision Scope: Minor changes and adjustments within the original project scope</li>
+                </ul>
+                <p>Each revision round includes feedback incorporation and refinements as agreed upon by both parties.</p>
+            `;
+
+            const projectTimelineSection = `
+                <p><strong>Project Schedule:</strong></p>
+                <ul>
+                    <li>Project Start Date: ${formData.startDate ? new Date(formData.startDate).toLocaleDateString() : 'To be determined upon contract signing'}</li>
+                    <li>Project Deadline: ${formData.deadline ? new Date(formData.deadline).toLocaleDateString() : 'To be determined based on scope'}</li>
+                        </ul>
+                <p>Timeline is subject to timely feedback and approvals from the Client. Delays in client feedback may extend the project timeline accordingly.</p>
+            `;
+
+            // Replace placeholders with actual data
+            const replacements = {
+                '{{CONTRACT_DATE}}': new Date().toLocaleDateString(),
+                '{{CLIENT_NAME}}': projectData.clientName,
+                '{{CLIENT_EMAIL}}': projectData.clientEmail,
+                '{{FREELANCER_NAME}}': projectData.freelancerName,
+                '{{FREELANCER_EMAIL}}': projectData.freelancerEmail,
+                '{{PROJECT_NAME}}': projectData.projectName,
+                '{{PROJECT_CATEGORY}}': projectData.projectCategory,
+                '{{PROJECT_DESCRIPTION}}': projectData.projectDescription,
+                '{{PROJECT_BUDGET}}': `₱${projectData.agreedAmount.toLocaleString()}`,
+                '{{AGREED_AMOUNT}}': `₱${projectData.agreedAmount.toLocaleString()}`,
+                '{{DELIVERY_TIMELINE}}': projectData.deliveryTimeline,
+                '{{PROPOSAL_DETAILS}}': projectData.projectDescription,
+                '{{PAYMENT_TERMS_SECTION}}': paymentTermsSection,
+                '{{REVISION_POLICY_SECTION}}': revisionPolicySection,
+                '{{PROJECT_TIMELINE_SECTION}}': projectTimelineSection
+            };
+
+            // Apply replacements
+            for (const [placeholder, value] of Object.entries(replacements)) {
+                content = content.replace(new RegExp(placeholder, 'g'), value);
+            }
 
             return `
                 <div class="contract-preview">
-                    <h1 class="text-2xl font-bold mb-4 text-center">${templateName}</h1>
-
-                    <div class="mb-6">
-                        <h2 class="text-lg font-semibold mb-2 text-blue-800">1. PARTIES</h2>
-                        <p><strong>Client:</strong> ${projectData.clientName} (${projectData.clientEmail})</p>
-                        <p><strong>Freelancer:</strong> ${projectData.freelancerName} (${projectData.freelancerEmail})</p>
-                    </div>
-
-                    <div class="mb-6">
-                        <h2 class="text-lg font-semibold mb-2 text-blue-800">2. PROJECT DETAILS</h2>
-                        <p><strong>Project Name:</strong> ${projectData.projectName}</p>
-                        <p><strong>Category:</strong> ${projectData.projectCategory}</p>
-                        <p><strong>Description:</strong> ${projectData.projectDescription}</p>
-                    </div>
-
-                    <div class="mb-6">
-                        <h2 class="text-lg font-semibold mb-2 text-blue-800">3. PAYMENT TERMS</h2>
-                        <p><strong>Total Project Amount:</strong> ₱${projectData.agreedAmount.toLocaleString()}</p>
-                        <p><strong>Upfront Payment:</strong> ${formData.upfrontPayment}% (₱${(projectData.agreedAmount * formData.upfrontPayment / 100).toLocaleString()})</p>
-                        <p><strong>Final Payment:</strong> ${formData.finalPayment}% (₱${(projectData.agreedAmount * formData.finalPayment / 100).toLocaleString()})</p>
-                        <p><strong>Payment Schedule:</strong> Upfront payment due upon contract signing, final payment due upon project completion.</p>
-                    </div>
-
-                    <div class="mb-6">
-                        <h2 class="text-lg font-semibold mb-2 text-blue-800">4. PROJECT TIMELINE</h2>
-                        <p><strong>Start Date:</strong> ${formData.startDate ? new Date(formData.startDate).toLocaleDateString() : 'To be determined'}</p>
-                        <p><strong>Deadline:</strong> ${formData.deadline ? new Date(formData.deadline).toLocaleDateString() : 'To be determined'}</p>
-                        <p><strong>Delivery Timeline:</strong> ${projectData.deliveryTimeline}</p>
-                    </div>
-
-                    <div class="mb-6">
-                        <h2 class="text-lg font-semibold mb-2 text-blue-800">5. REVISION POLICY</h2>
-                        <p><strong>Free Revisions:</strong> ${formData.freeRevisions} revision(s) included in the project cost.</p>
-                        <p><strong>Additional Revisions:</strong> ₱${formData.additionalCost.toLocaleString()} per additional revision after the free revisions are used.</p>
-                        <p><strong>Revision Scope:</strong> Minor changes to design, content, or functionality as agreed upon by both parties.</p>
-                    </div>
-
-                    <div class="mb-6">
-                        <h2 class="text-lg font-semibold mb-2 text-blue-800">6. DELIVERABLES</h2>
-                        <p>The freelancer will deliver the completed project according to the agreed specifications and timeline.</p>
-                        <p>All deliverables will be provided in the format specified in the project requirements.</p>
-                    </div>
-
-                    <div class="mb-6">
-                        <h2 class="text-lg font-semibold mb-2 text-blue-800">7. TERMS AND CONDITIONS</h2>
-                        <ul class="list-disc pl-5 space-y-1">
-                            <li>Both parties agree to the terms outlined in this contract.</li>
-                            <li>The project will commence upon receipt of the upfront payment.</li>
-                            <li>Any changes to the project scope must be agreed upon in writing.</li>
-                            <li>Intellectual property rights will transfer to the client upon final payment.</li>
-                            <li>This contract is binding and enforceable under applicable laws.</li>
-                        </ul>
-                    </div>
+                    ${content}
 
                     <div class="mt-8 pt-4 border-t border-gray-300">
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -333,7 +443,26 @@
                     </div>
 
                     <div class="mt-6 p-3 bg-blue-50 rounded-lg">
-                        <p class="text-sm text-blue-800 font-medium">📋 This is a preview of the contract that will be generated. The actual contract will include additional legal terms and be digitally signed by both parties.</p>
+                        <p class="text-sm text-blue-800 font-medium">📋 This is a preview of the contract that will be generated. The actual contract will be digitally signed by both parties.</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        function generateFallbackContent(templateId, projectData, formData) {
+            const templateName = document.querySelector(`[data-template-id="${templateId}"] h3`).textContent;
+
+            return `
+                <div class="contract-preview">
+                    <h1 class="text-2xl font-bold mb-4 text-center">${templateName}</h1>
+                    <p class="text-center text-gray-600 mb-6">Preview content is temporarily unavailable. The actual contract will be generated with the proper template.</p>
+                    
+                    <div class="mb-6">
+                        <h2 class="text-lg font-semibold mb-2 text-blue-800">Basic Contract Information</h2>
+                        <p><strong>Client:</strong> ${projectData.clientName}</p>
+                        <p><strong>Freelancer:</strong> ${projectData.freelancerName}</p>
+                        <p><strong>Project:</strong> ${projectData.projectName}</p>
+                        <p><strong>Amount:</strong> ₱${projectData.agreedAmount.toLocaleString()}</p>
                     </div>
                 </div>
             `;

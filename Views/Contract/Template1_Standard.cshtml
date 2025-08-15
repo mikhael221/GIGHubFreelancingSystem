@@ -1,0 +1,89 @@
+@{
+    // Standard Freelance Agreement Template
+    // Copy this content back to SeedContractTemplates.cs in the GetStandardTemplate() method
+}
+
+<div class='contract-header mb-2'>
+    <h1 class="text-center font-bold">FREELANCE SERVICE AGREEMENT</h1>
+    <p><strong>Contract Date:</strong> {{CONTRACT_DATE}}</p>
+</div>
+
+<div class='parties-section mb-2 rounded-lg bg-blue-700'>
+    <h2 class="text-center text-white">PARTIES</h2>
+    <p>This Freelance Service Agreement ("Agreement") is entered into between:</p>
+    
+    <div class='parties-container' style="display: flex; justify-content: space-between; gap: 20px;">
+        <div class='party-info' style="flex: 1;">
+            <h3>Client:</h3>
+            <p><strong>Name:</strong> {{CLIENT_NAME}}</p>
+            <p><strong>Email:</strong> {{CLIENT_EMAIL}}</p>
+        </div>
+        
+        <div class='party-info' style="flex: 1;">
+            <h3>Freelancer:</h3>
+            <p><strong>Name:</strong> {{FREELANCER_NAME}}</p>
+            <p><strong>Email:</strong> {{FREELANCER_EMAIL}}</p>
+        </div>
+    </div>
+</div>
+
+<div class='project-section'>
+    <h2>PROJECT DETAILS</h2>
+    <p><strong>Project Name:</strong> {{PROJECT_NAME}}</p>
+    <p><strong>Project Category:</strong> {{PROJECT_CATEGORY}}</p>
+    <p><strong>Project Description:</strong> {{PROJECT_DESCRIPTION}}</p>
+    <p><strong>Original Budget:</strong> {{PROJECT_BUDGET}}</p>
+    <p><strong>Agreed Amount:</strong> {{AGREED_AMOUNT}}</p>
+    <p><strong>Proposal Details:</strong> {{PROPOSAL_DETAILS}}</p>
+</div>
+
+<div class='payment-section'>
+    <h2>PAYMENT TERMS</h2>
+    {{PAYMENT_TERMS_SECTION}}
+</div>
+
+<div class='revision-section'>
+    <h2>REVISION POLICY</h2>
+    {{REVISION_POLICY_SECTION}}
+</div>
+
+<div class='timeline-section'>
+    <h2>PROJECT TIMELINE</h2>
+    {{PROJECT_TIMELINE_SECTION}}
+</div>
+
+<div class='deliverables-section'>
+    <h3>4. Deliverables</h3>
+    <p>The Freelancer will deliver the following:</p>
+    <ul>
+        <li>All project files and source code</li>
+        <li>Documentation and user guides</li>
+        <li>Final project report</li>
+    </ul>
+</div>
+
+<div class='terms-section'>
+    <h3>5. Terms and Conditions</h3>
+    <p>Both parties agree to the following terms:</p>
+    <ul>
+        <li>All work will be completed according to the agreed timeline</li>
+        <li>Payment will be made according to the payment schedule</li>
+        <li>Intellectual property rights will transfer upon final payment</li>
+        <li>Confidentiality of project details will be maintained</li>
+    </ul>
+</div>
+
+<div class='signature-section'>
+    <div class='signature-block'>
+        <p><strong>Client Signature:</strong></p>
+        <div class='signature-line'>_________________________</div>
+        <p>Date: _________________</p>
+    </div>
+    
+    <div class='signature-block'>
+        <p><strong>Freelancer Signature:</strong></p>
+        <div class='signature-line'>_________________________</div>
+        <p>Date: _________________</p>
+    </div>
+</div>
+

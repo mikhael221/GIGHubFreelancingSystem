@@ -368,8 +368,7 @@ namespace Freelancing.Data
             modelBuilder.Entity<ContractTemplate>()
                 .HasIndex(ct => ct.IsActive);
 
-            modelBuilder.Entity<ContractTemplate>()
-                .HasIndex(ct => ct.IsDefault);
+            // Removed IsDefault index as it's no longer used
 
             // Configure default values for contracts
             modelBuilder.Entity<Contract>()

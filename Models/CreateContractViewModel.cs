@@ -25,6 +25,7 @@ namespace Freelancing.Models
         public string Proposal { get; set; } = "";
         
         // Contract Template Selection
+        [Required(ErrorMessage = "Please select a contract template")]
         public Guid? SelectedTemplateId { get; set; }
         public List<ContractTemplateOption> AvailableTemplates { get; set; } = new List<ContractTemplateOption>();
         
@@ -91,7 +92,6 @@ namespace Freelancing.Models
         public string Name { get; set; }
         public string Description { get; set; }
         public string Category { get; set; }
-        public bool IsDefault { get; set; }
         public string? PreviewImagePath { get; set; }
     }
 }

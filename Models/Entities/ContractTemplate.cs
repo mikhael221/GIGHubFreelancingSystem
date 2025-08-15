@@ -9,7 +9,6 @@ namespace Freelancing.Models.Entities
         public string TemplateContent { get; set; } // HTML template with placeholders
         
         public bool IsActive { get; set; } = true;
-        public bool IsDefault { get; set; } = false;
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow.ToLocalTime();
         public DateTime? LastModifiedAt { get; set; }
         
