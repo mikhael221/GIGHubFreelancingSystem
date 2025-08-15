@@ -103,12 +103,16 @@ namespace Freelancing.Controllers
                 var freelancerId = await GetFreelancerIdFromProjectAsync(model.ProjectId);
                 if (freelancerId != Guid.Empty)
                 {
+                    // Get project name from database to ensure it's not null
+                    var project = await _context.Projects.FindAsync(model.ProjectId);
+                    var projectName = project?.ProjectName ?? "Unknown Project";
+                    
                     await _notificationService.CreateNotificationAsync(
                         freelancerId,
                         "Contract Created",
-                        $"A contract has been created for project '{model.ProjectName}'. Please review and sign.",
+                        $"A contract has been created for project '{projectName}'. Please review and sign.",
                         "contract_created",
-                        null,
+                        "<svg viewBox=\"0 0 1024 1024\" class=\"icon\" version=\"1.1\" xmlns=\"http://www.w3.org/2000/svg\" fill=\"#000000\"><g id=\"SVGRepo_bgCarrier\" stroke-width=\"0\"></g><g id=\"SVGRepo_tracerCarrier\" stroke-linecap=\"round\" stroke-linejoin=\"round\"></g><g id=\"SVGRepo_iconCarrier\"><path d=\"M182.52 146.2h585.14v256h73.15V73.06H109.38v877.71h256v-73.14H182.52z\" fill=\"#000000\"></path><path d=\"M255.67 219.34h438.86v73.14H255.67zM255.67 365.63h365.71v73.14H255.67zM255.67 511.91H475.1v73.14H255.67zM775.22 458.24L439.04 794.42l-0.52 154.64 155.68 0.52L930.38 613.4 775.22 458.24z m51.72 155.16l-25.43 25.43-51.73-51.72 25.44-25.44 51.72 51.73z m-77.14 77.15L620.58 819.77l-51.72-51.72 129.22-129.22 51.72 51.72zM511.91 876.16l0.17-51.34 5.06-5.06 51.72 51.72-4.85 4.85-52.1-0.17z\" fill=\"#000000\"></path></g></svg>",
                         $"/Contract/Sign/{contract.Id}"
                     );
                     System.Diagnostics.Debug.WriteLine($"Notification sent to freelancer: {freelancerId}");
@@ -302,6 +306,7 @@ namespace Freelancing.Controllers
                 new { Value = "", Text = "All Contracts" },
                 new { Value = "Draft", Text = "Draft" },
                 new { Value = "AwaitingFreelancer", Text = "Awaiting Freelancer" },
+                new { Value = "AwaitingClient", Text = "Awaiting Client" },
                 new { Value = "Active", Text = "Active" },
                 new { Value = "Completed", Text = "Completed" }
             };
@@ -547,7 +552,7 @@ namespace Freelancing.Controllers
                 "Contract Fully Signed",
                 clientMessage,
                 "Contract",
-                null,
+                "<svg viewBox=\"0 0 1024 1024\" class=\"icon\" version=\"1.1\" xmlns=\"http://www.w3.org/2000/svg\" fill=\"#000000\"><g id=\"SVGRepo_bgCarrier\" stroke-width=\"0\"></g><g id=\"SVGRepo_tracerCarrier\" stroke-linecap=\"round\" stroke-linejoin=\"round\"></g><g id=\"SVGRepo_iconCarrier\"><path d=\"M182.52 146.2h585.14v402.28h73.15V73.06H109.38v877.71h402.28v-73.14H182.52z\" fill=\"#000000\"></path><path d=\"M255.67 219.34h438.86v73.14H255.67zM255.67 365.63h365.71v73.14H255.67zM255.67 511.91H475.1v73.14H255.67zM731.02 585.06c-100.99 0-182.86 81.87-182.86 182.86s81.87 182.86 182.86 182.86 182.86-81.87 182.86-182.86-81.87-182.86-182.86-182.86z m0 292.57c-60.5 0-109.71-49.22-109.71-109.71 0-60.5 49.22-109.71 109.71-109.71 60.5 0 109.71 49.22 109.71 109.71 0 60.49-49.22 109.71-109.71 109.71z\" fill=\"#000000\"></path><path d=\"M717.88 777.65l-42.55-38.13-36.61 40.86 84.02 75.27 102.98-118.47-41.39-36z\" fill=\"#000000\"></path></g></svg>",
                 $"/Contract/Details/{contract.Id}"
             );
 
@@ -556,7 +561,7 @@ namespace Freelancing.Controllers
                 "Contract Fully Signed",
                 freelancerMessage,
                 "Contract",
-                null,
+                "<svg viewBox=\"0 0 1024 1024\" class=\"icon\" version=\"1.1\" xmlns=\"http://www.w3.org/2000/svg\" fill=\"#000000\"><g id=\"SVGRepo_bgCarrier\" stroke-width=\"0\"></g><g id=\"SVGRepo_tracerCarrier\" stroke-linecap=\"round\" stroke-linejoin=\"round\"></g><g id=\"SVGRepo_iconCarrier\"><path d=\"M182.52 146.2h585.14v402.28h73.15V73.06H109.38v877.71h402.28v-73.14H182.52z\" fill=\"#000000\"></path><path d=\"M255.67 219.34h438.86v73.14H255.67zM255.67 365.63h365.71v73.14H255.67zM255.67 511.91H475.1v73.14H255.67zM731.02 585.06c-100.99 0-182.86 81.87-182.86 182.86s81.87 182.86 182.86 182.86 182.86-81.87 182.86-182.86-81.87-182.86-182.86-182.86z m0 292.57c-60.5 0-109.71-49.22-109.71-109.71 0-60.5 49.22-109.71 109.71-109.71 60.5 0 109.71 49.22 109.71 109.71 0 60.49-49.22 109.71-109.71 109.71z\" fill=\"#000000\"></path><path d=\"M717.88 777.65l-42.55-38.13-36.61 40.86 84.02 75.27 102.98-118.47-41.39-36z\" fill=\"#000000\"></path></g></svg>",
                 $"/Contract/Details/{contract.Id}"
             );
         }
@@ -576,7 +581,7 @@ namespace Freelancing.Controllers
                 "Contract Signature Required",
                 message,
                 "Contract",
-                null,
+                "<svg viewBox=\"0 0 1024 1024\" class=\"icon\" version=\"1.1\" xmlns=\"http://www.w3.org/2000/svg\" fill=\"#000000\"><g id=\"SVGRepo_bgCarrier\" stroke-width=\"0\"></g><g id=\"SVGRepo_tracerCarrier\" stroke-linecap=\"round\" stroke-linejoin=\"round\"></g><g id=\"SVGRepo_iconCarrier\"><path d=\"M182.99 146.2h585.14v402.29h73.14V73.06H109.84v877.71H512v-73.14H182.99z\" fill=\"#000000\"></path><path d=\"M256.13 219.34h438.86v73.14H256.13zM256.13 365.63h365.71v73.14H256.13zM256.13 511.91h219.43v73.14H256.13zM731.55 585.06c-100.99 0-182.86 81.87-182.86 182.86s81.87 182.86 182.86 182.86c100.99 0 182.86-81.87 182.86-182.86s-81.86-182.86-182.86-182.86z m0 292.57c-60.5 0-109.71-49.22-109.71-109.71 0-60.5 49.22-109.71 109.71-109.71 60.5 0 109.71 49.22 109.71 109.71 0.01 60.49-49.21 109.71-109.71 109.71z\" fill=\"#000000\"></path><path d=\"M758.99 692.08h-54.86v87.27l69.39 68.76 38.61-38.96-53.14-52.66z\" fill=\"#000000\"></path></g></svg>",
                 $"/Contract/Sign/{contract.Id}"
             );
         }

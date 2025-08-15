@@ -304,6 +304,13 @@ namespace Freelancing.Services
                 {
                     contract.Status = "AwaitingFreelancer";
                 }
+                else if (contract.Status == "AwaitingClient")
+                {
+                    contract.Status = "Active";
+                    
+                    // Update project status to Active
+                    contract.Project.Status = "Active";
+                }
             }
             else if (isFreelancer)
             {
@@ -315,7 +322,11 @@ namespace Freelancing.Services
                 
                 await LogContractActionAsync(contractId, userId, "Signed", "Freelancer signed the contract", ipAddress, userAgent);
                 
-                if (contract.Status == "AwaitingFreelancer")
+                if (contract.Status == "Draft")
+                {
+                    contract.Status = "AwaitingClient";
+                }
+                else if (contract.Status == "AwaitingFreelancer")
                 {
                     contract.Status = "Active";
                     

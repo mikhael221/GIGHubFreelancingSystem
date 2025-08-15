@@ -56,7 +56,7 @@ namespace Freelancing.Models
         // Status Helpers
         public bool IsFullySigned => ClientHasSigned && FreelancerHasSigned;
         public bool IsActive => Status == "Active";
-        public bool CanBeModified => Status == "Draft" || Status == "AwaitingFreelancer";
+        public bool CanBeModified => Status == "Draft" || Status == "AwaitingFreelancer" || Status == "AwaitingClient";
         
         // Audit Information
         public List<ContractAuditLogViewModel> AuditLogs { get; set; } = new List<ContractAuditLogViewModel>();

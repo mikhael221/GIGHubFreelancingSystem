@@ -169,7 +169,7 @@ namespace Freelancing.Controllers
                 
                 // Check if current user (client) needs to sign
                 var needsSignature = !contract.ClientSignedAt.HasValue && 
-                                   contract.Status == "Draft";
+                                   (contract.Status == "Draft" || contract.Status == "AwaitingClient");
                 ViewBag.NeedsSignature = needsSignature;
                 
                 // Add status information for better UX
