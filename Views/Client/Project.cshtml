@@ -49,9 +49,22 @@
                         </div>
                     </div>
                 }
-                <div class="flex items-center mt-3">
-                    <h5 class="text-info font-medium italic tracking-tight text-gray-900 mr-2">Posted:</h5>
-                    <span class="text-info font-light italic tracking-tight text-gray-900">@Model.CreatedAt.ToString("MMM dd, yyyy 'at' h:mm tt")</span>
+                <div class="mt-6">
+                    <!-- Project Owner Information -->
+                    <div class="flex items-center space-x-3 bg-gray-50 rounded-lg w-fit mb-3">
+                        @if (!string.IsNullOrEmpty(Model.User?.Photo))
+                        {
+                            <img src="@Model.User.Photo" alt="Project Owner" class="rounded-full object-cover border-2 border-gray-200" style="width: 25px; height: auto">
+                        }
+                        else
+                        {
+                            <img src="https://ik.imagekit.io/6txj3mofs/GIGHub%20(11).png?updatedAt=1750552804497" alt="Project Owner" class="rounded-full object-cover border-2 border-gray-200" style="width: 50px; height: auto">
+                        }
+                        <div class="flex flex-col">
+                            <span class="font-semibold text-md text-gray-900">@(Model.User?.FirstName) @(Model.User?.LastName)</span>
+                            <span class="text-sm font-light italic tracking-tight text-gray-900">@Model.CreatedAt.ToString("MMM dd, yyyy 'at' h:mm tt")</span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
