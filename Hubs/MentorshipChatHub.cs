@@ -409,7 +409,8 @@ namespace Freelancing.Hubs
                 {
                     MentorshipMatchId = mentorshipMatchId,
                     CallerId = userId.ToString(),
-                    CallerName = fullName ?? "Unknown User"
+                    CallerName = fullName ?? "Unknown User",
+                    CallerPhoto = !string.IsNullOrEmpty(user.Photo) ? user.Photo : "https://ik.imagekit.io/6txj3mofs/GIGHub%20(11).png?updatedAt=1750552804497"
                 });
 
                 // Send to mentorship room (for users currently in chat)
@@ -417,6 +418,7 @@ namespace Freelancing.Hubs
                 {
                     CallerId = userId.ToString(),
                     CallerName = fullName ?? "Unknown User",
+                    CallerPhoto = !string.IsNullOrEmpty(user.Photo) ? user.Photo : "https://ik.imagekit.io/6txj3mofs/GIGHub%20(11).png?updatedAt=1750552804497",
                     MentorshipMatchId = mentorshipMatchId
                 });
 
@@ -428,6 +430,7 @@ namespace Freelancing.Hubs
                 {
                     CallerId = userId.ToString(),
                     CallerName = fullName ?? "Unknown User",
+                    CallerPhoto = !string.IsNullOrEmpty(user.Photo) ? user.Photo : "https://ik.imagekit.io/6txj3mofs/GIGHub%20(11).png?updatedAt=1750552804497",
                     MentorshipMatchId = mentorshipMatchId
                 });
             }

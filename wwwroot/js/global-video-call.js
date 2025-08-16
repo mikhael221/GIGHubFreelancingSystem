@@ -1,30 +1,37 @@
-// Global Video Call Notification System
+// Global Video Call Notification System for both Mentorship and Project Chat
 class GlobalVideoCall {
     constructor() {
-        this.connection = null;
+        this.mentorshipConnection = null;
+        this.projectConnection = null;
         this.currentUserId = null;
-        this.isConnected = false;
+        this.isMentorshipConnected = false;
+        this.isProjectConnected = false;
         this.notificationContainer = null;
         this.init();
     }
 
     async init() {
         try {
+            console.log('GlobalVideoCall: Initializing...');
             // Get current user ID from page
             this.currentUserId = this.getCurrentUserId();
+            console.log('GlobalVideoCall: Current user ID:', this.currentUserId);
             if (!this.currentUserId) {
+                console.log('GlobalVideoCall: No user ID found, skipping initialization');
                 return;
             }
 
             // Create notification container
             this.createNotificationContainer();
             
-            // Connect to SignalR
-            await this.connectToSignalR();
+            // Connect to both SignalR hubs
+            await this.connectToMentorshipSignalR();
+            await this.connectToProjectSignalR();
             
             // Set up event handlers
             this.setupEventHandlers();
             
+            console.log('GlobalVideoCall: Initialization complete');
         } catch (error) {
             console.error('GlobalVideoCall: Error initializing:', error);
         }
@@ -96,74 +103,156 @@ class GlobalVideoCall {
         document.body.appendChild(this.notificationContainer);
     }
 
-    async connectToSignalR() {
+    async connectToMentorshipSignalR() {
         try {
-            this.connection = new signalR.HubConnectionBuilder()
+            console.log('GlobalVideoCall: Connecting to Mentorship SignalR...');
+            this.mentorshipConnection = new signalR.HubConnectionBuilder()
                 .withUrl('/mentorshipChatHub')
                 .withAutomaticReconnect()
                 .build();
 
-            await this.connection.start();
-            this.isConnected = true;
+            await this.mentorshipConnection.start();
+            this.isMentorshipConnected = true;
+            console.log('GlobalVideoCall: Mentorship SignalR connected successfully');
 
             // Join global room for this user
-            await this.connection.invoke('JoinUserRoom', this.currentUserId);
+            await this.mentorshipConnection.invoke('JoinUserRoom', this.currentUserId);
+            console.log('GlobalVideoCall: Joined mentorship user room:', this.currentUserId);
 
         } catch (error) {
-            console.error('GlobalVideoCall: Failed to connect to SignalR:', error);
+            console.error('GlobalVideoCall: Failed to connect to Mentorship SignalR:', error);
+        }
+    }
+
+    async connectToProjectSignalR() {
+        try {
+            console.log('GlobalVideoCall: Connecting to Project SignalR...');
+            this.projectConnection = new signalR.HubConnectionBuilder()
+                .withUrl('/chatHub')
+                .withAutomaticReconnect()
+                .build();
+
+            await this.projectConnection.start();
+            this.isProjectConnected = true;
+            console.log('GlobalVideoCall: Project SignalR connected successfully');
+
+            // Join global room for this user
+            await this.projectConnection.invoke('JoinUserRoom', this.currentUserId);
+            console.log('GlobalVideoCall: Joined project user room:', this.currentUserId);
+
+        } catch (error) {
+            console.error('GlobalVideoCall: Failed to connect to Project SignalR:', error);
         }
     }
 
     setupEventHandlers() {
-        if (!this.connection) {
-            return;
+        // Setup mentorship event handlers
+        if (this.mentorshipConnection) {
+            this.setupMentorshipEventHandlers();
         }
 
-        // Handle incoming video calls
-        this.connection.on('IncomingVideoCall', (data) => {
-            this.showIncomingCallNotification(data);
+        // Setup project event handlers
+        if (this.projectConnection) {
+            this.setupProjectEventHandlers();
+        }
+    }
+
+    setupMentorshipEventHandlers() {
+        // Handle incoming mentorship video calls
+        this.mentorshipConnection.on('IncomingVideoCall', (data) => {
+            console.log('GlobalVideoCall: Received mentorship incoming call:', data);
+            this.showIncomingCallNotification(data, 'mentorship');
         });
 
-        // Handle call waiting events
-        this.connection.on('CallRequested', (data) => {
-            this.showCallWaitingNotification(data);
+        // Handle mentorship call waiting events
+        this.mentorshipConnection.on('CallRequested', (data) => {
+            this.showCallWaitingNotification(data, 'mentorship');
         });
 
-        this.connection.on('CallAccepted', (data) => {
+        this.mentorshipConnection.on('CallAccepted', (data) => {
             this.hideCallWaitingNotification();
         });
 
-        this.connection.on('CallDeclined', (data) => {
+        this.mentorshipConnection.on('CallDeclined', (data) => {
             this.hideCallWaitingNotification();
         });
 
-        // Handle video call ended
-        this.connection.on('VideoCallEnded', () => {
+        // Handle mentorship video call ended
+        this.mentorshipConnection.on('VideoCallEnded', () => {
             this.hideNotification();
         });
 
-        // Handle connection state changes
-        this.connection.onclose(() => {
-            this.isConnected = false;
+        // Handle mentorship connection state changes
+        this.mentorshipConnection.onclose(() => {
+            this.isMentorshipConnected = false;
         });
 
-        this.connection.onreconnecting(() => {
+        this.mentorshipConnection.onreconnecting(() => {
             // Reconnecting...
         });
 
-        this.connection.onreconnected(() => {
-            this.isConnected = true;
+        this.mentorshipConnection.onreconnected(() => {
+            this.isMentorshipConnected = true;
             // Rejoin user room
-            this.connection.invoke('JoinUserRoom', this.currentUserId);
+            this.mentorshipConnection.invoke('JoinUserRoom', this.currentUserId);
         });
 
-        // Handle errors
-        this.connection.on('Error', (error) => {
-            console.error('GlobalVideoCall: SignalR error:', error);
+        // Handle mentorship errors
+        this.mentorshipConnection.on('Error', (error) => {
+            console.error('GlobalVideoCall: Mentorship SignalR error:', error);
         });
     }
 
-    showIncomingCallNotification(data) {
+    setupProjectEventHandlers() {
+        // Handle incoming project video calls
+        this.projectConnection.on('IncomingVideoCall', (data) => {
+            console.log('GlobalVideoCall: Received project incoming call:', data);
+            this.showIncomingCallNotification(data, 'project');
+        });
+
+        // Handle project call waiting events
+        this.projectConnection.on('CallRequested', (data) => {
+            this.showCallWaitingNotification(data, 'project');
+        });
+
+        this.projectConnection.on('CallAccepted', (data) => {
+            this.hideCallWaitingNotification();
+        });
+
+        this.projectConnection.on('CallDeclined', (data) => {
+            this.hideCallWaitingNotification();
+        });
+
+        // Handle project video call ended
+        this.projectConnection.on('VideoCallEnded', () => {
+            this.hideNotification();
+        });
+
+        // Handle project connection state changes
+        this.projectConnection.onclose(() => {
+            this.isProjectConnected = false;
+        });
+
+        this.projectConnection.onreconnecting(() => {
+            // Reconnecting...
+        });
+
+        this.projectConnection.onreconnected(() => {
+            this.isProjectConnected = true;
+            // Rejoin user room
+            this.projectConnection.invoke('JoinUserRoom', this.currentUserId);
+        });
+
+        // Handle project errors
+        this.projectConnection.on('Error', (error) => {
+            console.error('GlobalVideoCall: Project SignalR error:', error);
+        });
+    }
+
+    showIncomingCallNotification(data, type = 'mentorship') {
+        console.log('GlobalVideoCall: Showing notification with data:', data, 'type:', type);
+        console.log('GlobalVideoCall: Data keys:', Object.keys(data));
+        console.log('GlobalVideoCall: Data values:', Object.values(data));
         const notification = document.createElement('div');
         notification.className = 'video-call-notification';
         
@@ -190,27 +279,53 @@ class GlobalVideoCall {
         notification.style.visibility = 'visible';
         notification.style.opacity = '1';
 
+        // Determine the caller name and ID based on type - handle both camelCase and PascalCase
+        let callerName, callerId, callId, callerPhoto;
+        
+        if (type === 'mentorship') {
+            callerName = data.callerName || data.CallerName || 'Unknown';
+            callerId = data.callerId || data.CallerId;
+            callId = data.mentorshipMatchId || data.MentorshipMatchId;
+            callerPhoto = data.callerPhoto || data.CallerPhoto;
+        } else {
+            callerName = data.CallerName || data.callerName || 'Unknown';
+            callerId = data.CallerId || data.callerId;
+            callId = data.ChatRoomId || data.chatRoomId;
+            callerPhoto = data.CallerPhoto || data.callerPhoto;
+        }
+        
+        console.log('GlobalVideoCall: Extracted data - callerName:', callerName, 'callerId:', callerId, 'callId:', callId);
+
+        // Validate that we have the required data
+        if (!callerId || !callId) {
+            console.error('GlobalVideoCall: Missing required data for notification - callerId:', callerId, 'callId:', callId);
+            return;
+        }
+
+        // Create the photo element - show user photo if available, otherwise show default GIGHub profile image
+        const photoElement = callerPhoto && callerPhoto.trim() !== '' 
+            ? `<img src="${callerPhoto}" alt="${callerName}" style="width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 2px solid rgba(255,255,255,0.3);">`
+            : `<img src="https://ik.imagekit.io/6txj3mofs/GIGHub%20(11).png?updatedAt=1750552804497" alt="${callerName}" style="width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 2px solid rgba(255,255,255,0.3);">`;
+
         notification.innerHTML = `
             <div style="display: flex; align-items: center; gap: 15px;">
                 <div style="flex-shrink: 0;">
-                    <div style="width: 50px; height: 50px; background: rgba(255,255,255,0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-                        <i class="fas fa-video" style="font-size: 20px;"></i>
-                    </div>
+                    ${photoElement}
                 </div>
                 <div style="flex-grow: 1;">
                     <h4 style="margin: 0 0 5px 0; font-size: 16px; font-weight: 600;">
                         Incoming Video Call
                     </h4>
                     <p style="margin: 0; font-size: 14px; opacity: 0.9;">
-                        ${data.callerName || 'Unknown'} is calling...
+                        ${callerName} is calling...
                     </p>
                 </div>
                 <div style="flex-shrink: 0; display: flex; gap: 8px;">
-                    <button onclick="window.globalVideoCall.acceptCall('${data.mentorshipMatchId}', '${data.callerId}')" 
+                    <button onclick="window.globalVideoCall.acceptCall('${callId}', '${callerId}', '${type}')" 
                             style="background: #10b981; border: none; color: white; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;">
                         <i class="fas fa-phone"></i> Accept
                     </button>
-                    <button onclick="window.globalVideoCall.declineCall('${data.mentorshipMatchId}', '${data.callerId}')" 
+                    <button onclick="window.globalVideoCall.declineCall('${callId}', '${callerId}', '${type}')" 
                             style="background: #ef4444; border: none; color: white; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;">
                         <i class="fas fa-phone-slash"></i> Decline
                     </button>
@@ -339,19 +454,24 @@ class GlobalVideoCall {
         // tries to accept/decline later, it won't affect anything
     }
 
-    async acceptCall(matchId, callerId) {
+    async acceptCall(matchId, callerId, type = 'mentorship') {
         try {
+            console.log('GlobalVideoCall: Accepting call:', matchId, callerId, type);
             // Hide notification
             this.hideNotification();
             
-            // Send accept signal
-            if (this.connection && this.isConnected) {
-                await this.connection.invoke('AcceptVideoCall', matchId, callerId);
+            // Send accept signal based on type
+            if (type === 'mentorship' && this.mentorshipConnection && this.isMentorshipConnected) {
+                await this.mentorshipConnection.invoke('AcceptVideoCall', matchId, callerId);
+                // Open mentorship video call window
+                const videoCallUrl = `/MentorshipChat/VideoCall/${matchId}`;
+                window.open(videoCallUrl, 'videoCall', 'width=1200,height=800,scrollbars=no,resizable=yes');
+            } else if (type === 'project' && this.projectConnection && this.isProjectConnected) {
+                await this.projectConnection.invoke('AcceptVideoCall', matchId, callerId);
+                // Open project video call window
+                const videoCallUrl = `/Chat/VideoCall?chatRoomId=${matchId}`;
+                window.open(videoCallUrl, 'videoCall', 'width=1200,height=800,scrollbars=no,resizable=yes');
             }
-            
-            // Open video call window
-            const videoCallUrl = `/MentorshipChat/VideoCall/${matchId}`;
-            window.open(videoCallUrl, 'videoCall', 'width=1200,height=800,scrollbars=no,resizable=yes');
             
         } catch (error) {
             console.error('GlobalVideoCall: Error accepting call:', error);
@@ -359,14 +479,17 @@ class GlobalVideoCall {
         }
     }
 
-    async declineCall(matchId, callerId) {
+    async declineCall(matchId, callerId, type = 'mentorship') {
         try {
+            console.log('GlobalVideoCall: Declining call:', matchId, callerId, type);
             // Hide notification
             this.hideNotification();
             
-            // Send decline signal
-            if (this.connection && this.isConnected) {
-                await this.connection.invoke('DeclineVideoCall', matchId, callerId);
+            // Send decline signal based on type
+            if (type === 'mentorship' && this.mentorshipConnection && this.isMentorshipConnected) {
+                await this.mentorshipConnection.invoke('DeclineVideoCall', matchId, callerId);
+            } else if (type === 'project' && this.projectConnection && this.isProjectConnected) {
+                await this.projectConnection.invoke('DeclineVideoCall', matchId, callerId);
             }
             
         } catch (error) {
@@ -376,7 +499,7 @@ class GlobalVideoCall {
 
     // Public method to check if connected
     isSignalRConnected() {
-        return this.isConnected;
+        return this.isMentorshipConnected || this.isProjectConnected;
     }
 }
 

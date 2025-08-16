@@ -581,5 +581,385 @@ namespace Freelancing.Hubs
                 Console.WriteLine($"Error in Typing: {ex.Message}");
             }
         }
+
+        // Video Call Methods
+        public async Task StartVideoCall(string chatRoomId)
+        {
+            try
+            {
+                var userIdClaim = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userIdClaim))
+                {
+                    await Clients.Caller.SendAsync("Error", "User not authenticated");
+                    return;
+                }
+
+                var userId = Guid.Parse(userIdClaim);
+                var user = await _context.UserAccounts.FirstOrDefaultAsync(u => u.Id == userId);
+                if (user == null)
+                {
+                    await Clients.Caller.SendAsync("Error", "User not found");
+                    return;
+                }
+                var fullName = $"{user.FirstName} {user.LastName}";
+
+                // Check if this is a temporary chat room ID (for new chats)
+                if (chatRoomId.StartsWith("temp_"))
+                {
+                    // For temporary chat rooms, we need to get the target user ID from the caller
+                    // This will be handled by the video call page when it opens
+                    await Clients.Caller.SendAsync("CallRequested", new
+                    {
+                        ChatRoomId = chatRoomId,
+                        CallerId = userId.ToString(),
+                        CallerName = fullName ?? "Unknown User",
+                        CallerPhoto = !string.IsNullOrEmpty(user.Photo) ? user.Photo : "https://ik.imagekit.io/6txj3mofs/GIGHub%20(11).png?updatedAt=1750552804497",
+                        IsTemporary = true
+                    });
+                    return;
+                }
+
+                // Verify access to this chat room
+                var chatRoom = await _context.ChatRooms
+                    .FirstOrDefaultAsync(cr => cr.Id.ToString() == chatRoomId &&
+                                              (cr.User1Id == userId || cr.User2Id == userId) &&
+                                              cr.IsActive);
+
+                if (chatRoom == null)
+                {
+                    await Clients.Caller.SendAsync("Error", "Access denied or chat room not found");
+                    return;
+                }
+
+                var roomName = $"chat_{chatRoomId}";
+
+                // Notify the caller that their call is being requested
+                await Clients.Caller.SendAsync("CallRequested", new
+                {
+                    ChatRoomId = chatRoomId,
+                    CallerId = userId.ToString(),
+                    CallerName = fullName ?? "Unknown User",
+                    CallerPhoto = !string.IsNullOrEmpty(user.Photo) ? user.Photo : "https://ik.imagekit.io/6txj3mofs/GIGHub%20(11).png?updatedAt=1750552804497"
+                });
+
+                // Send to chat room (for users currently in chat)
+                await Clients.OthersInGroup(roomName).SendAsync("IncomingVideoCall", new
+                {
+                    CallerId = userId.ToString(),
+                    CallerName = fullName ?? "Unknown User",
+                    CallerPhoto = !string.IsNullOrEmpty(user.Photo) ? user.Photo : "https://ik.imagekit.io/6txj3mofs/GIGHub%20(11).png?updatedAt=1750552804497",
+                    ChatRoomId = chatRoomId
+                });
+
+                // Also send to the partner's personal room (for global notifications)
+                var partnerId = chatRoom.User1Id == userId ? chatRoom.User2Id : chatRoom.User1Id;
+                var partnerRoomName = $"user_{partnerId}";
+                
+                await Clients.Group(partnerRoomName).SendAsync("IncomingVideoCall", new
+                {
+                    CallerId = userId.ToString(),
+                    CallerName = fullName ?? "Unknown User",
+                    CallerPhoto = !string.IsNullOrEmpty(user.Photo) ? user.Photo : "https://ik.imagekit.io/6txj3mofs/GIGHub%20(11).png?updatedAt=1750552804497",
+                    ChatRoomId = chatRoomId
+                });
+            }
+            catch (Exception ex)
+            {
+                await Clients.Caller.SendAsync("Error", "Failed to start video call");
+            }
+        }
+
+        public async Task AcceptVideoCall(string chatRoomId, string callerId)
+        {
+            try
+            {
+                var userIdClaim = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userIdClaim))
+                {
+                    await Clients.Caller.SendAsync("Error", "User not authenticated");
+                    return;
+                }
+
+                var userId = Guid.Parse(userIdClaim);
+
+                // Check if this is a temporary chat room ID
+                if (chatRoomId.StartsWith("temp_"))
+                {
+                    // For temporary chat rooms, we need to create a real chat room
+                    // Get the caller's user info to create the chat room
+                    var caller = await _context.UserAccounts.FirstOrDefaultAsync(u => u.Id.ToString() == callerId);
+                    if (caller == null)
+                    {
+                        await Clients.Caller.SendAsync("Error", "Caller not found");
+                        return;
+                    }
+
+                    // Create a new chat room for this video call
+                    var newChatRoom = new ChatRoom
+                    {
+                        Id = Guid.NewGuid(),
+                        User1Id = Guid.Parse(callerId),
+                        User2Id = userId,
+                        IsActive = true,
+                        CreatedAt = DateTime.UtcNow
+                    };
+
+                    _context.ChatRooms.Add(newChatRoom);
+                    await _context.SaveChangesAsync();
+
+                    // Notify the caller that their call was accepted with the new chat room ID
+                    await Clients.User(callerId).SendAsync("CallAccepted", new
+                    {
+                        ChatRoomId = newChatRoom.Id.ToString(),
+                        AccepterId = userId.ToString(),
+                        IsTemporary = false
+                    });
+
+                    // Also notify the accepter
+                    await Clients.Caller.SendAsync("CallAccepted", new
+                    {
+                        ChatRoomId = newChatRoom.Id.ToString(),
+                        AccepterId = userId.ToString(),
+                        IsTemporary = false
+                    });
+                    return;
+                }
+
+                // Verify access to this chat room
+                var chatRoom = await _context.ChatRooms
+                    .FirstOrDefaultAsync(cr => cr.Id.ToString() == chatRoomId &&
+                                              (cr.User1Id == userId || cr.User2Id == userId) &&
+                                              cr.IsActive);
+
+                if (chatRoom == null)
+                {
+                    await Clients.Caller.SendAsync("Error", "Access denied or chat room not found");
+                    return;
+                }
+
+                var roomName = $"chat_{chatRoomId}";
+
+                // Notify the caller that their call was accepted
+                await Clients.User(callerId).SendAsync("CallAccepted", new
+                {
+                    ChatRoomId = chatRoomId,
+                    AccepterId = userId.ToString()
+                });
+
+                await Clients.Group(roomName).SendAsync("VideoCallAccepted", new
+                {
+                    AccepterId = userId.ToString(),
+                    CallerId = callerId,
+                    ChatRoomId = chatRoomId
+                });
+            }
+            catch (Exception ex)
+            {
+                await Clients.Caller.SendAsync("Error", "Failed to accept video call");
+            }
+        }
+
+        public async Task DeclineVideoCall(string chatRoomId, string callerId)
+        {
+            try
+            {
+                var userIdClaim = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userIdClaim))
+                {
+                    await Clients.Caller.SendAsync("Error", "User not authenticated");
+                    return;
+                }
+
+                var userId = Guid.Parse(userIdClaim);
+
+                // Check if this is a temporary chat room ID
+                if (chatRoomId.StartsWith("temp_"))
+                {
+                    // For temporary chat rooms, just notify the caller that their call was declined
+                    await Clients.User(callerId).SendAsync("CallDeclined", new
+                    {
+                        ChatRoomId = chatRoomId,
+                        DeclinerId = userId.ToString(),
+                        IsTemporary = true
+                    });
+                    return;
+                }
+
+                // Verify access to this chat room
+                var chatRoom = await _context.ChatRooms
+                    .FirstOrDefaultAsync(cr => cr.Id.ToString() == chatRoomId &&
+                                              (cr.User1Id == userId || cr.User2Id == userId) &&
+                                              cr.IsActive);
+
+                if (chatRoom == null)
+                {
+                    await Clients.Caller.SendAsync("Error", "Access denied or chat room not found");
+                    return;
+                }
+
+                var roomName = $"chat_{chatRoomId}";
+
+                // Notify the caller that their call was declined
+                await Clients.User(callerId).SendAsync("CallDeclined", new
+                {
+                    ChatRoomId = chatRoomId,
+                    DeclinerId = userId.ToString()
+                });
+
+                await Clients.Group(roomName).SendAsync("VideoCallDeclined", new
+                {
+                    ChatRoomId = chatRoomId
+                });
+            }
+            catch (Exception ex)
+            {
+                await Clients.Caller.SendAsync("Error", "Failed to decline video call");
+            }
+        }
+
+        public async Task EndVideoCall(string chatRoomId)
+        {
+            try
+            {
+                var userIdClaim = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userIdClaim))
+                {
+                    await Clients.Caller.SendAsync("Error", "User not authenticated");
+                    return;
+                }
+
+                var userId = Guid.Parse(userIdClaim);
+
+                // Verify access to this chat room
+                var chatRoom = await _context.ChatRooms
+                    .FirstOrDefaultAsync(cr => cr.Id.ToString() == chatRoomId &&
+                                              (cr.User1Id == userId || cr.User2Id == userId) &&
+                                              cr.IsActive);
+
+                if (chatRoom == null)
+                {
+                    await Clients.Caller.SendAsync("Error", "Access denied or chat room not found");
+                    return;
+                }
+
+                var roomName = $"chat_{chatRoomId}";
+
+                await Clients.Group(roomName).SendAsync("VideoCallEnded", new
+                {
+                    ChatRoomId = chatRoomId
+                });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in EndVideoCall: {ex.Message}");
+                await Clients.Caller.SendAsync("Error", "Failed to end video call");
+            }
+        }
+
+        // WebRTC signaling methods
+        public async Task SendOffer(string chatRoomId, string offer)
+        {
+            try
+            {
+                var userIdClaim = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userIdClaim))
+                {
+                    await Clients.Caller.SendAsync("Error", "User not authenticated");
+                    return;
+                }
+
+                var userId = Guid.Parse(userIdClaim);
+
+                // Verify access to this chat room
+                var chatRoom = await _context.ChatRooms
+                    .FirstOrDefaultAsync(cr => cr.Id.ToString() == chatRoomId &&
+                                              (cr.User1Id == userId || cr.User2Id == userId) &&
+                                              cr.IsActive);
+
+                if (chatRoom == null)
+                {
+                    await Clients.Caller.SendAsync("Error", "Access denied or chat room not found");
+                    return;
+                }
+
+                var roomName = $"chat_{chatRoomId}";
+                await Clients.OthersInGroup(roomName).SendAsync("ReceiveOffer", offer);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in SendOffer: {ex.Message}");
+                await Clients.Caller.SendAsync("Error", "Failed to send offer");
+            }
+        }
+
+        public async Task SendAnswer(string chatRoomId, string answer)
+        {
+            try
+            {
+                var userIdClaim = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userIdClaim))
+                {
+                    await Clients.Caller.SendAsync("Error", "User not authenticated");
+                    return;
+                }
+
+                var userId = Guid.Parse(userIdClaim);
+
+                // Verify access to this chat room
+                var chatRoom = await _context.ChatRooms
+                    .FirstOrDefaultAsync(cr => cr.Id.ToString() == chatRoomId &&
+                                              (cr.User1Id == userId || cr.User2Id == userId) &&
+                                              cr.IsActive);
+
+                if (chatRoom == null)
+                {
+                    await Clients.Caller.SendAsync("Error", "Access denied or chat room not found");
+                    return;
+                }
+
+                var roomName = $"chat_{chatRoomId}";
+                await Clients.OthersInGroup(roomName).SendAsync("ReceiveAnswer", answer);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in SendAnswer: {ex.Message}");
+                await Clients.Caller.SendAsync("Error", "Failed to send answer");
+            }
+        }
+
+        public async Task SendIceCandidate(string chatRoomId, string candidate)
+        {
+            try
+            {
+                var userIdClaim = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userIdClaim))
+                {
+                    await Clients.Caller.SendAsync("Error", "User not authenticated");
+                    return;
+                }
+
+                var userId = Guid.Parse(userIdClaim);
+
+                // Verify access to this chat room
+                var chatRoom = await _context.ChatRooms
+                    .FirstOrDefaultAsync(cr => cr.Id.ToString() == chatRoomId &&
+                                              (cr.User1Id == userId || cr.User2Id == userId) &&
+                                              cr.IsActive);
+
+                if (chatRoom == null)
+                {
+                    await Clients.Caller.SendAsync("Error", "Access denied or chat room not found");
+                    return;
+                }
+
+                var roomName = $"chat_{chatRoomId}";
+                await Clients.OthersInGroup(roomName).SendAsync("ReceiveIceCandidate", candidate);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in SendIceCandidate: {ex.Message}");
+                await Clients.Caller.SendAsync("Error", "Failed to send ICE candidate");
+            }
+        }
     }
 }

@@ -26,4 +26,12 @@ namespace Freelancing.Models
         public bool IsActive { get; set; }
         public MentorshipMatch MentorshipMatch { get; set; }
     }
+
+    public class ProjectVideoCallViewModel
+    {
+        public string ChatRoomId { get; set; }
+        public Guid CurrentUserId { get; set; }
+        public UserAccount Partner { get; set; }
+        public string PartnerName => $"{Partner?.FirstName} {Partner?.LastName}";
+    }
 }

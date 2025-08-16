@@ -87,6 +87,7 @@ namespace Freelancing.Controllers
         public async Task<IActionResult> Project(Guid Id)
         {
             var projects = await dbContext.Projects
+                .Include(p => p.User)
                 .Include(p => p.Biddings)
                 .ThenInclude(b => b.User)
                 .Include(p => p.ProjectSkills)

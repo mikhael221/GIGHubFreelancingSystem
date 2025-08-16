@@ -751,6 +751,23 @@
         </div>
     </div>
 
+    <!-- Call Waiting Notification -->
+    <div class="call-waiting-notification" id="callWaitingNotification" style="display: none;">
+        <div class="flex items-center gap-3 mb-3">
+            <i class="fas fa-phone text-2xl text-orange-500"></i>
+            <div>
+                <div class="font-semibold">Calling...</div>
+                <div class="text-sm text-gray-600">Waiting for response</div>
+            </div>
+        </div>
+        <div class="flex gap-2">
+            <button class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600"
+                    onclick="cancelVideoCall()">
+                <i class="fas fa-times"></i> Cancel
+            </button>
+        </div>
+    </div>
+
 
 
     <script src="~/js/site.js" asp-append-version="true"></script>
@@ -767,6 +784,22 @@
         
         function hideSecurityInfo() {
             document.getElementById('securityInfoModal').classList.add('hidden');
+        }
+
+        // Video call functionality
+        function startVideoCall() {
+            if (typeof initiateVideoCall === 'function') {
+                initiateVideoCall();
+            } else {
+                const currentChatRoomId = document.getElementById('currentChatRoomId').value;
+                if (currentChatRoomId && currentChatRoomId !== '00000000-0000-0000-0000-000000000000') {
+                    // Open video call in a new window
+                    const videoCallUrl = `/Chat/VideoCall?chatRoomId=${currentChatRoomId}`;
+                    window.open(videoCallUrl, 'VideoCall', 'width=800,height=600,scrollbars=no,resizable=yes');
+                } else {
+                    alert('Please start a conversation first before making a video call.');
+                }
+            }
         }
         
         // Sidebar toggle functionality

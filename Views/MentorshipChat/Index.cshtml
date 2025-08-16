@@ -32,7 +32,7 @@
         }
     </style>
 </head>
-<body>
+<body data-user-id="@Model.CurrentUserId">
     <nav class="fixed top-0 z-50 w-full bg-white border-b border-gray-200">
         <div class="px-3 py-3 lg:px-5 lg:pl-3">
             <div class="flex items-center justify-between">
@@ -477,29 +477,8 @@
                 </div>
             </div>
 
-            <!-- Video Call Notification -->
-            <div class="video-call-notification" id="videoCallNotification">
-                <div class="flex items-center gap-3 mb-3">
-                    <i class="fas fa-video text-2xl text-blue-600"></i>
-                    <div>
-                        <div class="font-semibold" id="callerName"></div>
-                        <div class="text-sm text-gray-600">Incoming video call</div>
-                    </div>
-                </div>
-                <div class="flex gap-2">
-                    <button class="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600"
-                            onclick="acceptVideoCall()">
-                        <i class="fas fa-phone"></i> Accept
-                    </button>
-                    <button class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600"
-                            onclick="declineVideoCall()">
-                        <i class="fas fa-phone-slash"></i> Decline
-                    </button>
-                </div>
-            </div>
-
             <!-- Call Waiting Notification -->
-            <div class="call-waiting-notification" id="callWaitingNotification">
+            <div class="call-waiting-notification" id="callWaitingNotification" style="display: none;">
                 <div class="flex items-center gap-3 mb-3">
                     <i class="fas fa-phone text-2xl text-orange-500"></i>
                     <div>
@@ -525,6 +504,7 @@
         </div>
     </div>
     <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="~/js/global-video-call.js" asp-append-version="true"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.2.1/flowbite.min.js"></script>
     <script>
         // SignalR Connection
@@ -538,7 +518,6 @@
 
         let typingTimer;
         let isTyping = false;
-        let currentCallerId = null;
         let isConnectionReady = false;
 
         // Timezone handling - get user's timezone offset
@@ -651,24 +630,7 @@
             }
         });
 
-        // Video call events
-        connection.on('IncomingVideoCall', (data) => {
-            console.log('Incoming video call:', data);
-            console.log('Data type:', typeof data);
-            console.log('Data properties:', Object.keys(data));
-            console.log('CallerId:', data.callerId);
-            console.log('CallerName:', data.callerName);
-
-            // Since we're already in the chat, we don't need to show the global notification
-            // The global notification system will handle this for users not in the chat
-            // We can still show a local notification if needed
-            console.log('MentorshipMatchId:', data.mentorshipMatchId);
-
-            currentCallerId = data.callerId;
-            document.getElementById('callerName').textContent = data.callerName;
-            document.getElementById('videoCallNotification').style.display = 'block';
-        });
-
+        // Video call events - handled by global notification system
         connection.on('VideoCallAccepted', (data) => {
             console.log('Video call accepted:', data);
             console.log('Current matchId:', matchId);
@@ -684,15 +646,10 @@
             }, 500);
         });
 
-        connection.on('VideoCallDeclined', (data) => {
-            console.log('Video call declined:', data);
-            alert('Call was declined');
-        });
-
-        // Call waiting events
+        // Call waiting events for the caller
         connection.on('CallRequested', (data) => {
             console.log('Call requested:', data);
-            // Show the waiting notification
+            // Show the waiting notification for the caller
             document.getElementById('callWaitingNotification').style.display = 'block';
         });
 
@@ -700,8 +657,6 @@
             console.log('Call accepted:', data);
             // Hide the waiting notification
             document.getElementById('callWaitingNotification').style.display = 'none';
-
-            // The VideoCallAccepted event will handle opening the video call window
         });
 
         connection.on('CallDeclined', (data) => {
@@ -887,51 +842,6 @@
                 .catch(error => {
                     console.error('Error starting video call:', error);
                     alert('Failed to start video call. Please try again.');
-                });
-        }
-
-        function acceptVideoCall() {
-            // Check if connection is established
-            if (!isConnectionReady) {
-                console.log('Connection not ready, waiting for connection...');
-                alert('Connection not ready. Please wait a moment and try again.');
-                return;
-            }
-
-            console.log('Accepting video call with matchId:', matchId, 'callerId:', currentCallerId);
-            console.log('matchId type:', typeof matchId, 'value:', matchId);
-            console.log('currentCallerId type:', typeof currentCallerId, 'value:', currentCallerId);
-
-            connection.invoke('AcceptVideoCall', matchId, currentCallerId)
-                .then(() => {
-                    document.getElementById('videoCallNotification').style.display = 'none';
-                    // Don't open the video call window here - let the VideoCallAccepted event handle it
-                })
-                .catch(error => {
-                    console.error('Error accepting video call:', error);
-                    alert('Failed to accept video call. Please try again.');
-                    document.getElementById('videoCallNotification').style.display = 'none';
-                });
-        }
-
-        function declineVideoCall() {
-            // Check if connection is established
-            if (!isConnectionReady) {
-                console.log('Connection not ready, waiting for connection...');
-                alert('Connection not ready. Please wait a moment and try again.');
-                return;
-            }
-
-            console.log('Declining video call with matchId:', matchId, 'callerId:', currentCallerId);
-            connection.invoke('DeclineVideoCall', matchId, currentCallerId)
-                .then(() => {
-                    console.log('Video call declined successfully');
-                    document.getElementById('videoCallNotification').style.display = 'none';
-                })
-                .catch(error => {
-                    console.error('Error declining video call:', error);
-                    alert('Failed to decline video call. Please try again.');
-                    document.getElementById('videoCallNotification').style.display = 'none';
                 });
         }
 
@@ -1160,6 +1070,15 @@
         window.onload = () => {
             scrollToBottom();
         };
+
+        // Initialize global video call system
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof GlobalVideoCall !== 'undefined') {
+                window.globalVideoCall = new GlobalVideoCall();
+            } else {
+                console.error('GlobalVideoCall class not found');
+            }
+        });
     </script>
     <script src="~/js/notification.js" asp-append-version="true"></script>
 </body>

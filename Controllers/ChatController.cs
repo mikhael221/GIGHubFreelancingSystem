@@ -438,5 +438,90 @@ namespace Freelancing.Controllers
 
             await _context.SaveChangesAsync();
         }
+
+        [HttpGet]
+        public async Task<IActionResult> VideoCall(Guid? chatRoomId = null)
+        {
+            var userId = GetCurrentUserId();
+
+            // If chatRoomId is provided, try to find that specific chat room
+            if (chatRoomId.HasValue)
+            {
+                var chatRoom = await _context.ChatRooms
+                    .Include(cr => cr.User1)
+                    .Include(cr => cr.User2)
+                    .FirstOrDefaultAsync(cr => cr.Id == chatRoomId.Value &&
+                                             (cr.User1Id == userId || cr.User2Id == userId) &&
+                                             cr.IsActive);
+
+                if (chatRoom != null)
+                {
+                    // Get the partner (other user in the chat)
+                    var partner = chatRoom.User1Id == userId ? chatRoom.User2 : chatRoom.User1;
+
+                    var viewModel = new ProjectVideoCallViewModel
+                    {
+                        ChatRoomId = chatRoom.Id.ToString(),
+                        CurrentUserId = userId,
+                        Partner = partner
+                    };
+
+                    return View(viewModel);
+                }
+            }
+
+            // If no chat room found or no chatRoomId provided, try to find by targetUserId
+            var targetUserId = Request.Query["targetUserId"].ToString();
+            if (!string.IsNullOrEmpty(targetUserId) && Guid.TryParse(targetUserId, out Guid targetUserGuid))
+            {
+                var existingChatRoom = await _context.ChatRooms
+                    .Include(cr => cr.User1)
+                    .Include(cr => cr.User2)
+                    .FirstOrDefaultAsync(cr => 
+                        ((cr.User1Id == userId && cr.User2Id == targetUserGuid) || 
+                         (cr.User1Id == targetUserGuid && cr.User2Id == userId)) && 
+                        cr.RoomType == "General" && cr.IsActive);
+
+                if (existingChatRoom != null)
+                {
+                    var existingPartner = existingChatRoom.User1Id == userId ? existingChatRoom.User2 : existingChatRoom.User1;
+                    var existingViewModel = new ProjectVideoCallViewModel
+                    {
+                        ChatRoomId = existingChatRoom.Id.ToString(),
+                        CurrentUserId = userId,
+                        Partner = existingPartner
+                    };
+                    return View(existingViewModel);
+                }
+
+                // If no existing chat room, create a temporary one for the video call
+                var targetUser = await _context.UserAccounts.FirstOrDefaultAsync(u => u.Id == targetUserGuid);
+                if (targetUser != null)
+                {
+                    var tempChatRoom = new ChatRoom
+                    {
+                        Id = Guid.NewGuid(),
+                        User1Id = userId,
+                        User2Id = targetUserGuid,
+                        RoomType = "General",
+                        IsActive = true,
+                        CreatedAt = DateTime.UtcNow
+                    };
+
+                    _context.ChatRooms.Add(tempChatRoom);
+                    await _context.SaveChangesAsync();
+
+                    var tempViewModel = new ProjectVideoCallViewModel
+                    {
+                        ChatRoomId = tempChatRoom.Id.ToString(),
+                        CurrentUserId = userId,
+                        Partner = targetUser
+                    };
+                    return View(tempViewModel);
+                }
+            }
+            
+            return NotFound("Chat room not found or access denied");
+        }
     }
 }

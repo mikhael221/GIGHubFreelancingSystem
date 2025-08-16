@@ -136,6 +136,52 @@ function setupSignalRHandlers() {
         }
     });
 
+    // Video call events - handled by global notification system
+    connection.on('IncomingVideoCall', (callData) => {
+        console.log('Incoming video call:', callData);
+        // Global notification system will handle this
+    });
+
+    connection.on('CallRequested', (callData) => {
+        console.log('Call requested:', callData);
+        // Show the waiting notification for the caller
+        showCallWaitingNotification();
+    });
+
+    connection.on('CallAccepted', (callData) => {
+        console.log('Call accepted:', callData);
+        // Hide the waiting notification
+        hideCallWaitingNotification();
+        
+        // Open the video call window if we have a pending URL
+        if (window.pendingVideoCallUrl) {
+            console.log('Opening video call window:', window.pendingVideoCallUrl);
+            window.open(window.pendingVideoCallUrl, 'VideoCall', 'width=800,height=600,scrollbars=no,resizable=yes');
+            // Clear the pending URL
+            window.pendingVideoCallUrl = null;
+        }
+        
+        // Global notification system will handle this
+    });
+
+    connection.on('CallDeclined', (callData) => {
+        console.log('Call declined:', callData);
+        // Hide the waiting notification
+        hideCallWaitingNotification();
+        
+        // Clear any pending video call URL
+        if (window.pendingVideoCallUrl) {
+            window.pendingVideoCallUrl = null;
+        }
+        
+        // Global notification system will handle this
+    });
+
+    connection.on('VideoCallEnded', (callData) => {
+        console.log('Video call ended:', callData);
+        // Global notification system will handle this
+    });
+
     // Connection state changes
     connection.onclose(() => {
         console.log('SignalR connection closed');
@@ -620,3 +666,79 @@ document.addEventListener('keydown', function(e) {
         closeImageModal();
     }
 });
+
+function initiateVideoCall() {
+    if (!currentChatRoomId) {
+        showError('Please start a conversation first before making a video call.');
+        return;
+    }
+
+    // If we're in a "new" chat, we need to create a chat room first or use targetUserId
+    if (currentChatRoomId === 'new') {
+        const targetUserId = document.getElementById('targetUserId')?.value;
+        if (!targetUserId) {
+            showError('Please start a conversation first before making a video call.');
+            return;
+        }
+        
+        // For new chats, we'll create a temporary chat room ID and pass targetUserId
+        const tempChatRoomId = `temp_${Date.now()}`;
+        connection.invoke('StartVideoCall', tempChatRoomId)
+            .then(() => {
+                console.log('Video call initiated for new chat');
+                // Show the waiting notification
+                showCallWaitingNotification();
+                // Store the video call URL for later use when call is accepted
+                window.pendingVideoCallUrl = `/Chat/VideoCall?targetUserId=${targetUserId}`;
+            })
+            .catch(err => {
+                console.error('Failed to initiate video call:', err);
+                showError('Failed to start video call');
+            });
+    } else {
+        // Existing chat room
+        connection.invoke('StartVideoCall', currentChatRoomId)
+            .then(() => {
+                console.log('Video call initiated');
+                // Show the waiting notification
+                showCallWaitingNotification();
+                // Store the video call URL for later use when call is accepted
+                window.pendingVideoCallUrl = `/Chat/VideoCall?chatRoomId=${currentChatRoomId}`;
+            })
+            .catch(err => {
+                console.error('Failed to initiate video call:', err);
+                showError('Failed to start video call');
+            });
+    }
+}
+
+// Call Waiting Notification Functions
+function showCallWaitingNotification() {
+    const notification = document.getElementById('callWaitingNotification');
+    if (notification) {
+        notification.style.display = 'block';
+    }
+}
+
+function hideCallWaitingNotification() {
+    const notification = document.getElementById('callWaitingNotification');
+    if (notification) {
+        notification.style.display = 'none';
+    }
+}
+
+function cancelVideoCall() {
+    console.log('Cancelling video call');
+    
+    // Hide the waiting notification
+    hideCallWaitingNotification();
+    
+    // Clear any pending video call URL
+    if (window.pendingVideoCallUrl) {
+        window.pendingVideoCallUrl = null;
+    }
+    
+    // Note: We don't need to send a specific cancel event to the server
+    // The waiting notification will just disappear, and if the other person
+    // tries to accept/decline later, it won't affect anything
+}
