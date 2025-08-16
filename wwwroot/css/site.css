@@ -287,6 +287,20 @@
   opacity: 0.9;
 }
 
+/* Video Messages */
+.video-message {
+  padding: 0.25rem;
+}
+
+.video-message video {
+  border-radius: 0.5rem;
+  transition: opacity 0.2s;
+}
+
+.video-message video:hover {
+  opacity: 0.9;
+}
+
 /* Typing Indicator */
 .typing-indicator {
   display: none;

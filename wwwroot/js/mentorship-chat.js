@@ -58,7 +58,7 @@ class MentorshipChat {
     // Send message (server handles encryption)
     async sendMessage(message, messageType = 'text') {
         try {
-            await this.connection.invoke('SendMessage', this.matchId, message, messageType);
+            await this.connection.invoke('SendMessage', this.matchId, message, messageType, null);
         } catch (error) {
             console.error('Failed to send message:', error);
             alert('Failed to send message');

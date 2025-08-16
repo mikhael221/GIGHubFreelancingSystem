@@ -9,6 +9,7 @@ using Freelancing.Services;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Freelancing.Controllers
 {

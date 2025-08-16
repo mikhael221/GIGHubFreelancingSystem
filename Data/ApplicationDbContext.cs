@@ -26,6 +26,11 @@ namespace Freelancing.Data
         // New chat-related entities
         public DbSet<MentorshipChatMessage> MentorshipChatMessages { get; set; }
         public DbSet<MentorshipChatFile> MentorshipChatFiles { get; set; }
+        
+        // Chat entities
+        public DbSet<ChatMessage> ChatMessages { get; set; }
+        public DbSet<ChatRoom> ChatRooms { get; set; }
+        public DbSet<ChatFile> ChatFiles { get; set; }
 
         // Notification entity
         public DbSet<Notification> Notifications { get; set; }
@@ -432,6 +437,79 @@ namespace Freelancing.Data
             modelBuilder.Entity<Deliverable>()
                 .Property(d => d.SubmittedAt)
                 .HasDefaultValueSql("GETUTCDATE()");
+
+            // ChatRoom relationships and configurations
+            modelBuilder.Entity<ChatRoom>()
+                .HasOne(cr => cr.User1)
+                .WithMany()
+                .HasForeignKey(cr => cr.User1Id)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<ChatRoom>()
+                .HasOne(cr => cr.User2)
+                .WithMany()
+                .HasForeignKey(cr => cr.User2Id)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<ChatRoom>()
+                .HasOne(cr => cr.Project)
+                .WithMany()
+                .HasForeignKey(cr => cr.ProjectId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<ChatRoom>()
+                .HasOne(cr => cr.MentorshipMatch)
+                .WithMany()
+                .HasForeignKey(cr => cr.MentorshipMatchId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            // ChatMessage relationships and configurations
+            modelBuilder.Entity<ChatMessage>()
+                .HasOne(cm => cm.ChatRoom)
+                .WithMany(cr => cr.Messages)
+                .HasForeignKey(cm => cm.ChatRoomId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<ChatMessage>()
+                .HasOne(cm => cm.Sender)
+                .WithMany()
+                .HasForeignKey(cm => cm.SenderId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            // ChatFile relationships and configurations
+            modelBuilder.Entity<ChatFile>()
+                .HasOne(cf => cf.Message)
+                .WithMany()
+                .HasForeignKey(cf => cf.MessageId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Add indexes for better performance
+            modelBuilder.Entity<ChatRoom>()
+                .HasIndex(cr => new { cr.User1Id, cr.User2Id });
+
+            modelBuilder.Entity<ChatRoom>()
+                .HasIndex(cr => cr.ProjectId);
+
+            modelBuilder.Entity<ChatRoom>()
+                .HasIndex(cr => cr.MentorshipMatchId);
+
+            modelBuilder.Entity<ChatRoom>()
+                .HasIndex(cr => cr.LastActivityAt);
+
+            modelBuilder.Entity<ChatMessage>()
+                .HasIndex(cm => cm.ChatRoomId);
+
+            modelBuilder.Entity<ChatMessage>()
+                .HasIndex(cm => cm.SenderId);
+
+            modelBuilder.Entity<ChatMessage>()
+                .HasIndex(cm => cm.SentAt);
+
+            modelBuilder.Entity<ChatMessage>()
+                .HasIndex(cm => cm.IsRead);
+
+            modelBuilder.Entity<ChatFile>()
+                .HasIndex(cf => cf.MessageId);
 
             base.OnModelCreating(modelBuilder);
         }

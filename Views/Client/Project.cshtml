@@ -78,10 +78,12 @@
                             @if (!string.IsNullOrEmpty(bid.User.Photo))
                             {
                                 <img class="w-8 h-8 rounded-full" src="@bid.User.Photo" alt="user photo">
+                                @await Html.PartialAsync("_ChatButton", bid.User.Id)
                             }
                             else
                             {
                                 <img class="w-8 h-8 rounded-full" src="https://ik.imagekit.io/6txj3mofs/GIGHub%20(11).png?updatedAt=1750552804497" alt="user photo">
+                                @await Html.PartialAsync("_ChatButton", bid.User.Id)
                             }
                             <h5 class="ms-2 text-xl font-bold tracking-tight text-gray-900">@bid.User?.FirstName @bid.User?.LastName</h5>
                         </div>
