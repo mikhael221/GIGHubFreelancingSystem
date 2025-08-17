@@ -8,14 +8,33 @@
     <div class="p-4 mt-20">
         <div class="mt-4">
             <div class="block w-full p-6">
-                <h2 class="mb-4 text-2xl font-bold text-gray-900">Manage Active Projects</h2>
+                <h2 class="mb-4 text-2xl font-bold text-gray-900">Manage Projects</h2>
                 
                 @if (Model.OngoingProjects.Any())
                 {
-                    <div class="mb-4">
-                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
-                            @Model.TotalActiveProjects Active Project(s)
-                        </span>
+                    var activeProjects = Model.OngoingProjects.Count(p => p.ProjectStatus == "Active");
+                    var terminatedProjects = Model.OngoingProjects.Count(p => p.ProjectStatus == "Terminated");
+                    var completedProjects = Model.OngoingProjects.Count(p => p.ProjectStatus == "Completed");
+                    
+                    <div class="mb-4 flex flex-wrap gap-2">
+                        @if (activeProjects > 0)
+                        {
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                                @activeProjects Active Project@(activeProjects != 1 ? "s" : "")
+                            </span>
+                        }
+                        @if (terminatedProjects > 0)
+                        {
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800">
+                                @terminatedProjects Terminated Project@(terminatedProjects != 1 ? "s" : "")
+                            </span>
+                        }
+                        @if (completedProjects > 0)
+                        {
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                                @completedProjects Completed Project@(completedProjects != 1 ? "s" : "")
+                            </span>
+                        }
                     </div>
 
                     <div class="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
@@ -24,9 +43,9 @@
                             <div class="bg-white rounded-lg shadow-md p-6 border border-gray-200">
                                 <div class="flex items-start justify-between mb-4">
                                     <h3 class="text-lg font-semibold text-gray-900 truncate">@project.ProjectName</h3>
-                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                        @project.ProjectStatus
-                                    </span>
+                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium @(project.ProjectStatus == "Active" ? "bg-green-100 text-green-800" : project.ProjectStatus == "Terminated" ? "bg-red-100 text-red-800" : project.ProjectStatus == "Completed" ? "bg-blue-100 text-blue-800" : "bg-gray-100 text-gray-800")">
+                                @project.ProjectStatus
+                            </span>
                                 </div>
                                 
                                 <div class="space-y-3">
@@ -73,8 +92,8 @@
                         <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
-                        <h3 class="mt-2 text-sm font-medium text-gray-900">No active projects</h3>
-                        <p class="mt-1 text-sm text-gray-500">You don't have any active projects with accepted freelancers yet.</p>
+                        <h3 class="mt-2 text-sm font-medium text-gray-900">No projects</h3>
+                        <p class="mt-1 text-sm text-gray-500">You don't have any projects with accepted freelancers yet.</p>
                     </div>
                 }
             </div>

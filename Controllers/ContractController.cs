@@ -151,6 +151,20 @@ namespace Freelancing.Controllers
 
             var viewModel = MapToContractViewModel(contract);
             
+            // Check for existing termination request
+            var existingTermination = await _context.ContractTerminations
+                .FirstOrDefaultAsync(ct => ct.ContractId == id && ct.Status != "Cancelled");
+            
+            if (existingTermination != null)
+            {
+                ViewData["ExistingTerminationId"] = existingTermination.Id;
+                ViewData["HasExistingTermination"] = true;
+            }
+            else
+            {
+                ViewData["HasExistingTermination"] = false;
+            }
+            
             // Log contract view
             await _contractService.LogContractActionAsync(id, userId, "Viewed", "Contract details viewed", GetClientIpAddress(), Request.Headers["User-Agent"]);
 
@@ -361,6 +375,111 @@ namespace Freelancing.Controllers
             }
         }
 
+        // POST: Contract/MarkComplete/{id}
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> MarkComplete(Guid id)
+        {
+            try
+            {
+                var userId = GetCurrentUserId();
+                var contract = await _context.Contracts
+                    .Include(c => c.Project)
+                        .ThenInclude(p => p.User)
+                    .Include(c => c.Bidding)
+                        .ThenInclude(b => b.User)
+                    .FirstOrDefaultAsync(c => c.Id == id);
+                
+                if (contract == null)
+                {
+                    TempData["ErrorMessage"] = "Contract not found.";
+                    return RedirectToAction("MyContracts");
+                }
+
+                // Verify user can access this contract
+                if (!CanUserAccessContract(contract, userId))
+                {
+                    TempData["ErrorMessage"] = "You are not authorized to access this contract.";
+                    return RedirectToAction("MyContracts");
+                }
+
+                // Verify contract is active
+                if (contract.Status != "Active")
+                {
+                    TempData["ErrorMessage"] = "Only active contracts can be marked as complete.";
+                    return RedirectToAction("Details", new { id });
+                }
+
+                // Check if there are enough accepted deliverables
+                var acceptedDeliverablesCount = await _context.Deliverables
+                    .CountAsync(d => d.ContractId == id && d.Status == "Approved");
+                
+                if (acceptedDeliverablesCount < 1)
+                {
+                    TempData["ErrorMessage"] = "Project cannot be completed until at least one deliverable has been accepted by the client.";
+                    return RedirectToAction("Details", new { id });
+                }
+
+                var isClient = contract.Project.UserId == userId;
+                var now = DateTime.UtcNow.ToLocalTime();
+
+                // Mark completion based on user role
+                if (isClient)
+                {
+                    if (contract.ClientMarkedCompleteAt.HasValue)
+                    {
+                        TempData["ErrorMessage"] = "You have already marked this project as complete.";
+                        return RedirectToAction("Details", new { id });
+                    }
+                    contract.ClientMarkedCompleteAt = now;
+                }
+                else // Freelancer
+                {
+                    if (contract.FreelancerMarkedCompleteAt.HasValue)
+                    {
+                        TempData["ErrorMessage"] = "You have already marked this project as complete.";
+                        return RedirectToAction("Details", new { id });
+                    }
+                    contract.FreelancerMarkedCompleteAt = now;
+                }
+
+                // Check if both parties have marked complete
+                if (contract.ClientMarkedCompleteAt.HasValue && contract.FreelancerMarkedCompleteAt.HasValue)
+                {
+                    contract.Status = "Completed";
+                    contract.CompletedAt = now;
+                    
+                    // Update project status as well
+                    var project = contract.Project;
+                    project.Status = "Completed";
+                    
+                    await _context.SaveChangesAsync();
+
+                    // Send completion notifications to both parties
+                    await NotifyProjectCompletedAsync(contract);
+
+                    TempData["SuccessMessage"] = "Project has been successfully completed! Both parties have confirmed completion.";
+                }
+                else
+                {
+                    await _context.SaveChangesAsync();
+                    
+                    // Send notification to the other party
+                    await NotifyPartialCompletionAsync(contract, userId, isClient);
+                    
+                    var otherParty = isClient ? "freelancer" : "client";
+                    TempData["SuccessMessage"] = $"You have marked the project as complete. Waiting for the {otherParty} to confirm completion.";
+                }
+
+                return RedirectToAction("Details", new { id });
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"Error marking project as complete: {ex.Message}";
+                return RedirectToAction("Details", new { id });
+            }
+        }
+
 
 
 
@@ -469,6 +588,11 @@ namespace Freelancing.Controllers
 
         private ContractViewModel MapToContractViewModel(Contract contract)
         {
+            // Get accepted deliverables count
+            var acceptedDeliverablesCount = _context.Deliverables
+                .Where(d => d.ContractId == contract.Id && d.Status == "Approved")
+                .Count();
+
             var viewModel = new ContractViewModel
             {
                 Id = contract.Id,
@@ -499,7 +623,12 @@ namespace Freelancing.Controllers
                 AgreedAmount = contract.Bidding.Budget,
                 DeliveryTimeline = contract.Bidding.Delivery,
                 Proposal = contract.Bidding.Proposal,
-                DocumentPath = contract.DocumentPath
+                DocumentPath = contract.DocumentPath,
+                // Completion tracking
+                ClientMarkedCompleteAt = contract.ClientMarkedCompleteAt,
+                FreelancerMarkedCompleteAt = contract.FreelancerMarkedCompleteAt,
+                CompletedAt = contract.CompletedAt,
+                AcceptedDeliverablesCount = acceptedDeliverablesCount
             };
 
             // Parse JSON fields
@@ -603,6 +732,49 @@ namespace Freelancing.Controllers
                 "Contract",
                 "<svg viewBox=\"0 0 1024 1024\" class=\"icon\" version=\"1.1\" xmlns=\"http://www.w3.org/2000/svg\" fill=\"#000000\"><g id=\"SVGRepo_bgCarrier\" stroke-width=\"0\"></g><g id=\"SVGRepo_tracerCarrier\" stroke-linecap=\"round\" stroke-linejoin=\"round\"></g><g id=\"SVGRepo_iconCarrier\"><path d=\"M182.99 146.2h585.14v402.29h73.14V73.06H109.84v877.71H512v-73.14H182.99z\" fill=\"#000000\"></path><path d=\"M256.13 219.34h438.86v73.14H256.13zM256.13 365.63h365.71v73.14H256.13zM256.13 511.91h219.43v73.14H256.13zM731.55 585.06c-100.99 0-182.86 81.87-182.86 182.86s81.87 182.86 182.86 182.86c100.99 0 182.86-81.87 182.86-182.86s-81.86-182.86-182.86-182.86z m0 292.57c-60.5 0-109.71-49.22-109.71-109.71 0-60.5 49.22-109.71 109.71-109.71 60.5 0 109.71 49.22 109.71 109.71 0.01 60.49-49.21 109.71-109.71 109.71z\" fill=\"#000000\"></path><path d=\"M758.99 692.08h-54.86v87.27l69.39 68.76 38.61-38.96-53.14-52.66z\" fill=\"#000000\"></path></g></svg>",
                 $"/Contract/Sign/{contract.Id}"
+            );
+        }
+
+        private async Task NotifyProjectCompletedAsync(Contract contract)
+        {
+            var clientMessage = $"Project '{contract.Project.ProjectName}' has been completed successfully! Both parties have confirmed completion.";
+            var freelancerMessage = $"Project '{contract.Project.ProjectName}' has been completed successfully! Both parties have confirmed completion.";
+
+            await _notificationService.CreateNotificationAsync(
+                contract.Project.UserId,
+                "Project Completed",
+                clientMessage,
+                "project_completed",
+                "<svg fill=\"#000000\" viewBox=\"0 0 24 24\" xmlns=\"http://www.w3.org/2000/svg\"><g id=\"SVGRepo_bgCarrier\" stroke-width=\"0\"></g><g id=\"SVGRepo_tracerCarrier\" stroke-linecap=\"round\" stroke-linejoin=\"round\"></g><g id=\"SVGRepo_iconCarrier\"><path d=\"M4,1A1,1,0,0,0,3,2V22a1,1,0,0,0,2,0V17H20a1,1,0,0,0,1-1V4a1,1,0,0,0-1-1H5V2A1,1,0,0,0,4,1ZM7,15H5V13H7Zm0-4H5V9H7ZM17,5h2V7H17Zm0,4h2v2H17Zm0,4h2v2H17ZM13,5h2V7H13Zm0,4h2v2H13Zm0,4h2v2H13ZM9,5h2V7H9ZM9,9h2v2H9Zm0,4h2v2H9ZM7,5V7H5V5Z\"></path></g></svg>",
+                $"/Contract/Details/{contract.Id}"
+            );
+
+            await _notificationService.CreateNotificationAsync(
+                contract.Bidding.UserId,
+                "Project Completed",
+                freelancerMessage,
+                "project_completed",
+                "<svg fill=\"#000000\" viewBox=\"0 0 24 24\" xmlns=\"http://www.w3.org/2000/svg\"><g id=\"SVGRepo_bgCarrier\" stroke-width=\"0\"></g><g id=\"SVGRepo_tracerCarrier\" stroke-linecap=\"round\" stroke-linejoin=\"round\"></g><g id=\"SVGRepo_iconCarrier\"><path d=\"M4,1A1,1,0,0,0,3,2V22a1,1,0,0,0,2,0V17H20a1,1,0,0,0,1-1V4a1,1,0,0,0-1-1H5V2A1,1,0,0,0,4,1ZM7,15H5V13H7Zm0-4H5V9H7ZM17,5h2V7H17Zm0,4h2v2H17Zm0,4h2v2H17ZM13,5h2V7H13Zm0,4h2v2H13Zm0,4h2v2H13ZM9,5h2V7H9ZM9,9h2v2H9Zm0,4h2v2H9ZM7,5V7H5V5Z\"></path></g></svg>",
+                $"/Contract/Details/{contract.Id}"
+            );
+        }
+
+        private async Task NotifyPartialCompletionAsync(Contract contract, Guid completerId, bool isClientCompleter)
+        {
+            var recipientId = isClientCompleter ? contract.Bidding.UserId : contract.Project.UserId;
+            var completerName = isClientCompleter ? 
+                $"{contract.Project.User.FirstName} {contract.Project.User.LastName}" : 
+                $"{contract.Bidding.User.FirstName} {contract.Bidding.User.LastName}";
+
+            var message = $"{completerName} has marked project '{contract.Project.ProjectName}' as complete. Please review and confirm completion to finalize the project.";
+
+            await _notificationService.CreateNotificationAsync(
+                recipientId,
+                "Project Completion Confirmation Required",
+                message,
+                "project_completed",
+                "<svg fill=\"#000000\" viewBox=\"0 0 24 24\" xmlns=\"http://www.w3.org/2000/svg\"><g id=\"SVGRepo_bgCarrier\" stroke-width=\"0\"></g><g id=\"SVGRepo_tracerCarrier\" stroke-linecap=\"round\" stroke-linejoin=\"round\"></g><g id=\"SVGRepo_iconCarrier\"><path d=\"M4,1A1,1,0,0,0,3,2V22a1,1,0,0,0,2,0V17H20a1,1,0,0,0,1-1V4a1,1,0,0,0-1-1H5V2A1,1,0,0,0,4,1ZM7,15H5V13H7Zm0-4H5V9H7ZM17,5h2V7H17Zm0,4h2v2H17Zm0,4h2v2H17ZM13,5h2V7H13Zm0,4h2v2H13Zm0,4h2v2H13ZM9,5h2V7H9ZM9,9h2v2H9Zm0,4h2v2H9ZM7,5V7H5V5Z\"></path></g></svg>",
+                $"/Contract/Details/{contract.Id}"
             );
         }
 

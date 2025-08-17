@@ -12,46 +12,34 @@
             <!-- Messages -->
             @if (TempData["ErrorMessage"] != null)
             {
-                <div class="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
-                    <div class="flex">
-                        <div class="flex-shrink-0">
-                            <svg class="h-5 w-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg>
-                        </div>
-                        <div class="ml-3">
-                            <h3 class="text-sm font-medium text-red-800">Error</h3>
-                            <div class="mt-2 text-sm text-red-700">
-                                @TempData["ErrorMessage"]
-                            </div>
-                        </div>
+                <div class="mt-2 flex items-center p-4 mb-4 text-sm text-red-800 border border-red-300 rounded-lg bg-red-50" role="alert">
+                    <svg class="shrink-0 inline w-4 h-4 me-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5ZM9.5 4a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM12 15H8a1 1 0 0 1 0-2h1v-3H8a1 1 0 0 1 0-2h2a1 1 0 0 1 1 1v4h1a1 1 0 0 1 0 2Z" />
+                    </svg>
+                    <span class="sr-only">Error</span>
+                    <div>
+                        @TempData["ErrorMessage"]
                     </div>
                 </div>
             }
-            
+
             @if (TempData["SuccessMessage"] != null)
             {
-                <div class="mb-6 bg-green-50 border border-green-200 rounded-lg p-4">
-                    <div class="flex">
-                        <div class="flex-shrink-0">
-                            <svg class="h-5 w-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg>
-                        </div>
-                        <div class="ml-3">
-                            <h3 class="text-sm font-medium text-green-800">Success</h3>
-                            <div class="mt-2 text-sm text-green-700">
-                                @TempData["SuccessMessage"]
-                            </div>
-                        </div>
+                <div class="mt-2 flex items-center p-4 mb-4 text-sm text-green-800 border border-green-300 rounded-lg bg-green-50" role="alert">
+                    <svg class="shrink-0 inline w-4 h-4 me-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5Zm3.707 8.207-4 4a1 1 0 0 1-1.414 0l-2-2a1 1 0 0 1 1.414-1.414L9 10.586l3.293-3.293a1 1 0 0 1 1.414 1.414Z" />
+                    </svg>
+                    <span class="sr-only">Success</span>
+                    <div>
+                        @TempData["SuccessMessage"]
                     </div>
                 </div>
             }
-            
+
             <!-- Header -->
             <div class="flex items-center justify-between mb-6">
                 <div class="flex items-center space-x-4">
-                    <a href="@(userIsClient ? Url.Action("Details", "ManageProjectClient", new { id = Model.ProjectId }) : Url.Action("Details", "ManageProjectFreelancer", new { id = Model.ProjectId }))" class="text-blue-600 hover:text-blue-800">
+                    <a href="@(userIsClient? Url.Action("Details", "ManageProjectClient", new { id = Model.ProjectId }) : Url.Action("Details", "ManageProjectFreelancer", new { id = Model.ProjectId }))" class="text-blue-600 hover:text-blue-800">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
                         </svg>
@@ -90,7 +78,7 @@
                         }
                     </div>
                 </div>
-                
+
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Project</label>
@@ -102,16 +90,19 @@
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Delivery Timeline</label>
-                                                 <p class="text-gray-900">
-                             @if (Model.Timeline != null)
-                             {
-                                 @Model.Timeline.StartDate.ToString("MMM dd, yyyy") <span>-</span> @Model.Timeline.Deadline.ToString("MMM dd, yyyy")
-                             }
-                             else
-                             {
-                                 @Model.DeliveryTimeline
-                             }
-                         </p>
+                        <p class="text-gray-900">
+                            @if (Model.Timeline != null)
+                            {
+                                @Model.Timeline.StartDate.ToString("MMM dd, yyyy")
+                                <span>-</span>
+ 
+                                @Model.Timeline.Deadline.ToString("MMM dd, yyyy")
+                            }
+                            else
+                            {
+                                @Model.DeliveryTimeline
+                            }
+                        </p>
                     </div>
                 </div>
             </div>
@@ -140,7 +131,7 @@
                             <h3 class="font-medium text-gray-900">Client: @Model.ClientName</h3>
                             @if (Model.ClientHasSigned)
                             {
-                                <p class="text-sm text-green-600">Signed on @Model.ClientSignedAt?.ToString("MMMM dd, yyyy 'at' HH:mm")</p>
+                                <p class="text-sm text-green-600">Signed on @Model.ClientSignedAt?.ToString("MMMM dd, yyyy 'at' h:mm tt")</p>
                             }
                             else
                             {
@@ -169,7 +160,7 @@
                             <h3 class="font-medium text-gray-900">Freelancer: @Model.FreelancerName</h3>
                             @if (Model.FreelancerHasSigned)
                             {
-                                <p class="text-sm text-green-600">Signed on @Model.FreelancerSignedAt?.ToString("MMMM dd, yyyy 'at' HH:mm")</p>
+                                <p class="text-sm text-green-600">Signed on @Model.FreelancerSignedAt?.ToString("MMMM dd, yyyy 'at' h:mm tt")</p>
                             }
                             else
                             {
@@ -213,7 +204,7 @@
             {
                 <div class="bg-white rounded-lg shadow p-6 mb-6">
                     <h2 class="text-xl font-semibold text-gray-900 mb-4">Terms Summary</h2>
-                    
+
                     @if (Model.PaymentTerms != null)
                     {
                         <div class="mb-4">
@@ -230,7 +221,7 @@
                             </div>
                         </div>
                     }
-                    
+
                     @if (Model.DeliverableRequirements != null && Model.DeliverableRequirements.Any())
                     {
                         <div class="mb-4">
@@ -246,62 +237,250 @@
                 </div>
             }
 
-            <!-- Audit Log -->
-            @if (Model.AuditLogs.Any())
+            <!-- Project Completion Status -->
+            @if (Model.Status == "Active" && (Model.ClientMarkedComplete || Model.FreelancerMarkedComplete))
             {
-                <div class="bg-white rounded-lg shadow p-6">
-                    <h2 class="text-xl font-semibold text-gray-900 mb-4">Activity Log</h2>
-                    <div class="space-y-3">
-                        @foreach (var log in Model.AuditLogs.Take(10))
-                        {
-                            <div class="flex items-start space-x-3 p-3 bg-gray-50 rounded">
-                                <div class="flex-shrink-0">
-                                    <div class="w-2 h-2 bg-blue-600 rounded-full mt-2"></div>
-                                </div>
-                                <div class="flex-1 min-w-0">
-                                    <p class="text-sm text-gray-900">
-                                        <span class="font-medium">@log.UserName</span>
-                                        @log.Action.ToLower() the contract
-                                    </p>
-                                    @if (!string.IsNullOrEmpty(log.Details))
-                                    {
-                                        <p class="text-sm text-gray-600">@log.Details</p>
-                                    }
-                                    <p class="text-xs text-gray-500">@log.Timestamp.ToString("MMM dd, yyyy 'at' HH:mm")</p>
-                                </div>
+                <div class="bg-white rounded-lg shadow p-6 mb-6">
+                    <h2 class="text-xl font-semibold text-gray-900 mb-4">Project Completion Status</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <!-- Client Completion -->
+                        <div class="flex items-center space-x-4 p-4 @(Model.ClientMarkedComplete ? "bg-green-50" : "bg-yellow-50") rounded-lg">
+                            <div class="flex-shrink-0">
+                                @if (Model.ClientMarkedComplete)
+                                {
+                                    <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                }
+                                else
+                                {
+                                    <svg class="w-8 h-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                }
                             </div>
-                        }
+                            <div class="flex-1">
+                                <h3 class="font-medium text-gray-900">Client: @Model.ClientName</h3>
+                                @if (Model.ClientMarkedComplete)
+                                {
+                                    <p class="text-sm text-green-600">Marked complete on @Model.ClientMarkedCompleteAt?.ToString("MMMM dd, yyyy 'at' h:mm tt")</p>
+                                }
+                                else
+                                {
+                                    <p class="text-sm text-yellow-600">Completion confirmation pending</p>
+                                }
+                            </div>
+                        </div>
+
+                        <!-- Freelancer Completion -->
+                        <div class="flex items-center space-x-4 p-4 @(Model.FreelancerMarkedComplete ? "bg-green-50" : "bg-yellow-50") rounded-lg">
+                            <div class="flex-shrink-0">
+                                @if (Model.FreelancerMarkedComplete)
+                                {
+                                    <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                }
+                                else
+                                {
+                                    <svg class="w-8 h-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                }
+                            </div>
+                            <div class="flex-1">
+                                <h3 class="font-medium text-gray-900">Freelancer: @Model.FreelancerName</h3>
+                                @if (Model.FreelancerMarkedComplete)
+                                {
+                                    <p class="text-sm text-green-600">Marked complete on @Model.FreelancerMarkedCompleteAt?.ToString("MMMM dd, yyyy 'at' h:mm tt")</p>
+                                }
+                                else
+                                {
+                                    <p class="text-sm text-yellow-600">Completion confirmation pending</p>
+                                }
+                            </div>
+                        </div>
                     </div>
                 </div>
             }
+
+            <!-- Contract Action -->
+            <div class="bg-white rounded-lg shadow p-6">
+                <h2 class="text-xl font-semibold text-gray-900 mb-4">Contract Action</h2>
+
+                @if (Model.Status == "Completed")
+                {
+                    <div class="text-center py-8">
+                        <div class="flex justify-center mb-4">
+                            <svg viewBox="0 0 20 20" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" fill="#000000" class="w-16 h-16">
+                                <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
+                                <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
+                                <g id="SVGRepo_iconCarrier">
+                                    <title>finish_line [#104]</title>
+                                    <desc>Created with Sketch.</desc>
+                                    <defs> </defs>
+                                    <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+                                        <g id="Dribbble-Light-Preview" transform="translate(-220.000000, -7759.000000)" fill="#000000">
+                                            <g id="icons" transform="translate(56.000000, 160.000000)">
+                                                <path d="M174,7611 L178,7611 L178,7607 L174,7607 L174,7611 Z M170,7607 L174,7607 L174,7603 L170,7603 L170,7607 Z M174,7603 L178,7603 L178,7599 L174,7599 L174,7603 Z M182,7599 L182,7603 L178,7603 L178,7607 L182,7607 L182,7619 L184,7619 L184,7599 L182,7599 Z M166,7607 L170,7607 L170,7611 L166,7611 L166,7619 L164,7619 L164,7599 L170,7599 L170,7603 L166,7603 L166,7607 Z" id="finish_line-[#104]"> </path>
+                                            </g>
+                                        </g>
+                                    </g>
+                                </g>
+                            </svg>
+                        </div>
+                        <h3 class="text-xl font-semibold text-green-900 mb-2">Project Completed!</h3>
+                        <p class="text-gray-600">This project was completed on @Model.CompletedAt?.ToString("MMMM dd, yyyy 'at' h:mm tt")</p>
+                    </div>
+                }
+                else
+                {
+                    <div class="space-y-3">
+                        @if (!Model.HasSufficientDeliverables && Model.Status == "Active")
+                        {
+                            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+                                <div class="flex">
+                                    <svg class="w-5 h-5 text-yellow-400 mr-2 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                                    </svg>
+                                    <div>
+                                        <h4 class="text-sm font-medium text-yellow-800">Deliverable Required</h4>
+                                        <p class="text-sm text-yellow-700 mt-1">At least one deliverable must be submitted and accepted by the client before the project can be completed.</p>
+                                        <p class="text-sm text-yellow-700">Currently accepted deliverables: @Model.AcceptedDeliverablesCount</p>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+
+                        <div class="inline-flex">
+                            <div class="flex justify-center items-center">
+                                @if (Model.CanShowFinishButton)
+                                {
+                                    var userId = Guid.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value!);
+                                    var isClient = Model.ClientId == userId;
+                                    var isFreelancer = Model.FreelancerId == userId;
+                                    var hasMarkedComplete = (isClient && Model.ClientMarkedComplete) || (isFreelancer && Model.FreelancerMarkedComplete);
+
+                                    @if (hasMarkedComplete)
+                                    {
+                                        <button type="button" class="focus:outline-none text-gray-600 bg-gray-200 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 cursor-not-allowed" disabled>
+                                            ✓ You've marked this complete
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <form id="finishProjectForm" asp-action="MarkComplete" method="post" style="display: none;">
+                                            <input type="hidden" name="id" value="@Model.Id" />
+                                        </form>
+                                        <button type="button" onclick="openFinishProjectModal()" class="focus:outline-none text-white bg-green-700 hover:bg-green-800 focus:ring-4 focus:ring-green-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-green-600 dark:hover:bg-green-700 dark:focus:ring-green-800">
+                                            Finish Project
+                                        </button>
+                                    }
+                                }
+                                else
+                                {
+                                    <button type="button" class="focus:outline-none text-white bg-green-700 hover:bg-green-800 focus:ring-4 focus:ring-green-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-green-600 dark:hover:bg-green-700 dark:focus:ring-green-800 opacity-50 cursor-not-allowed" disabled>
+                                        Finish Project
+                                    </button>
+                                }
+
+                                @if (Model.Status == "Active")
+                                {
+                                    @if (ViewData["HasExistingTermination"] != null && (bool)ViewData["HasExistingTermination"])
+                                    {
+                                        <a href="@Url.Action("Details", "ContractTermination", new { id = ViewData["ExistingTerminationId"] })" class="focus:outline-none text-white bg-red-700 hover:bg-red-800 focus:ring-4 focus:ring-red-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-red-600 dark:hover:bg-red-700 dark:focus:ring-red-900">View Termination Request</a>
+                                    }
+                                    else
+                                    {
+                                        <a href="@Url.Action("Create", "ContractTermination", new { contractId = Model.Id })" class="focus:outline-none text-white bg-red-700 hover:bg-red-800 focus:ring-4 focus:ring-red-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-red-600 dark:hover:bg-red-700 dark:focus:ring-red-900">Terminate Contract</a>
+                                    }
+                                }
+                                else if (Model.Status != "Completed")
+                                {
+                                    <button type="button" class="focus:outline-none text-white bg-red-700 hover:bg-red-800 focus:ring-4 focus:ring-red-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-red-600 dark:hover:bg-red-700 dark:focus:ring-red-900 opacity-50 cursor-not-allowed" disabled>Terminate Contract</button>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
         </div>
     </div>
 </div>
 
 <script>
-function downloadPdf(url) {
-    const button = document.getElementById('downloadPdfBtn');
-    const icon = document.getElementById('downloadIcon');
-    const text = document.getElementById('downloadText');
-    
-    // Disable button and show loading state
-    button.disabled = true;
-    button.classList.add('opacity-50', 'cursor-not-allowed');
-    text.textContent = 'Generating PDF...';
-    
-    // Create a hidden iframe to trigger the download
-    const iframe = document.createElement('iframe');
-    iframe.style.display = 'none';
-    iframe.src = url;
-    document.body.appendChild(iframe);
-    
-    // Reset button after a delay
-    setTimeout(() => {
-        button.disabled = false;
-        button.classList.remove('opacity-50', 'cursor-not-allowed');
-        text.textContent = 'Download PDF';
-        document.body.removeChild(iframe);
-    }, 3000);
-}
+    function downloadPdf(url) {
+        const button = document.getElementById('downloadPdfBtn');
+        const icon = document.getElementById('downloadIcon');
+        const text = document.getElementById('downloadText');
+
+        // Disable button and show loading state
+        button.disabled = true;
+        button.classList.add('opacity-50', 'cursor-not-allowed');
+        text.textContent = 'Generating PDF...';
+
+        // Create a hidden iframe to trigger the download
+        const iframe = document.createElement('iframe');
+        iframe.style.display = 'none';
+        iframe.src = url;
+        document.body.appendChild(iframe);
+
+        // Reset button after a delay
+        setTimeout(() => {
+            button.disabled = false;
+            button.classList.remove('opacity-50', 'cursor-not-allowed');
+            text.textContent = 'Download PDF';
+            document.body.removeChild(iframe);
+        }, 3000);
+    }
+
+    // Finish Project Modal Functions
+    function openFinishProjectModal() {
+        document.getElementById('finishProjectModal').classList.remove('hidden');
+    }
+
+    function closeFinishProjectModal() {
+        document.getElementById('finishProjectModal').classList.add('hidden');
+    }
+
+    function submitFinishProject() {
+        document.getElementById('finishProjectForm').submit();
+    }
 </script>
+
+<!-- Finish Project Confirmation Modal -->
+<div id="finishProjectModal" tabindex="-1" class="hidden fixed inset-0 z-50 overflow-y-auto overflow-x-hidden">
+    <div class="modal-backdrop absolute inset-0 backdrop-blur-md bg-black/20"></div>
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="relative w-full max-w-md">
+            <div class="relative bg-white rounded-lg shadow">
+                <button type="button" class="absolute top-3 end-2.5 text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center" onclick="closeFinishProjectModal()">
+                    <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
+                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6" />
+                    </svg>
+                    <span class="sr-only">Close modal</span>
+                </button>
+
+                <div class="p-6 text-center">
+                    <svg class="mx-auto mb-4 text-gray-500 w-12 h-12" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20">
+                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 11V6m0 8h.01M19 10a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                    </svg>
+                    <h3 class="mb-5 text-lg font-normal text-gray-800">Are you sure you want to mark this project as complete?</h3>
+                    <p class="mb-5 text-sm text-gray-600">@(Model.ClientMarkedComplete || Model.FreelancerMarkedComplete ? "Once both parties mark the project as complete, the contract will be finalized." : "The other party will be notified and must also confirm completion.")</p>
+
+                    <button type="button"
+                            onclick="submitFinishProject()"
+                            class="text-white bg-green-600 hover:bg-green-800 focus:ring-4 focus:outline-none focus:ring-green-300 font-medium rounded-lg text-sm inline-flex items-center px-5 py-2.5 text-center me-2">
+                        Yes, I'm sure
+                    </button>
+                    <button type="button"
+                            onclick="closeFinishProjectModal()"
+                            class="text-gray-500 bg-white hover:bg-gray-100 focus:ring-4 focus:outline-none focus:ring-gray-200 rounded-lg border border-gray-200 text-sm font-medium px-5 py-2.5 hover:text-gray-900 focus:z-10">
+                        No, cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 

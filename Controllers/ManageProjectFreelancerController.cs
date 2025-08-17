@@ -31,7 +31,7 @@ namespace Freelancing.Controllers
                 return Unauthorized();
             }
 
-            // Get ongoing projects where freelancer's bid was accepted
+            // Get all projects where freelancer's bid was accepted (including terminated and completed)
             var ongoingProjects = await dbContext.Projects
                 .Where(p => p.AcceptedBidId != null && 
                            p.Biddings.Any(b => b.UserId == userId && b.IsAccepted))
@@ -43,7 +43,7 @@ namespace Freelancing.Controllers
                 .OrderByDescending(p => p.CreatedAt)
                 .ToListAsync();
 
-            var ongoingProjectViewModels = new List<OngoingProjectViewModel>();
+            var projectViewModels = new List<OngoingProjectViewModel>();
 
             foreach (var project in ongoingProjects)
             {
@@ -56,6 +56,10 @@ namespace Freelancing.Controllers
                     .Include(uas => uas.UserSkill)
                     .Select(uas => uas.UserSkill)
                     .ToListAsync();
+
+                // Get contract status for this project
+                var contract = await contractService.GetContractByProjectIdAsync(project.Id);
+                var projectStatus = contract?.Status ?? GetProjectStatus(project);
 
                 var ongoingProjectViewModel = new OngoingProjectViewModel
                 {
@@ -82,18 +86,18 @@ namespace Freelancing.Controllers
                                     AcceptedBidProposal = project.AcceptedBid.Proposal,
                 BiddingAcceptedDate = project.AcceptedBid.BiddingAcceptedDate,
                 
-                ProjectStatus = project.AcceptedBidId.HasValue ? "Active" : "Open",
+                ProjectStatus = projectStatus,
                     ProjectRequiredSkills = project.ProjectSkills?.Select(ps => ps.UserSkill).ToList() ?? new List<UserSkill>(),
                     FreelancerSkills = freelancerSkills
                 };
 
-                ongoingProjectViewModels.Add(ongoingProjectViewModel);
+                projectViewModels.Add(ongoingProjectViewModel);
             }
 
             var viewModel = new OngoingProjectListViewModel
             {
-                OngoingProjects = ongoingProjectViewModels,
-                TotalActiveProjects = ongoingProjectViewModels.Count,
+                OngoingProjects = projectViewModels,
+                TotalActiveProjects = projectViewModels.Count,
                 UserRole = "Freelancer"
             };
 
@@ -161,7 +165,7 @@ namespace Freelancing.Controllers
                 AcceptedBidProposal = project.AcceptedBid.Proposal,
                 BiddingAcceptedDate = project.AcceptedBid.BiddingAcceptedDate,
                 
-                ProjectStatus = project.Status,
+                ProjectStatus = GetProjectStatus(project),
                 ProjectRequiredSkills = project.ProjectSkills?.Select(ps => ps.UserSkill).ToList() ?? new List<UserSkill>(),
                 FreelancerSkills = freelancerSkills
             };
@@ -213,6 +217,19 @@ namespace Freelancing.Controllers
             await dbContext.SaveChangesAsync();
 
             return RedirectToAction(nameof(Index));
+        }
+
+        // Helper method to determine project status
+        private string GetProjectStatus(Project project)
+        {
+            // If project has a specific status set, use that
+            if (!string.IsNullOrEmpty(project.Status))
+            {
+                return project.Status;
+            }
+            
+            // Otherwise, determine status based on accepted bid
+            return project.AcceptedBidId.HasValue ? "Active" : "Open";
         }
 
         // Helper method to parse JSON arrays stored as strings

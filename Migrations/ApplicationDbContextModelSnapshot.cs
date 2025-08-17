@@ -226,6 +226,9 @@ namespace Freelancing.Migrations
                     b.Property<string>("ClientIPAddress")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<DateTime?>("ClientMarkedCompleteAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("ClientSignatureData")
                         .HasColumnType("nvarchar(max)");
 
@@ -237,6 +240,9 @@ namespace Freelancing.Migrations
 
                     b.Property<string>("ClientUserAgent")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("ContractContent")
                         .IsRequired()
@@ -269,6 +275,9 @@ namespace Freelancing.Migrations
                     b.Property<string>("FreelancerIPAddress")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<DateTime?>("FreelancerMarkedCompleteAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("FreelancerSignatureData")
                         .HasColumnType("nvarchar(max)");
 
@@ -296,6 +305,9 @@ namespace Freelancing.Migrations
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime?>("TerminatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("Timeline")
                         .HasColumnType("nvarchar(max)");
@@ -454,6 +466,148 @@ namespace Freelancing.Migrations
                     b.HasIndex("IsActive");
 
                     b.ToTable("ContractTemplates");
+                });
+
+            modelBuilder.Entity("Freelancing.Models.Entities.ContractTermination", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ClientIPAddress")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ClientSignatureData")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ClientSignatureType")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("ClientSignedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ClientUserAgent")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("ContractId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("DocumentHash")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("DocumentPath")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<long?>("DocumentSize")
+                        .HasColumnType("bigint");
+
+                    b.Property<decimal>("FinalPayment")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("FreelancerIPAddress")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FreelancerSignatureData")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FreelancerSignatureType")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("FreelancerSignedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("FreelancerUserAgent")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("RequestedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETUTCDATE()");
+
+                    b.Property<Guid>("RequestedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("RequestedByUserRole")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("SettlementDetails")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("SettlementNotes")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("TerminationDetails")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("TerminationReason")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("TerminationTerms")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ContractId");
+
+                    b.HasIndex("RequestedAt");
+
+                    b.HasIndex("RequestedByUserId");
+
+                    b.HasIndex("Status");
+
+                    b.ToTable("ContractTerminations");
+                });
+
+            modelBuilder.Entity("Freelancing.Models.Entities.ContractTerminationAuditLog", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("ContractTerminationId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Details")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("IPAddress")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("Timestamp")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETUTCDATE()");
+
+                    b.Property<string>("UserAgent")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ContractTerminationId");
+
+                    b.HasIndex("Timestamp");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("ContractTerminationAuditLogs");
                 });
 
             modelBuilder.Entity("Freelancing.Models.Entities.Deliverable", b =>
@@ -1242,6 +1396,36 @@ namespace Freelancing.Migrations
                     b.Navigation("CreatedByUser");
                 });
 
+            modelBuilder.Entity("Freelancing.Models.Entities.ContractTermination", b =>
+                {
+                    b.HasOne("Freelancing.Models.Entities.Contract", "Contract")
+                        .WithMany()
+                        .HasForeignKey("ContractId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Contract");
+                });
+
+            modelBuilder.Entity("Freelancing.Models.Entities.ContractTerminationAuditLog", b =>
+                {
+                    b.HasOne("Freelancing.Models.Entities.ContractTermination", "ContractTermination")
+                        .WithMany("AuditLogs")
+                        .HasForeignKey("ContractTerminationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Freelancing.Models.Entities.UserAccount", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("ContractTermination");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("Freelancing.Models.Entities.Deliverable", b =>
                 {
                     b.HasOne("Freelancing.Models.Entities.Contract", "Contract")
@@ -1493,6 +1677,11 @@ namespace Freelancing.Migrations
                     b.Navigation("AuditLogs");
 
                     b.Navigation("Revisions");
+                });
+
+            modelBuilder.Entity("Freelancing.Models.Entities.ContractTermination", b =>
+                {
+                    b.Navigation("AuditLogs");
                 });
 
             modelBuilder.Entity("Freelancing.Models.Entities.Project", b =>

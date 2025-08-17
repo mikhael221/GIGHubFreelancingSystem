@@ -14,9 +14,10 @@ namespace Freelancing.Models.Entities
         public string? ContractTemplateUsed { get; set; }
         
         // Contract Status and Dates
-        public string Status { get; set; } = "Draft"; // Draft, AwaitingFreelancer, AwaitingClient, Active, Completed, Cancelled
+        public string Status { get; set; } = "Draft"; // Draft, AwaitingFreelancer, AwaitingClient, Active, Completed, Cancelled, Terminated
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow.ToLocalTime();
         public DateTime? LastModifiedAt { get; set; }
+        public DateTime? TerminatedAt { get; set; }
         
         // Client Signature Information
         public DateTime? ClientSignedAt { get; set; }
@@ -36,6 +37,11 @@ namespace Freelancing.Models.Entities
         public string? PaymentTerms { get; set; } // JSON: { "upfront": 30, "milestones": [...], "final": 70 }
         public string? DeliverableRequirements { get; set; } // JSON array of requirements
         public string? RevisionPolicy { get; set; } // JSON: { "freeRevisions": 3, "additionalCost": 50 }
+        
+        // Project Completion Tracking
+        public DateTime? ClientMarkedCompleteAt { get; set; }
+        public DateTime? FreelancerMarkedCompleteAt { get; set; }
+        public DateTime? CompletedAt { get; set; }
         public string? Timeline { get; set; } // JSON: { "startDate": "...", "milestones": [...], "deadline": "..." }
         
         // Document Management

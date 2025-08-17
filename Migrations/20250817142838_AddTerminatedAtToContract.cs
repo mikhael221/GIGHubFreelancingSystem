@@ -1,19 +1,20 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+﻿using System;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
 namespace Freelancing.Migrations
 {
     /// <inheritdoc />
-    public partial class AddProjectImagePath : Migration
+    public partial class AddTerminatedAtToContract : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AddColumn<string>(
-                name: "ImagePath",
-                table: "Projects",
-                type: "nvarchar(max)",
+            migrationBuilder.AddColumn<DateTime>(
+                name: "TerminatedAt",
+                table: "Contracts",
+                type: "datetime2",
                 nullable: true);
         }
 
@@ -21,8 +22,8 @@ namespace Freelancing.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropColumn(
-                name: "ImagePath",
-                table: "Projects");
+                name: "TerminatedAt",
+                table: "Contracts");
         }
     }
 }

@@ -41,6 +41,10 @@ namespace Freelancing.Data
         public DbSet<ContractRevision> ContractRevisions { get; set; }
         public DbSet<ContractTemplate> ContractTemplates { get; set; }
         
+        // Contract Termination entities
+        public DbSet<ContractTermination> ContractTerminations { get; set; }
+        public DbSet<ContractTerminationAuditLog> ContractTerminationAuditLogs { get; set; }
+        
         // Deliverable entity
         public DbSet<Deliverable> Deliverables { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -394,6 +398,59 @@ namespace Freelancing.Data
             modelBuilder.Entity<ContractTemplate>()
                 .Property(ct => ct.CreatedAt)
                 .HasDefaultValueSql("GETUTCDATE()");
+
+            // ContractTermination relationships and configurations
+            modelBuilder.Entity<ContractTermination>()
+                .HasOne(ct => ct.Contract)
+                .WithMany()
+                .HasForeignKey(ct => ct.ContractId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // ContractTermination indexes
+            modelBuilder.Entity<ContractTermination>()
+                .HasIndex(ct => ct.ContractId);
+
+            modelBuilder.Entity<ContractTermination>()
+                .HasIndex(ct => ct.Status);
+
+            modelBuilder.Entity<ContractTermination>()
+                .HasIndex(ct => ct.RequestedAt);
+
+            modelBuilder.Entity<ContractTermination>()
+                .HasIndex(ct => ct.RequestedByUserId);
+
+            // ContractTerminationAuditLog relationships
+            modelBuilder.Entity<ContractTerminationAuditLog>()
+                .HasOne(ctal => ctal.ContractTermination)
+                .WithMany(ct => ct.AuditLogs)
+                .HasForeignKey(ctal => ctal.ContractTerminationId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<ContractTerminationAuditLog>()
+                .HasOne(ctal => ctal.User)
+                .WithMany()
+                .HasForeignKey(ctal => ctal.UserId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<ContractTerminationAuditLog>()
+                .HasIndex(ctal => ctal.ContractTerminationId);
+
+            modelBuilder.Entity<ContractTerminationAuditLog>()
+                .HasIndex(ctal => ctal.Timestamp);
+
+            // Configure default values for contract termination
+            modelBuilder.Entity<ContractTermination>()
+                .Property(ct => ct.RequestedAt)
+                .HasDefaultValueSql("GETUTCDATE()");
+
+                    modelBuilder.Entity<ContractTerminationAuditLog>()
+            .Property(ctal => ctal.Timestamp)
+            .HasDefaultValueSql("GETUTCDATE()");
+
+        // Configure decimal precision for FinalPayment
+        modelBuilder.Entity<ContractTermination>()
+            .Property(ct => ct.FinalPayment)
+            .HasPrecision(18, 2);
 
             // Deliverable relationships and configurations
             modelBuilder.Entity<Deliverable>()

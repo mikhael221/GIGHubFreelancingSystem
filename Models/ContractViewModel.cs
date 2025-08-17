@@ -53,10 +53,23 @@ namespace Freelancing.Models
         public string? DocumentPath { get; set; }
         public bool HasSignedDocument => !string.IsNullOrEmpty(DocumentPath);
         
+        // Project Completion Tracking
+        public DateTime? ClientMarkedCompleteAt { get; set; }
+        public DateTime? FreelancerMarkedCompleteAt { get; set; }
+        public DateTime? CompletedAt { get; set; }
+        public bool ClientMarkedComplete => ClientMarkedCompleteAt.HasValue;
+        public bool FreelancerMarkedComplete => FreelancerMarkedCompleteAt.HasValue;
+        public bool IsCompleted => Status == "Completed";
+        
+        // Deliverable Information
+        public int AcceptedDeliverablesCount { get; set; }
+        public bool HasSufficientDeliverables => AcceptedDeliverablesCount >= 1;
+        
         // Status Helpers
         public bool IsFullySigned => ClientHasSigned && FreelancerHasSigned;
         public bool IsActive => Status == "Active";
         public bool CanBeModified => Status == "Draft" || Status == "AwaitingFreelancer" || Status == "AwaitingClient";
+        public bool CanShowFinishButton => IsActive && HasSufficientDeliverables;
         
         // Audit Information
         public List<ContractAuditLogViewModel> AuditLogs { get; set; } = new List<ContractAuditLogViewModel>();

@@ -25,6 +25,7 @@ builder.Services.AddScoped<IMentorshipSchedulingService, MentorshipSchedulingSer
 
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IContractService, ContractService>();
+builder.Services.AddScoped<IContractTerminationService, ContractTerminationService>();
 builder.Services.AddScoped<IPdfGenerationService, PdfGenerationService>();
 
 // Add SignalR

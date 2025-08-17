@@ -425,7 +425,7 @@
                                 }
 
                                 <div class="message-time" data-timestamp="@message.SentAt.ToString("yyyy-MM-ddTHH:mm:ss.fffZ")">
-                                    @message.SentAt.ToString("HH:mm")
+                                    @message.SentAt.ToString("h:mm tt")
                                     @if (message.IsCurrentUser)
                                     {
                                         <i class="fas fa-check @(message.IsRead ? "text-blue-400" : "")"

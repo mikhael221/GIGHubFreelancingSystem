@@ -1,0 +1,268 @@
+@model Freelancing.Models.TerminationViewModel
+@{
+    Layout = User.IsInRole("Client") ? "_LayoutClient" : "_LayoutFreelancer";
+    ViewData["Title"] = "Termination Details - " + Model.ProjectName;
+    var userIsClient = User.IsInRole("Client");
+    var userIsFreelancer = User.IsInRole("Freelancer");
+}
+
+<div class="p-4 sm:ml-64">
+    <div class="p-4 mt-20">
+        <div class="max-w-4xl mx-auto">
+            <!-- Messages -->
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <div class="mt-2 flex items-center p-4 mb-4 text-sm text-red-800 border border-red-300 rounded-lg bg-red-50" role="alert">
+                    <svg class="shrink-0 inline w-4 h-4 me-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5ZM9.5 4a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM12 15H8a1 1 0 0 1 0-2h1v-3H8a1 1 0 0 1 0-2h2a1 1 0 0 1 1 1v4h1a1 1 0 0 1 0 2Z" />
+                    </svg>
+                    <span class="sr-only">Error</span>
+                    <div>
+                        @TempData["ErrorMessage"]
+                    </div>
+                </div>
+            }
+            
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <div class="mt-2 flex items-center p-4 mb-4 text-sm text-green-800 border border-green-300 rounded-lg bg-green-50" role="alert">
+                    <svg class="shrink-0 inline w-4 h-4 me-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5Zm3.707 8.207-4 4a1 1 0 0 1-1.414 0l-2-2a1 1 0 0 1 1.414-1.414L9 10.586l3.293-3.293a1 1 0 0 1 1.414 1.414Z" />
+                    </svg>
+                    <span class="sr-only">Success</span>
+                    <div>
+                        @TempData["SuccessMessage"]
+                    </div>
+                </div>
+            }
+            
+            <!-- Header -->
+            <div class="flex items-center justify-between mb-6">
+                <div class="flex items-center space-x-4">
+                    <a href="@Url.Action("Details", "Contract", new { id = Model.ContractId })" class="text-blue-600 hover:text-blue-800">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                        </svg>
+                    </a>
+                    <h1 class="text-3xl font-bold text-gray-900">Termination Details</h1>
+                </div>
+                @{
+                    var statusColor = Model.Status switch
+                    {
+                        "Pending" => "bg-yellow-100 text-yellow-800",
+                        "Awaiting Client" => "bg-orange-100 text-orange-800",
+                        "Awaiting Freelancer" => "bg-orange-100 text-orange-800",
+                        "Signed" => "bg-green-100 text-green-800",
+                        "Completed" => "bg-blue-100 text-blue-800",
+                        "Cancelled" => "bg-red-100 text-red-800",
+                        _ => "bg-gray-100 text-gray-800"
+                    };
+                }
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium @statusColor">
+                    @Model.Status
+                </span>
+            </div>
+
+            <!-- Termination Summary -->
+            <div class="bg-white rounded-lg shadow p-6 mb-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-xl font-semibold text-gray-900">Termination Request</h2>
+                    <div class="flex space-x-2">
+                        @if (Model.HasSignedDocument)
+                        {
+                            <button id="downloadPdfBtn" onclick="downloadPdf('@Url.Action("Download", new { id = Model.Id })')" class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                                <svg id="downloadIcon" class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                </svg>
+                                <span id="downloadText">Download PDF</span>
+                            </button>
+                        }
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Project</label>
+                        <p class="text-gray-900">@Model.ProjectName</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Final Payment</label>
+                        <p class="text-gray-900 font-semibold text-red-600">₱@Model.FinalPayment</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Termination Details -->
+            <div class="bg-white rounded-lg shadow p-6 mb-6 overflow-hidden">
+                <h2 class="text-xl font-semibold text-gray-900 mb-4">Termination Information</h2>
+                <div class="space-y-4">
+                    <div class="w-full overflow-hidden">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Reason</label>
+                        <p class="text-gray-900 break-words word-wrap-break-word overflow-hidden" style="word-break: break-word; overflow-wrap: break-word; max-width: 100%;">@Model.TerminationReason</p>
+                    </div>
+                    <div class="w-full overflow-hidden">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Details</label>
+                        <p class="text-gray-900 break-words word-wrap-break-word overflow-hidden" style="word-break: break-word; overflow-wrap: break-word; max-width: 100%;">@Model.TerminationDetails</p>
+                    </div>
+                    @if (!string.IsNullOrEmpty(Model.SettlementNotes))
+                    {
+                        <div class="w-full overflow-hidden">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Settlement Notes</label>
+                            <p class="text-gray-900 break-words word-wrap-break-word overflow-hidden" style="word-break: break-word; overflow-wrap: break-word; max-width: 100%;">@Model.SettlementNotes</p>
+                        </div>
+                    }
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Requested By</label>
+                            <p class="text-gray-900">@Model.RequestedByName (@Model.RequestedByRole)</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Requested On</label>
+                            <p class="text-gray-900">@Model.RequestedAt.ToString("MMM dd, yyyy 'at' h:mm tt")</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Signature Status -->
+            <div class="bg-white rounded-lg shadow p-6 mb-6">
+                <h2 class="text-xl font-semibold text-gray-900 mb-4">Signature Status</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <!-- Client Signature -->
+                    <div class="flex items-center space-x-4 p-4 @(Model.ClientHasSigned ? "bg-green-50" : "bg-yellow-50") rounded-lg">
+                        <div class="flex-shrink-0">
+                            @if (Model.ClientHasSigned)
+                            {
+                                <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                            }
+                            else
+                            {
+                                <svg class="w-8 h-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                            }
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="font-medium text-gray-900">Client: @Model.ClientName</h3>
+                            @if (Model.ClientHasSigned)
+                            {
+                                <p class="text-sm text-green-600">Signed on @Model.ClientSignedAt?.ToString("MMMM dd, yyyy 'at' h:mm tt")</p>
+                            }
+                            else
+                            {
+                                <p class="text-sm text-yellow-600">Signature pending</p>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Freelancer Signature -->
+                    <div class="flex items-center space-x-4 p-4 @(Model.FreelancerHasSigned ? "bg-green-50" : "bg-yellow-50") rounded-lg">
+                        <div class="flex-shrink-0">
+                            @if (Model.FreelancerHasSigned)
+                            {
+                                <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                            }
+                            else
+                            {
+                                <svg class="w-8 h-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                            }
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="font-medium text-gray-900">Freelancer: @Model.FreelancerName</h3>
+                            @if (Model.FreelancerHasSigned)
+                            {
+                                <p class="text-sm text-green-600">Signed on @Model.FreelancerSignedAt?.ToString("MMMM dd, yyyy 'at' h:mm tt")</p>
+                            }
+                            else
+                            {
+                                <p class="text-sm text-yellow-600">Signature pending</p>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sign Button -->
+                @{
+                    var currentUserId = Guid.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value!);
+                    var isCurrentUserClient = Model.ClientId == currentUserId;
+                    var isCurrentUserFreelancer = Model.FreelancerId == currentUserId;
+                    var canCurrentUserSign = (isCurrentUserClient && !Model.ClientHasSigned) || (isCurrentUserFreelancer && !Model.FreelancerHasSigned);
+                }
+
+                @if (canCurrentUserSign && (Model.Status == "Pending" || Model.Status == "AwaitingClient" || Model.Status == "AwaitingFreelancer"))
+                {
+                    <div class="mt-6 text-center">
+                        <a href="@Url.Action("Sign", new { id = Model.Id })" class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:ring-4 focus:ring-red-300">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
+                            </svg>
+                            Sign Termination
+                        </a>
+                    </div>
+                }
+            </div>
+
+            <!-- Actions -->
+            <div class="bg-white rounded-lg shadow p-6">
+                <h2 class="text-xl font-semibold text-gray-900 mb-4">Actions</h2>
+                <div class="space-y-3">
+                    <div class="inline-flex">
+                        <div class="flex justify-center items-center">
+                            @if (Model.CanUserExecute)
+                            {
+                                <form asp-action="Execute" method="post" style="display: inline;">
+                                    <input type="hidden" name="id" value="@Model.Id" />
+                                    <button type="submit" class="focus:outline-none text-white bg-red-700 hover:bg-red-800 focus:ring-4 focus:ring-red-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-red-600 dark:hover:bg-red-700 dark:focus:ring-red-800">
+                                        Execute Termination
+                                    </button>
+                                </form>
+                            }
+                            @if (Model.CanUserCancel && Model.Status == "Pending")
+                            {
+                                <form asp-action="Cancel" method="post" style="display: inline;">
+                                    <input type="hidden" name="id" value="@Model.Id" />
+                                    <button type="submit" class="focus:outline-none text-white bg-gray-700 hover:bg-gray-800 focus:ring-4 focus:ring-gray-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-gray-600 dark:hover:bg-gray-700 dark:focus:ring-gray-800">
+                                        Cancel Request
+                                    </button>
+                                </form>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function downloadPdf(url) {
+    const button = document.getElementById('downloadPdfBtn');
+    const icon = document.getElementById('downloadIcon');
+    const text = document.getElementById('downloadText');
+    
+    // Disable button and show loading state
+    button.disabled = true;
+    button.classList.add('opacity-50', 'cursor-not-allowed');
+    text.textContent = 'Generating PDF...';
+    
+    // Create a hidden iframe to trigger the download
+    const iframe = document.createElement('iframe');
+    iframe.style.display = 'none';
+    iframe.src = url;
+    document.body.appendChild(iframe);
+    
+    // Reset button after a delay
+    setTimeout(() => {
+        button.disabled = false;
+        button.classList.remove('opacity-50', 'cursor-not-allowed');
+        text.textContent = 'Download PDF';
+        document.body.removeChild(iframe);
+    }, 3000);
+}
+</script>
