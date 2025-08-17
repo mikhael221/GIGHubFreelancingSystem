@@ -143,12 +143,14 @@ namespace Freelancing.Controllers
                 ClientId = project.User.Id,
                 ClientName = $"{project.User.FirstName} {project.User.LastName}",
                 ClientEmail = project.User.Email,
-                                    ClientPhoto = project.User.Photo ?? "https://ik.imagekit.io/6txj3mofs/GIGHub%20(11).png?updatedAt=1750552804497",
+                ClientUsername = project.User.UserName,
+                ClientPhoto = project.User.Photo ?? "https://ik.imagekit.io/6txj3mofs/GIGHub%20(11).png?updatedAt=1750552804497",
                 
                 FreelancerId = freelancer.Id,
                 FreelancerName = $"{freelancer.FirstName} {freelancer.LastName}",
                 FreelancerEmail = freelancer.Email,
-                                    FreelancerPhoto = freelancer.Photo ?? "https://ik.imagekit.io/6txj3mofs/GIGHub%20(11).png?updatedAt=1750552804497",
+                FreelancerUsername = freelancer.UserName,
+                FreelancerPhoto = freelancer.Photo ?? "https://ik.imagekit.io/6txj3mofs/GIGHub%20(11).png?updatedAt=1750552804497",
                 
                 AcceptedBidAmount = project.AcceptedBid.Budget,
                 AcceptedBidDelivery = project.AcceptedBid.Delivery,

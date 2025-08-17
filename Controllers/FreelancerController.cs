@@ -97,6 +97,8 @@ namespace Freelancing.Controllers
                 .Include(p => p.User)
                 .Include(p => p.Biddings)
                 .ThenInclude(b => b.User)
+                .ThenInclude(u => u.UserAccountSkills)
+                .ThenInclude(uas => uas.UserSkill)
                 .Include(p => p.ProjectSkills)
                 .ThenInclude(ps => ps.UserSkill)
                 .FirstOrDefaultAsync(p => p.Id == Id);

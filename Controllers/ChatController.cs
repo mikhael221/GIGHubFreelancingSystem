@@ -103,8 +103,8 @@ namespace Freelancing.Controllers
                 });
             }
 
-            // If no specific chat room is selected, select the first one
-            if (!chatRoomId.HasValue && chatList.Any())
+            // If no specific chat room is selected and no target user is specified, select the first one
+            if (!chatRoomId.HasValue && !targetUserId.HasValue && chatList.Any())
             {
                 chatRoomId = chatList.First().ChatRoomId;
             }
@@ -296,6 +296,89 @@ namespace Freelancing.Controllers
             }
         }
 
+        [HttpGet]
+        public async Task<IActionResult> GetChatList()
+        {
+            var userId = GetCurrentUserId();
+
+            // Get all chat rooms where user is a participant
+            var userChatRooms = await _context.ChatRooms
+                .Include(cr => cr.User1)
+                .Include(cr => cr.User2)
+                .Include(cr => cr.MentorshipMatch)
+                .Where(cr => (cr.User1Id == userId || cr.User2Id == userId) && cr.IsActive)
+                .OrderByDescending(cr => cr.LastActivityAt ?? cr.CreatedAt)
+                .ToListAsync();
+
+            var chatList = new List<object>();
+
+            foreach (var chatRoom in userChatRooms)
+            {
+                // Get the partner (other user in the chat)
+                var partner = chatRoom.User1Id == userId ? chatRoom.User2 : chatRoom.User1;
+
+                // Get last message
+                var lastMessage = await _context.ChatMessages
+                    .Where(m => m.ChatRoomId == chatRoom.Id && !m.IsDeleted)
+                    .OrderByDescending(m => m.SentAt)
+                    .FirstOrDefaultAsync();
+
+                // Get unread count
+                var unreadCount = await _context.ChatMessages
+                    .CountAsync(m => m.ChatRoomId == chatRoom.Id && 
+                                    m.SenderId != userId && 
+                                    !m.IsRead && 
+                                    !m.IsDeleted);
+
+                string lastMessageText = "No messages yet";
+                DateTime lastMessageTime = chatRoom.CreatedAt;
+
+                if (lastMessage != null)
+                {
+                    try
+                    {
+                        var encryptionKey = _encryptionService.GenerateRoomKey(chatRoom.Id.ToString());
+                        var decryptedMessage = _encryptionService.DecryptMessage(lastMessage.Message, encryptionKey);
+                        lastMessageTime = lastMessage.SentAt;
+                        
+                        // Check if it's a file, image, or video message
+                        if (lastMessage.MessageType == "file" || lastMessage.MessageType == "image" || lastMessage.MessageType == "video")
+                        {
+                            lastMessageText = "Sent an attachment";
+                        }
+                        else
+                        {
+                            lastMessageText = decryptedMessage;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Failed to decrypt last message: {ex.Message}");
+                        lastMessageText = "Message unavailable";
+                    }
+                }
+
+                chatList.Add(new
+                {
+                    ChatRoomId = chatRoom.Id,
+                    RoomName = GetRoomName(chatRoom, partner),
+                    RoomType = chatRoom.RoomType,
+                    Partner = new
+                    {
+                        Id = partner.Id,
+                        FirstName = partner.FirstName,
+                        LastName = partner.LastName,
+                        Photo = partner.Photo
+                    },
+                    LastMessage = lastMessageText,
+                    LastMessageTime = lastMessageTime,
+                    UnreadCount = unreadCount,
+                    MentorshipMatch = chatRoom.MentorshipMatch
+                });
+            }
+
+            return Json(new { success = true, chatList = chatList });
+        }
 
 
         private string GetRoomName(ChatRoom chatRoom, UserAccount partner)

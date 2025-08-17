@@ -17,12 +17,14 @@ namespace Freelancing.Models
         public Guid ClientId { get; set; }
         public string ClientName { get; set; }
         public string ClientEmail { get; set; }
+        public string ClientUsername { get; set; }
         public string ClientPhoto { get; set; }
         
         // Freelancer Information  
         public Guid FreelancerId { get; set; }
         public string FreelancerName { get; set; }
         public string FreelancerEmail { get; set; }
+        public string FreelancerUsername { get; set; }
         public string FreelancerPhoto { get; set; }
         
         // Accepted Bid Information

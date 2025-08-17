@@ -60,7 +60,7 @@
                     <div class="col-span-2 w-full h-full">
                         <!-- Freelancer Profile -->
                         <div class="bg-white p-6">
-                            <div class="flex items-center space-x-3 mb-6">
+                            <div class="flex items-center space-x-3 mb-2 ms-3">
                                 <img src="@Model.FreelancerPhoto" alt="@Model.FreelancerName" class="w-24 h-24 rounded-full">
                                 <div>
                                     <p class="font-medium text-gray-900 ms-1">@Model.FreelancerName <span class="italic text-sm font-light">(Freelancer)</span></p>
@@ -84,6 +84,7 @@
                                     }
                                 </div>
                             </div>
+                            <button type="button" class="text-gray-900 bg-white border border-gray-300 focus:outline-none hover:bg-gray-100 focus:ring-4 focus:ring-gray-100 font-medium rounded-lg text-sm px-5 py-2 me-2 mb-4" onclick="openProfileModal()">View Profile</button>
 
                             <!-- Required Skills -->
                             <h2 class="text-xl font-semibold text-gray-900 mb-2">Required Skills</h2>
@@ -288,3 +289,99 @@
         </div>
     </div>
 </div>
+
+<div id="profileModal" class="fixed inset-0 flex items-center justify-center z-50 hidden" style="background-color: rgba(0, 0, 0, 0.5); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);">
+    <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-full mx-4">
+        <div class="relative p-6">
+            <button type="button" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 rounded-full p-2 hover:bg-gray-100 transition-colors duration-200" onclick="closeProfileModal()">
+                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+            <div class="flex flex-col md:flex-row items-start space-y-4 md:space-y-0 md:space-x-6">
+                <!-- Profile Picture -->
+                <div class="flex-shrink-0">
+                    @if (!string.IsNullOrEmpty(Model.FreelancerPhoto))
+                    {
+                        <img src="@Model.FreelancerPhoto" alt="Profile Picture" class="w-32 h-32 rounded-full object-cover border-4 border-gray-200 shadow-lg">
+                    }
+                    else
+                    {
+                        <img src="https://ik.imagekit.io/6txj3mofs/GIGHub%20(11).png?updatedAt=1750552804497" alt="Default Profile Picture" class="w-32 h-32 rounded-full object-cover border-4 border-gray-200 shadow-lg">
+                    }
+                </div>
+
+                <!-- Profile Information -->
+                <div class="flex-1 min-w-0">
+                    <h3 class="text-2xl font-bold text-gray-900 mb-2">@Model.FreelancerName</h3>
+
+                    @if (!string.IsNullOrEmpty(Model.FreelancerEmail))
+                    {
+                        <div class="flex items-center mb-2">
+                            <svg class="w-5 h-5 text-gray-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                            </svg>
+                            <span class="text-gray-700">@Model.FreelancerEmail</span>
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrEmpty(Model.FreelancerUsername))
+                    {
+                        <div class="flex items-center mb-2">
+                            <svg class="w-5 h-5 text-gray-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207"></path>
+                            </svg>
+                            <span class="text-gray-700">@Model.FreelancerUsername</span>
+                        </div>
+                    }
+
+                    @if (Model.FreelancerSkills.Any())
+                    {
+                        <div class="mt-4">
+                            <h4 class="text-lg font-semibold text-gray-900 mb-2">Skills</h4>
+                            <div class="flex flex-wrap gap-2">
+                                @foreach (var skill in Model.FreelancerSkills)
+                                {
+                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                                        @skill.Name
+                                    </span>
+                                }
+                            </div>
+                        </div>
+                    }
+
+                    <!-- Action Buttons -->
+                    <div class="flex flex-wrap gap-3 mt-6">
+                        @await Html.PartialAsync("_ChatButton", Model.FreelancerId)
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function openProfileModal() {
+        document.getElementById('profileModal').classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeProfileModal() {
+        document.getElementById('profileModal').classList.add('hidden');
+        document.body.style.overflow = 'auto';
+    }
+
+    // Close profile modal when clicking outside the modal
+    document.getElementById('profileModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeProfileModal();
+        }
+    });
+
+    // Close modals with Escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeProfileModal();
+        }
+    });
+</script>

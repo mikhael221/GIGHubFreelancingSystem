@@ -79,6 +79,9 @@ function setupSignalRHandlers() {
         }
         // Join the new room
         connection.invoke('JoinChatRoom', newChatRoomId);
+        
+        // Update the sidebar with the new chat room and navigate to it
+        updateSidebarWithNewChatAndNavigate(newChatRoomId);
     });
 
     connection.on('Error', (error) => {
@@ -556,6 +559,91 @@ function updateChatList(message) {
             timeElement.textContent = formatTime(message.SentAt || message.sentAt);
         }
     }
+}
+
+function updateSidebarWithNewChatAndNavigate(newChatRoomId) {
+    // Fetch updated chat list from server
+    fetch('/Chat/GetChatList')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.chatList) {
+                updateSidebarChatList(data.chatList);
+                
+                // Navigate to the new chat room after a short delay to ensure sidebar is updated
+                setTimeout(() => {
+                    window.location.href = `/Chat/Index?chatRoomId=${newChatRoomId}`;
+                }, 500);
+            }
+        })
+        .catch(error => {
+            console.error('Failed to update sidebar:', error);
+            // Still navigate even if sidebar update fails
+            setTimeout(() => {
+                window.location.href = `/Chat/Index?chatRoomId=${newChatRoomId}`;
+            }, 500);
+        });
+}
+
+function updateSidebarChatList(chatList) {
+    const sidebar = document.getElementById('chat-sidebar');
+    if (!sidebar) return;
+
+    if (chatList.length === 0) {
+        // Show "No Active Chats" message
+        sidebar.innerHTML = `
+            <h2 class="text-2xl font-bold pl-7">Chats</h2>
+            <div class="no-chats p-5">
+                <i class="fas fa-comments"></i>
+                <h3 class="text-lg font-medium mb-2">No Active Chats</h3>
+                <p class="text-sm">You don't have any active conversations yet.</p>
+            </div>
+        `;
+        return;
+    }
+
+    // Build the new chat list HTML
+    let chatListHTML = '<h2 class="text-2xl font-bold pl-7">Chats</h2>';
+    
+    chatList.forEach(chat => {
+        // For new chat rooms, we want to mark the newly created one as active
+        const isActive = chat.ChatRoomId === currentChatRoomId;
+        const partnerPhoto = chat.Partner.Photo || 'https://ik.imagekit.io/6txj3mofs/GIGHub%20(11).png?updatedAt=1750552804497';
+        const partnerName = `${chat.Partner.FirstName} ${chat.Partner.LastName}`;
+        const lastMessageTime = formatTime(chat.LastMessageTime);
+        
+        chatListHTML += `
+            <div class="chat-item ${isActive ? 'active' : ''}" data-chat-room-id="${chat.ChatRoomId}">
+                <div class="chat-item-header">
+                    <div class="flex items-center space-x-3">
+                        <img class="rounded-full" style="width: 50px; height:auto"
+                             src="${partnerPhoto}"
+                             alt="${chat.Partner.FirstName}">
+                        <div>
+                            <div class="chat-item-name">${partnerName}</div>
+                            <div class="chat-item-message text-truncate">${chat.LastMessage}</div>
+                        </div>
+                    </div>
+                    <div class="flex flex-col items-end">
+                        <div class="chat-item-time">${lastMessageTime}</div>
+                        ${chat.UnreadCount > 0 ? `<div class="unread-badge">${chat.UnreadCount}</div>` : ''}
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+
+    // Update the sidebar content
+    sidebar.innerHTML = chatListHTML;
+    
+    // Re-attach click event listeners to the new chat items
+    document.querySelectorAll('.chat-item').forEach(item => {
+        item.addEventListener('click', function() {
+            const chatRoomId = this.dataset.chatRoomId;
+            if (chatRoomId) {
+                window.location.href = `/Chat/Index?chatRoomId=${chatRoomId}`;
+            }
+        });
+    });
 }
 
 function scrollToBottom() {

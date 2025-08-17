@@ -51,19 +51,22 @@
                 }
                 <div class="mt-6">
                     <!-- Project Owner Information -->
-                    <div class="flex items-center space-x-3 bg-gray-50 rounded-lg w-fit mb-3">
+                    <div class="flex items-center space-x-3 bg-gray-50 w-fit mb-3">
                         @if (!string.IsNullOrEmpty(Model.User?.Photo))
                         {
-                            <img src="@Model.User.Photo" alt="Project Owner" class="rounded-full object-cover border-2 border-gray-200" style="width: 25px; height: auto">
+                            <div class="rounded-full cursor-pointer hover:bg-gray-100 transition-colors duration-200" onclick="openProfileModal()">
+                                <img src="@Model.User.Photo" alt="Project Owner" class="rounded-full object-cover border-2 border-gray-200" style="width: 25px; height: auto">
+                            </div>
                         }
                         else
                         {
-                            <img src="https://ik.imagekit.io/6txj3mofs/GIGHub%20(11).png?updatedAt=1750552804497" alt="Project Owner" class="rounded-full object-cover border-2 border-gray-200" style="width: 50px; height: auto">
+                            <div class="rounded-full cursor-pointer hover:bg-gray-100 transition-colors duration-200" onclick="openProfileModal()">
+                                <img src="https://ik.imagekit.io/6txj3mofs/GIGHub%20(11).png?updatedAt=1750552804497" alt="Project Owner" class="rounded-full object-cover border-2 border-gray-200" style="width: 50px; height: auto">
+                            </div>
                         }
                         <div class="flex flex-col">
                             <span class="font-semibold text-md text-gray-900">@(Model.User?.FirstName) @(Model.User?.LastName)</span>
                             <span class="text-sm font-light italic tracking-tight text-gray-900">@Model.CreatedAt.ToString("MMM dd, yyyy 'at' h:mm tt")</span>
-
                         </div>
                     </div>
                 </div>
@@ -78,13 +81,15 @@
                         <div class="flex items-center mb-3">
                             @if (!string.IsNullOrEmpty(bid.User.Photo))
                             {
-                                <img class="w-8 h-8 rounded-full" src="@bid.User.Photo" alt="user photo">
-                                @await Html.PartialAsync("_ChatButton", bid.User.Id)
+                                <div class="rounded-full cursor-pointer hover:bg-gray-100 transition-colors duration-200" onclick="openProfileBidModal('@bid.User.Id')">
+                                    <img class="w-8 h-8 rounded-full" src="@bid.User.Photo" alt="user photo">
+                                </div>
                             }
                             else
                             {
-                                <img class="w-8 h-8 rounded-full" src="https://ik.imagekit.io/6txj3mofs/GIGHub%20(11).png?updatedAt=1750552804497" alt="user photo">
-                                @await Html.PartialAsync("_ChatButton", bid.User.Id)
+                                <div class="rounded-full cursor-pointer hover:bg-gray-100 transition-colors duration-200" onclick="openProfileBidModal('@bid.User.Id')">
+                                    <img class="w-8 h-8 rounded-full" src="https://ik.imagekit.io/6txj3mofs/GIGHub%20(11).png?updatedAt=1750552804497" alt="user photo">
+                                </div>
                             }
                             <h5 class="ms-2 text-xl font-bold tracking-tight text-gray-900">@bid.User?.FirstName @bid.User?.LastName</h5>
                         </div>
@@ -191,6 +196,142 @@
     </div>
 </div>
 
+<!-- Profile Modal -->
+@if (@User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value != Model.User.Id.ToString())
+{
+    <div id="profileModal" class="fixed inset-0 flex items-center justify-center z-50 hidden" style="background-color: rgba(0, 0, 0, 0.5); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);">
+        <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-full mx-4">
+            <div class="relative p-6">
+                <button type="button" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 rounded-full p-2 hover:bg-gray-100 transition-colors duration-200" onclick="closeProfileModal()">
+                    <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+                <div class="flex flex-col md:flex-row items-start space-y-4 md:space-y-0 md:space-x-6">
+                    <!-- Profile Picture -->
+                    <div class="flex-shrink-0">
+                        @if (!string.IsNullOrEmpty(Model.User?.Photo))
+                        {
+                            <img src="@Model.User.Photo" alt="Profile Picture" class="w-32 h-32 rounded-full object-cover border-4 border-gray-200 shadow-lg">
+                        }
+                        else
+                        {
+                            <img src="https://ik.imagekit.io/6txj3mofs/GIGHub%20(11).png?updatedAt=1750552804497" alt="Default Profile Picture" class="w-32 h-32 rounded-full object-cover border-4 border-gray-200 shadow-lg">
+                        }
+                    </div>
+
+                    <!-- Profile Information -->
+                    <div class="flex-1 min-w-0">
+                        <h3 class="text-2xl font-bold text-gray-900 mb-2">@(Model.User?.FirstName) @(Model.User?.LastName)</h3>
+
+                        @if (!string.IsNullOrEmpty(Model.User?.Email))
+                        {
+                            <div class="flex items-center mb-2">
+                                <svg class="w-5 h-5 text-gray-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                                </svg>
+                                <span class="text-gray-700">@Model.User?.Email</span>
+                            </div>
+                        }
+
+                        @if (!string.IsNullOrEmpty(Model.User?.UserName))
+                        {
+                            <div class="flex items-center mb-2">
+                                <svg class="w-5 h-5 text-gray-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207"></path>
+                                </svg>
+                                <span class="text-gray-700">@Model.User?.UserName</span>
+                            </div>
+                        }
+
+                        <!-- Action Buttons -->
+                        <div class="flex flex-wrap gap-3 mt-6">
+                            @await Html.PartialAsync("_ChatButton", Model.User.Id)
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Profile Bid Modal -->
+@foreach (var bid in Model.Biddings)
+{
+    @if (@User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value != bid.User.Id.ToString())
+    {
+        <div id="profileBidModal-@bid.User.Id" class="fixed inset-0 flex items-center justify-center z-50 hidden" style="background-color: rgba(0, 0, 0, 0.5); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);">
+            <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-full mx-4">
+                <div class="relative p-6">
+                    <button type="button" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 rounded-full p-2 hover:bg-gray-100 transition-colors duration-200" onclick="closeProfileBidModal('@bid.User.Id')">
+                        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                    <div class="flex flex-col md:flex-row items-start space-y-4 md:space-y-0 md:space-x-6">
+                        <!-- Profile Picture -->
+                        <div class="flex-shrink-0">
+                            @if (!string.IsNullOrEmpty(bid.User?.Photo))
+                            {
+                                <img src="@bid.User.Photo" alt="Profile Picture" class="w-32 h-32 rounded-full object-cover border-4 border-gray-200 shadow-lg">
+                            }
+                            else
+                            {
+                                <img src="https://ik.imagekit.io/6txj3mofs/GIGHub%20(11).png?updatedAt=1750552804497" alt="Default Profile Picture" class="w-32 h-32 rounded-full object-cover border-4 border-gray-200 shadow-lg">
+                            }
+                        </div>
+
+                        <!-- Profile Information -->
+                        <div class="flex-1 min-w-0">
+                            <h3 class="text-2xl font-bold text-gray-900 mb-2">@(bid.User?.FirstName) @(bid.User?.LastName)</h3>
+
+                            @if (!string.IsNullOrEmpty(bid.User?.Email))
+                            {
+                                <div class="flex items-center mb-2">
+                                    <svg class="w-5 h-5 text-gray-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                                    </svg>
+                                    <span class="text-gray-700">@bid.User?.Email</span>
+                                </div>
+                            }
+
+                            @if (!string.IsNullOrEmpty(bid.User?.UserName))
+                            {
+                                <div class="flex items-center mb-2">
+                                    <svg class="w-5 h-5 text-gray-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207"></path>
+                                    </svg>
+                                    <span class="text-gray-700">@bid.User?.UserName</span>
+                                </div>
+                            }
+
+                            @if (bid.User.UserAccountSkills.Any())
+                            {
+                                <div class="mt-4">
+                                    <h4 class="text-lg font-semibold text-gray-900 mb-2">Skills</h4>
+                                    <div class="flex flex-wrap gap-2">
+                                        @foreach (var skill in bid.User.UserAccountSkills)
+                                        {
+                                            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                                                @skill.UserSkill.Name
+                                            </span>
+                                        }
+                                    </div>
+                                </div>
+                            }
+
+                            <!-- Action Buttons -->
+                            <div class="flex flex-wrap gap-3 mt-6">
+                                @await Html.PartialAsync("_ChatButton", bid.User.Id)
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+}
+
 <script>
     function openImageModal(imagePath) {
         document.getElementById('modalImage').src = imagePath;
@@ -203,17 +344,61 @@
         document.body.style.overflow = 'auto';
     }
 
-    // Close modal when clicking outside the image
+    function openProfileModal() {
+        document.getElementById('profileModal').classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeProfileModal() {
+        document.getElementById('profileModal').classList.add('hidden');
+        document.body.style.overflow = 'auto';
+    }
+
+    function openProfileBidModal(userId) {
+        // Show modal for specific user
+        document.getElementById(`profileBidModal-${userId}`).classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeProfileBidModal(userId) {
+        // Close modal for specific user
+        document.getElementById(`profileBidModal-${userId}`).classList.add('hidden');
+        document.body.style.overflow = 'auto';
+    }
+
+    // Close image modal when clicking outside the image
     document.getElementById('imageModal').addEventListener('click', function(e) {
         if (e.target === this) {
             closeImageModal();
         }
     });
 
-    // Close modal with Escape key
+    // Close profile modal when clicking outside the modal
+    document.getElementById('profileModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeProfileModal();
+        }
+    });
+
+    // Close profile bid modals when clicking outside the modal
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('fixed') && e.target.id && e.target.id.startsWith('profileBidModal-')) {
+            const userId = e.target.id.replace('profileBidModal-', '');
+            closeProfileBidModal(userId);
+        }
+    });
+
+    // Close modals with Escape key
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') {
             closeImageModal();
+            closeProfileModal();
+            // Close any open profile bid modal
+            const openBidModals = document.querySelectorAll('[id^="profileBidModal-"]:not(.hidden)');
+            openBidModals.forEach(modal => {
+                const userId = modal.id.replace('profileBidModal-', '');
+                closeProfileBidModal(userId);
+            });
         }
     });
 </script>
