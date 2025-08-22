@@ -190,6 +190,24 @@ namespace Freelancing.Controllers
                 ViewBag.NeedsSignature = false;
             }
 
+            // Get feedback information for this project
+            var feedback = await dbContext.FreelancerFeedbacks
+                .Where(f => f.AcceptBidId == project.AcceptedBidId)
+                .FirstOrDefaultAsync();
+
+            if (feedback != null)
+            {
+                ViewBag.HasFeedback = true;
+                ViewBag.FeedbackRating = feedback.Rating;
+                ViewBag.FeedbackRecommendation = feedback.WouldRecommend;
+                ViewBag.FeedbackComments = feedback.Comments;
+                ViewBag.FeedbackDate = feedback.CreatedAt;
+            }
+            else
+            {
+                ViewBag.HasFeedback = false;
+            }
+
             return View(viewModel);
         }
 
@@ -230,6 +248,61 @@ namespace Freelancing.Controllers
             
             // Otherwise, determine status based on accepted bid
             return project.AcceptedBidId.HasValue ? "Active" : "Open";
+        }
+
+        // GET: ManageProjectFreelancer/Feedback/5
+        public async Task<IActionResult> Feedback(Guid id)
+        {
+            var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!Guid.TryParse(userIdString, out Guid userId))
+            {
+                return Unauthorized();
+            }
+
+                                 // Get the project where freelancer's bid was accepted
+                     var project = await dbContext.Projects
+                         .Where(p => p.Id == id && p.AcceptedBidId != null && 
+                                    p.Biddings.Any(b => b.UserId == userId && b.IsAccepted))
+                         .Include(p => p.User) // Client
+                         .Include(p => p.AcceptedBid)
+                         .ThenInclude(ab => ab.User) // Freelancer
+                         .FirstOrDefaultAsync();
+
+            if (project == null)
+            {
+                TempData["Error"] = "Project not found or unauthorized access.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            // Get feedback for this project
+            var feedback = await dbContext.FreelancerFeedbacks
+                .Where(f => f.AcceptBidId == project.AcceptedBidId)
+                .FirstOrDefaultAsync();
+
+            if (feedback == null)
+            {
+                TempData["Error"] = "No feedback found for this project.";
+                return RedirectToAction(nameof(Details), new { id = project.Id });
+            }
+
+            var viewModel = new FeedbackViewModel
+            {
+                AcceptBidId = project.AcceptedBidId.Value,
+                ProjectId = project.Id,
+                FreelancerName = $"{project.AcceptedBid.User.FirstName} {project.AcceptedBid.User.LastName}",
+                FreelancerPhoto = project.AcceptedBid.User.Photo,
+                ClientName = $"{project.User.FirstName} {project.User.LastName}",
+                ClientPhoto = project.User.Photo,
+                ProjectName = project.ProjectName,
+                Rating = feedback.Rating,
+                WouldRecommend = feedback.WouldRecommend,
+                Comments = feedback.Comments
+            };
+
+            ViewBag.IsViewingExisting = true;
+            ViewBag.FeedbackDate = feedback.CreatedAt.ToString("MMM dd, yyyy");
+
+            return View(viewModel);
         }
 
         // Helper method to parse JSON arrays stored as strings

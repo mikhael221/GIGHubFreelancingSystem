@@ -47,6 +47,9 @@ namespace Freelancing.Data
         
         // Deliverable entity
         public DbSet<Deliverable> Deliverables { get; set; }
+        
+        // FreelancerFeedback entity
+        public DbSet<FreelancerFeedback> FreelancerFeedbacks { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<Project>()
@@ -567,6 +570,35 @@ namespace Freelancing.Data
 
             modelBuilder.Entity<ChatFile>()
                 .HasIndex(cf => cf.MessageId);
+
+            // FreelancerFeedback relationships and configurations
+            modelBuilder.Entity<FreelancerFeedback>()
+                .HasOne(ff => ff.AcceptBidding)
+                .WithMany()
+                .HasForeignKey(ff => ff.AcceptBidId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<FreelancerFeedback>()
+                .HasOne(ff => ff.Freelancer)
+                .WithMany()
+                .HasForeignKey(ff => ff.FreelancerId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            // FreelancerFeedback indexes
+            modelBuilder.Entity<FreelancerFeedback>()
+                .HasIndex(ff => ff.AcceptBidId)
+                .IsUnique(); // One feedback per accepted bid
+
+            modelBuilder.Entity<FreelancerFeedback>()
+                .HasIndex(ff => ff.FreelancerId);
+
+            modelBuilder.Entity<FreelancerFeedback>()
+                .HasIndex(ff => ff.CreatedAt);
+
+            // Configure default values for freelancer feedback
+            modelBuilder.Entity<FreelancerFeedback>()
+                .Property(ff => ff.CreatedAt)
+                .HasDefaultValueSql("GETUTCDATE()");
 
             base.OnModelCreating(modelBuilder);
         }

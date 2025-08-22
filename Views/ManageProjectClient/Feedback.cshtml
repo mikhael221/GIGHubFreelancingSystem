@@ -1,0 +1,368 @@
+﻿@{
+    Layout = "_LayoutClient";
+    ViewData["Title"] = "Feedback";
+}
+
+@model Freelancing.Models.FeedbackViewModel
+
+<div class="p-4 sm:ml-64">
+    <div class="p-4 mt-20">
+        <div class="mt-4">
+            <div class="block w-full p-6">
+                <div class="flex justify-between items-center">
+                    <div class="flex items-center space-x-4">
+                        <a href="@Url.Action("Details", "ManageProjectFreelancer", new { id = Model.ProjectId })" class="text-blue-600 hover:text-blue-800">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                            </svg>
+                        </a>
+                        @if (ViewBag.IsViewingExisting)
+                        {
+                            <h1 class="text-3xl font-bold text-gray-900 mb-2">Your Feedback</h1>
+                        }
+                        else
+                        {
+                            <h1 class="text-3xl font-bold text-gray-900 mb-2">Freelancer Feedback</h1>
+                        }
+                    </div>
+                </div>
+
+                <div class="max-w-4xl mx-auto">
+                    @if (TempData["Error"] != null)
+                    {
+                        <div class="mb-6 p-4 text-sm text-red-800 border border-red-300 rounded-lg bg-red-50" role="alert">
+                            <svg class="shrink-0 inline w-4 h-4 me-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5ZM9.5 4a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM12 15H8a1 1 0 0 1 0-2h1v-3H8a1 1 0 0 1 0-2h2a1 1 0 0 1 1 1v4h1a1 1 0 0 1 0 2Z" />
+                            </svg>
+                            <span class="sr-only">Error!</span>
+                            <div>@TempData["Error"]</div>
+                        </div>
+                    }
+
+                    <div class="p-6">
+                        <div class="flex flex-col items-center justify-center space-y-4">
+                            <div class="w-50 h-50 rounded-full overflow-hidden">
+                                @if (ViewBag.IsViewingExisting)
+                                {
+                                    @if (!string.IsNullOrEmpty(Model.FreelancerPhoto))
+                                    {
+                                        <img src="@Model.FreelancerPhoto" alt="Profile" class="w-full h-full object-cover">
+                                    }
+                                    else
+                                    {
+                                        <img src="https://ik.imagekit.io/6txj3mofs/GIGHub%20(11).png?updatedAt=1750552804497" alt="Profile" class="w-full h-full object-cover">
+                                    }
+                                }
+                                else
+                                {
+                                    @if (!string.IsNullOrEmpty(Model.FreelancerPhoto))
+                                    {
+                                        <img src="@Model.FreelancerPhoto" alt="Profile" class="w-full h-full object-cover">
+                                    }
+                                    else
+                                    {
+                                        <img src="https://ik.imagekit.io/6txj3mofs/GIGHub%20(11).png?updatedAt=1750552804497" alt="Profile" class="w-full h-full object-cover">
+                                    }
+                                }
+                            </div>
+                            <div class="flex flex-col items-center">
+                                <h3 class="text-xl font-semibold text-gray-900">@Model.FreelancerName</h3>
+                                <p class="text-gray-600">@Model.ProjectName</p>
+                                @if (ViewBag.IsViewingExisting)
+                                {
+                                    <p class="text-sm text-gray-500">Submitted on @ViewBag.FeedbackDate</p>
+                                }
+                            </div>
+                        </div>
+                    </div>
+
+                    <form asp-action="Feedback" method="post" class="space-y-6">
+                        <input type="hidden" asp-for="AcceptBidId" />
+                        <input type="hidden" asp-for="FreelancerName" />
+
+                        <!-- Star Rating Section -->
+                        <div class="max-w-xl mx-auto">
+                            <div class="flex items-center justify-center">
+                                <div class="flex space-x-1" id="starRating">
+                                    @for (int i = 1; i <= 5; i++)
+                                    {
+                                        @if (ViewBag.IsViewingExisting)
+                                        {
+                                            <span class="text-3xl @(i <= Model.Rating ? "text-yellow-400" : "text-gray-300")">
+                                                @(i <= Model.Rating ? "★" : "☆")
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <button type="button" class="star-btn text-3xl text-gray-300 hover:text-yellow-400 transition-colors duration-200" data-rating="@i">
+                                                ☆
+                                            </button>
+                                        }
+                                    }
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-center">
+                                @if (ViewBag.IsViewingExisting)
+                                {
+                                    <span class="text-sm text-gray-600 ml-2">
+                                        @switch (Model.Rating)
+                                        {
+                                            case 1:
+                                                <text>Poor - 1/5</text>
+                                                ; break;
+                                            case 2:
+
+                                                <text>Fair - 2/5</text>
+                                                ; break;
+                                            case 3:
+
+                                                <text>Good - 3/5</text>
+                                                ; break;
+                                            case 4:
+
+                                                <text>Very Good - 4/5</text>
+                                                ; break;
+                                            case 5:
+
+                                                <text>Excellent - 5/5</text>
+                                                ; break;
+                                        }
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="text-sm text-gray-600 ml-2" id="ratingText">Click to rate</span>
+                                }
+                            </div>
+                            @if (!ViewBag.IsViewingExisting)
+                            {
+                                <input type="hidden" asp-for="Rating" id="ratingInput" />
+                                <div asp-validation-summary="ModelOnly" class="text-red-600 text-sm"></div>
+                            }
+                        </div>
+
+                        <!-- Recommendation Section -->
+                        <div class="max-w-xl mx-auto">
+                            <h3 class="text-lg font-semibold text-gray-900 mb-4 text-center">Would you recommend this freelancer to a friend?</h3>
+                            @if (ViewBag.IsViewingExisting)
+                            {
+                                <div class="flex justify-center">
+                                    <span class="px-6 py-3 rounded-lg font-semibold @(Model.WouldRecommend ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800")">
+                                        @(Model.WouldRecommend ? "Yes, I would recommend" : "No, I would not recommend")
+                                    </span>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="flex justify-center" style="gap: 20px;">
+                                    <div class="flex items-center">
+                                        <input type="radio" asp-for="WouldRecommend" value="true" id="recommendYes" class="sr-only" />
+                                        <label for="recommendYes" class="recommend-btn">
+                                            Yes
+                                        </label>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <input type="radio" asp-for="WouldRecommend" value="false" id="recommendNo" class="sr-only" />
+                                        <label for="recommendNo" class="recommend-btn">
+                                            No
+                                        </label>
+                                    </div>
+                                </div>
+                                <div asp-validation-summary="ModelOnly" class="text-red-600 text-sm mt-2 text-center"></div>
+                            }
+                        </div>
+
+                        <!-- Comments Section -->
+                        <div class="max-w-xl mx-auto">
+                            <h3 class="text-lg font-semibold text-gray-900 mb-4 text-center">General Comments</h3>
+                            @if (ViewBag.IsViewingExisting)
+                            {
+                                @if (!string.IsNullOrEmpty(Model.Comments))
+                                {
+                                    <div class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg block w-full p-2.5 min-h-[100px]">
+                                        @Model.Comments
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="bg-gray-50 border border-gray-300 text-gray-500 text-sm rounded-lg block w-full p-2.5 min-h-[100px] italic">
+                                        No comments provided
+                                    </div>
+                                }
+                            }
+                            else
+                            {
+                                <textarea asp-for="Comments" rows="4" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5" placeholder="Share your overall experience with this freelancer..."></textarea>
+                                <div asp-validation-summary="ModelOnly" class="text-red-600 text-sm mt-2 text-center"></div>
+                            }
+                        </div>
+
+
+
+                        @if (ViewBag.IsViewingExisting)
+                        {
+                        }
+                        else
+                        {
+                            <!-- Submit Button for new feedback -->
+                            <div class="flex justify-end space-x-4" style="margin-top: 40px">
+                                <a asp-controller="ManageProjectClient" asp-action="Details" asp-route-id="@Model.ProjectId" class="px-6 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors duration-200">
+                                    Cancel
+                                </a>
+                                <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors duration-200">
+                                    Submit Feedback
+                                </button>
+                            </div>
+                        }
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const starButtons = document.querySelectorAll('.star-btn');
+        const ratingInput = document.getElementById('ratingInput');
+        const ratingText = document.getElementById('ratingText');
+        let currentRating = 0;
+
+        const ratingDescriptions = {
+            1: "Poor - 1/5",
+            2: "Fair - 2/5",
+            3: "Good - 3/5",
+            4: "Very Good - 4/5",
+            5: "Excellent - 5/5"
+        };
+
+        starButtons.forEach((button, index) => {
+            const rating = index + 1;
+
+            button.addEventListener('click', function() {
+                currentRating = rating;
+                updateStars();
+                updateRatingText();
+            });
+
+            button.addEventListener('mouseenter', function() {
+                highlightStars(rating);
+            });
+
+            button.addEventListener('mouseleave', function() {
+                updateStars();
+            });
+        });
+
+                 function updateStars() {
+             starButtons.forEach((button, index) => {
+                 const rating = index + 1;
+                 if (rating <= currentRating) {
+                     button.classList.remove('text-gray-300');
+                     button.classList.add('text-yellow-400');
+                     button.innerHTML = '★';
+                 } else {
+                     button.classList.remove('text-yellow-400');
+                     button.classList.add('text-gray-300');
+                     button.innerHTML = '☆';
+                 }
+             });
+         }
+
+                 function highlightStars(rating) {
+             starButtons.forEach((button, index) => {
+                 const starRating = index + 1;
+                 if (starRating <= rating) {
+                     button.classList.remove('text-gray-300');
+                     button.classList.add('text-yellow-400');
+                     button.innerHTML = '★';
+                 } else {
+                     button.classList.remove('text-yellow-400');
+                     button.classList.add('text-gray-300');
+                     button.innerHTML = '☆';
+                 }
+             });
+         }
+
+        function updateRatingText() {
+            ratingInput.value = currentRating;
+            if (currentRating > 0) {
+                ratingText.textContent = ratingDescriptions[currentRating];
+            } else {
+                ratingText.textContent = "Click to rate";
+            }
+        }
+
+        // Initialize with any existing rating
+        if (ratingInput.value) {
+            currentRating = parseInt(ratingInput.value);
+            updateStars();
+            updateRatingText();
+        }
+    });
+</script>
+
+<style>
+    .star-btn {
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-size: 3rem;
+        line-height: 1;
+    }
+
+        .star-btn:hover {
+            transform: scale(1.15);
+        }
+
+        .star-btn.text-yellow-400 {
+            filter: drop-shadow(0 0 4px rgba(251, 191, 36, 0.6));
+            text-shadow: 0 0 8px rgba(251, 191, 36, 0.4);
+        }
+
+        .star-btn:not(.text-yellow-400) {
+            color: #d1d5db !important;
+        }
+
+        .star-btn.text-yellow-400 {
+            color: #fbbf24 !important;
+        }
+
+    /* Custom Recommendation Button Styles */
+    .recommend-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        padding: 12px 24px;
+        border: 2px solid #e5e7eb;
+        border-radius: 12px;
+        background: white;
+        transition: all 0.3s ease;
+        min-width: 100px;
+        font-weight: 600;
+        color: #374151;
+        font-size: 16px;
+    }
+
+        .recommend-btn:hover {
+            border-color: #3b82f6;
+            background: #f8fafc;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+            color: #1f2937;
+        }
+
+    /* Selected state */
+    input[type="radio"]:checked + .recommend-btn {
+        border-color: #3b82f6;
+        background: #3b82f6;
+        color: white;
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    }
+
+    /* Focus state */
+    .recommend-btn:focus-within {
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+</style>

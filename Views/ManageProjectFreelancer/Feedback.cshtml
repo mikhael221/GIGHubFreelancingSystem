@@ -1,0 +1,175 @@
+@model Freelancing.Models.FeedbackViewModel
+@{
+    Layout = "_LayoutFreelancer";
+    ViewData["Title"] = "Feedback - " + Model.ProjectName;
+}
+
+<div class="p-4 sm:ml-64">
+    <div class="p-4 mt-20">
+        <div class="mt-4">
+            <div class="block w-full p-6">
+                <!-- Header -->
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-4">
+                        <a href="@Url.Action("Details", "ManageProjectFreelancer", new { id = Model.ProjectId })" class="text-blue-600 hover:text-blue-800">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                            </svg>
+                        </a>
+                        <h1 class="text-3xl font-bold text-gray-900">
+                            @if (ViewBag.IsViewingExisting)
+                            {
+                                <span>Client Feedback</span>
+                            }
+                            else
+                            {
+                                <span>Your Feedback</span>
+                            }
+                        </h1>
+                    </div>
+                </div>
+
+                <!-- Feedback Form -->
+                <!-- Client Information -->
+                <div class="p-6">
+                    <div class="flex flex-col items-center justify-center space-y-4">
+                        <div class="w-50 h-50 rounded-full overflow-hidden">
+                            @if (!string.IsNullOrEmpty(Model.ClientPhoto))
+                            {
+                                <img src="@Model.ClientPhoto" alt="Profile" class="w-full h-full object-cover">
+                            }
+                            else
+                            {
+                                <img src="https://ik.imagekit.io/6txj3mofs/GIGHub%20(11).png?updatedAt=1750552804497" alt="Profile" class="w-full h-full object-cover">
+                            }
+                        </div>
+                        <div class="flex flex-col items-center">
+                            <h3 class="text-xl font-semibold text-gray-900">@Model.ClientName</h3>
+                            <p class="text-gray-600">@Model.ProjectName</p>
+                            <p class="text-sm text-gray-500">Feedback provided on @ViewBag.FeedbackDate</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="space-y-6">
+                    <!-- Star Rating Section -->
+                    <div class="max-w-xl mx-auto">
+                        <div class="flex items-center justify-center">
+                            <div class="flex space-x-1" id="starRating">
+                                @for (int i = 1; i <= 5; i++)
+                                {
+                                    @if (ViewBag.IsViewingExisting)
+                                    {
+                                        <span class="text-3xl @(i <= Model.Rating ? "text-yellow-400" : "text-gray-300")">
+                                            @(i <= Model.Rating ? "★" : "☆")
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <button type="button" class="star-btn text-3xl text-gray-300 hover:text-yellow-400 transition-colors duration-200" data-rating="@i">
+                                            ☆
+                                        </button>
+                                    }
+                                }
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-center">
+                            @if (ViewBag.IsViewingExisting)
+                            {
+                                <span class="text-sm text-gray-600 ml-2">
+                                    @switch (Model.Rating)
+                                    {
+                                        case 1:
+                                            <text>Poor - 1/5</text>
+                                            ; break;
+                                        case 2:
+
+                                            <text>Fair - 2/5</text>
+                                            ; break;
+                                        case 3:
+
+                                            <text>Good - 3/5</text>
+                                            ; break;
+                                        case 4:
+
+                                            <text>Very Good - 4/5</text>
+                                            ; break;
+                                        case 5:
+
+                                            <text>Excellent - 5/5</text>
+                                            ; break;
+                                    }
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="text-sm text-gray-600 ml-2" id="ratingText">Click to rate</span>
+                            }
+                        </div>
+                        @if (!ViewBag.IsViewingExisting)
+                        {
+                            <input type="hidden" asp-for="Rating" id="ratingInput" />
+                            <div asp-validation-summary="ModelOnly" class="text-red-600 text-sm"></div>
+                        }
+                    </div>
+
+                    <!-- Recommendation Section -->
+                    <div class="max-w-xl mx-auto">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4 text-center">Would you recommend this freelancer to a friend?</h3>
+                        @if (ViewBag.IsViewingExisting)
+                        {
+                            <div class="flex justify-center">
+                                <span class="px-6 py-3 rounded-lg font-semibold @(Model.WouldRecommend ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800")">
+                                    @(Model.WouldRecommend ? "Yes, I would recommend" : "No, I would not recommend")
+                                </span>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="flex justify-center" style="gap: 20px;">
+                                <div class="flex items-center">
+                                    <input type="radio" asp-for="WouldRecommend" value="true" id="recommendYes" class="sr-only" />
+                                    <label for="recommendYes" class="recommend-btn">
+                                        Yes
+                                    </label>
+                                </div>
+                                <div class="flex items-center">
+                                    <input type="radio" asp-for="WouldRecommend" value="false" id="recommendNo" class="sr-only" />
+                                    <label for="recommendNo" class="recommend-btn">
+                                        No
+                                    </label>
+                                </div>
+                            </div>
+                            <div asp-validation-summary="ModelOnly" class="text-red-600 text-sm mt-2 text-center"></div>
+                        }
+                    </div>
+
+                    <!-- Comments Section -->
+                    <div class="max-w-xl mx-auto">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4 text-center">General Comments</h3>
+                        @if (ViewBag.IsViewingExisting)
+                        {
+                            @if (!string.IsNullOrEmpty(Model.Comments))
+                            {
+                                <div class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg block w-full p-2.5 min-h-[100px]">
+                                    @Model.Comments
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="bg-gray-50 border border-gray-300 text-gray-500 text-sm rounded-lg block w-full p-2.5 min-h-[100px] italic">
+                                    No comments provided
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <textarea asp-for="Comments" rows="4" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5" placeholder="Share your overall experience with this freelancer..."></textarea>
+                            <div asp-validation-summary="ModelOnly" class="text-red-600 text-sm mt-2 text-center"></div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
