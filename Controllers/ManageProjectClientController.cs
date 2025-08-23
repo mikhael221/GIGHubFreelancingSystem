@@ -15,11 +15,16 @@ namespace Freelancing.Controllers
     {
         private readonly ApplicationDbContext dbContext;
         private readonly IContractService contractService;
+        private readonly ISmartHiringService smartHiringService;
 
-        public ManageProjectClientController(ApplicationDbContext context, IContractService contractService)
+        public ManageProjectClientController(
+            ApplicationDbContext context, 
+            IContractService contractService,
+            ISmartHiringService smartHiringService)
         {
             this.dbContext = context;
             this.contractService = contractService;
+            this.smartHiringService = smartHiringService;
         }
 
         // GET: ManageProjectClient
@@ -428,6 +433,220 @@ namespace Freelancing.Controllers
 
             TempData["Message"] = "Thank you for your feedback! It has been submitted successfully.";
             return RedirectToAction(nameof(Details), new { id = acceptedBid.Project.Id });
+        }
+
+        // GET: ManageProjectClient/SmartHiring/5
+        public async Task<IActionResult> SmartHiring(Guid id)
+        {
+            var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!Guid.TryParse(userIdString, out Guid userId))
+            {
+                return Unauthorized();
+            }
+
+            // Get project details
+            var project = await dbContext.Projects
+                .Where(p => p.Id == id && p.UserId == userId)
+                .Include(p => p.Biddings)
+                    .ThenInclude(b => b.User)
+                .Include(p => p.ProjectSkills)
+                    .ThenInclude(ps => ps.UserSkill)
+                .FirstOrDefaultAsync();
+
+            if (project == null)
+            {
+                return NotFound();
+            }
+
+            // Check if project has biddings
+            if (project.Biddings?.Any() != true)
+            {
+                TempData["Info"] = "No bids have been submitted for this project yet.";
+                return RedirectToAction("Details", "ProjectDetails", new { id = id });
+            }
+
+            try
+            {
+                // Get smart hiring recommendations
+                var recommendations = await smartHiringService.GetBestFreelancersAsync(id);
+                var insights = await smartHiringService.GetProjectInsightsAsync(id);
+
+                var viewModel = new SmartHiringViewModel
+                {
+                    Project = project,
+                    Recommendations = recommendations,
+                    ProjectInsights = insights,
+                    TopRecommendations = recommendations.Take(1).ToList()
+                };
+
+                return View(viewModel);
+            }
+            catch (Exception ex)
+            {
+                TempData["Error"] = "Unable to generate smart hiring recommendations at this time.";
+                return RedirectToAction("Details", "ProjectDetails", new { id = id });
+            }
+        }
+
+        // GET: ManageProjectClient/BidderDetails/5?freelancerId=guid
+        public async Task<IActionResult> BidderDetails(Guid id, Guid freelancerId)
+        {
+            var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!Guid.TryParse(userIdString, out Guid userId))
+            {
+                return Unauthorized();
+            }
+
+            // Verify project ownership
+            var project = await dbContext.Projects
+                .Where(p => p.Id == id && p.UserId == userId)
+                .Include(p => p.ProjectSkills)
+                    .ThenInclude(ps => ps.UserSkill)
+                .FirstOrDefaultAsync();
+
+            if (project == null)
+            {
+                return NotFound();
+            }
+
+            // Get bidding details
+            var bid = await dbContext.Biddings
+                .Where(b => b.ProjectId == id && b.UserId == freelancerId)
+                .Include(b => b.User)
+                    .ThenInclude(u => u.UserAccountSkills)
+                        .ThenInclude(uas => uas.UserSkill)
+                .FirstOrDefaultAsync();
+
+            if (bid == null)
+            {
+                return NotFound("Bid not found");
+            }
+
+            try
+            {
+                // Get detailed prediction for this freelancer
+                var prediction = await smartHiringService.GetFreelancerScoreAsync(id, freelancerId);
+
+                // Get freelancer's past feedback
+                var pastFeedbacks = await dbContext.FreelancerFeedbacks
+                    .Where(f => f.FreelancerId == freelancerId)
+                    .OrderByDescending(f => f.CreatedAt)
+                    .Take(5)
+                    .ToListAsync();
+
+                // Get freelancer's completed projects count
+                var completedProjects = await dbContext.Biddings
+                    .Where(b => b.UserId == freelancerId && b.IsAccepted && b.Project.Status == "Completed")
+                    .CountAsync();
+
+                var viewModel = new BidderDetailsViewModel
+                {
+                    Project = project,
+                    Bid = bid,
+                    Freelancer = bid.User,
+                    Prediction = prediction,
+                    PastFeedbacks = pastFeedbacks,
+                    CompletedProjectsCount = completedProjects,
+                    FreelancerSkills = bid.User.UserAccountSkills?.Select(uas => uas.UserSkill).ToList() ?? new List<UserSkill>()
+                };
+
+                return View(viewModel);
+            }
+            catch (Exception ex)
+            {
+                TempData["Error"] = "Unable to load detailed analysis for this bidder.";
+                return RedirectToAction(nameof(SmartHiring), new { id = id });
+            }
+        }
+
+        // POST: ManageProjectClient/AcceptBid/5
+        [HttpPost]
+        public async Task<IActionResult> AcceptBid(Guid bidId)
+        {
+            var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!Guid.TryParse(userIdString, out Guid userId))
+            {
+                return Unauthorized();
+            }
+
+            var bid = await dbContext.Biddings
+                .Where(b => b.Id == bidId && b.Project.UserId == userId)
+                .Include(b => b.Project)
+                .Include(b => b.User)
+                .FirstOrDefaultAsync();
+
+            if (bid == null)
+            {
+                return NotFound();
+            }
+
+            try
+            {
+                // Update project and bid
+                bid.IsAccepted = true;
+                bid.BiddingAcceptedDate = DateTime.UtcNow;
+                bid.Project.AcceptedBidId = bidId;
+                bid.Project.Status = "Active";
+
+                // Create notification for freelancer
+                var notification = new Notification
+                {
+                    Id = Guid.NewGuid(),
+                    UserId = bid.UserId,
+                    Title = "🎉 Congratulations! Your bid was accepted",
+                    Message = $"Your bid for '{bid.Project.ProjectName}' has been accepted by {User.Identity?.Name}. You can now start working on the project.",
+                    Type = "BidAcceptance",
+                    IsRead = false,
+                    CreatedAt = DateTime.UtcNow,
+                    RelatedUrl = $"/ManageProjectFreelancer/Details/{bid.Project.Id}",
+                    IconSvg = "<svg viewBox=\"0 0 24 24\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M12 2L15.09 8.26L22 9L17 14L18.18 21L12 17.77L5.82 21L7 14L2 9L8.91 8.26L12 2Z\" fill=\"#FFD700\" stroke=\"#FFD700\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg>"
+                };
+
+                dbContext.Notifications.Add(notification);
+                await dbContext.SaveChangesAsync();
+
+                // Record hiring outcome for ML learning (initially neutral, will be updated based on feedback)
+                await smartHiringService.RecordHiringOutcomeAsync(bid.Project.Id, bid.UserId, true);
+
+                TempData["Message"] = $"Successfully accepted bid from {bid.User.FirstName} {bid.User.LastName}!";
+                return RedirectToAction(nameof(Details), new { id = bid.Project.Id });
+            }
+            catch (Exception ex)
+            {
+                TempData["Error"] = "Failed to accept the bid. Please try again.";
+                return RedirectToAction(nameof(SmartHiring), new { id = bid.Project.Id });
+            }
+        }
+
+        // GET: ManageProjectClient/ExportTrainingData
+        [HttpGet]
+        public async Task<IActionResult> ExportTrainingData()
+        {
+            try
+            {
+                var tempFilePath = Path.GetTempFileName();
+                tempFilePath = Path.ChangeExtension(tempFilePath, ".csv");
+
+                // Get the feature service and export training data
+                var featureService = HttpContext.RequestServices.GetService<ISmartHiringFeatureService>();
+                if (featureService == null)
+                {
+                    TempData["Error"] = "Smart hiring service not available.";
+                    return RedirectToAction(nameof(Index));
+                }
+
+                await featureService.ExportTrainingDataToCsvAsync(tempFilePath);
+
+                var fileBytes = await System.IO.File.ReadAllBytesAsync(tempFilePath);
+                System.IO.File.Delete(tempFilePath);
+
+                return File(fileBytes, "text/csv", $"smart_hiring_training_data_{DateTime.Now:yyyyMMdd}.csv");
+            }
+            catch (Exception ex)
+            {
+                TempData["Error"] = "Failed to export training data: " + ex.Message;
+                return RedirectToAction(nameof(Index));
+            }
         }
     }
 }

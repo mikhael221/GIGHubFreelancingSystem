@@ -1,0 +1,525 @@
+@model BidderDetailsViewModel
+@{
+    Layout = "_LayoutClient";
+    ViewData["Title"] = "Bidder Analysis - " + Model.Freelancer.FirstName + " " + Model.Freelancer.LastName;
+}
+
+<style>
+    .bidder-analysis-container {
+        max-width: 1500px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    .freelancer-header {
+        background: linear-gradient(135deg, #6da1fc 0%, #4cd9fe 100%);
+        color: white;
+        padding: 30px;
+        border-radius: 15px;
+        margin-bottom: 30px;
+        display: flex;
+        align-items: center;
+    }
+
+    .freelancer-avatar-large {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        border: 4px solid white;
+        margin-right: 30px;
+    }
+
+    .analysis-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 30px;
+        margin-bottom: 30px;
+    }
+
+    .analysis-card {
+        background: white;
+        border-radius: 15px;
+        padding: 25px;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+    }
+
+    .score-display {
+        text-align: center;
+        margin-bottom: 30px;
+        margin-top: 20px;
+    }
+
+    .main-score {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 15px;
+        color: white;
+        font-size: 2em;
+        font-weight: bold;
+    }
+
+    .score-excellent {
+        background: linear-gradient(135deg, #4CAF50, #45a049);
+    }
+
+    .score-good {
+        background: linear-gradient(135deg, #2196F3, #1976D2);
+    }
+
+    .score-fair {
+        background: linear-gradient(135deg, #FF9800, #F57C00);
+    }
+
+    .score-poor {
+        background: linear-gradient(135deg, #f44336, #d32f2f);
+    }
+
+    .metrics-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 15px;
+        margin-bottom: 20px;
+    }
+
+    .metric-item {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+        text-align: center;
+    }
+
+    .metric-value {
+        font-size: 1.8em;
+        font-weight: bold;
+        color: #667eea;
+        display: block;
+    }
+
+    .metric-label {
+        color: #666;
+        font-size: 0.9em;
+        margin-top: 5px;
+    }
+
+    .skills-comparison {
+        margin-bottom: 25px;
+    }
+
+    .skill-category {
+        margin-bottom: 20px;
+    }
+
+    .skill-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 10px;
+    }
+
+    .skill-tag {
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 0.85em;
+        font-weight: 500;
+    }
+
+    .skill-match {
+        background: #e8f5e8;
+        color: #2e7d32;
+    }
+
+    .skill-missing {
+        background: #ffebee;
+        color: #f57c00;
+    }
+
+    .skill-missing-1 {
+        background: #ffebee;
+        color: #c62828;
+    }
+
+    .skill-extra {
+        background: #e3f2fd;
+        color: #1565c0;
+    }
+
+    .feedback-section {
+        margin-top: 25px;
+    }
+
+    .feedback-item {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 15px;
+        border-left: 4px solid #667eea;
+    }
+
+    .rating-display {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 10px;
+    }
+
+    .stars {
+        color: #FFD700;
+        font-size: 1.2em;
+    }
+
+    .recommendation-status {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 15px;
+        font-size: 0.8em;
+        font-weight: bold;
+        margin-left: 10px;
+    }
+
+    .recommended {
+        background: #e8f5e8;
+        color: #2e7d32;
+    }
+
+    .not-recommended {
+        background: #ffebee;
+        color: #c62828;
+    }
+
+    .proposal-section {
+        background: white;
+        border-radius: 15px;
+        padding: 25px;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
+    }
+
+    .action-section {
+        background: linear-gradient(135deg, #f8f9ff 0%, #ffffff 100%);
+        border-radius: 15px;
+        padding: 25px;
+        text-align: center;
+    }
+
+    .btn-accept-large {
+        background: linear-gradient(135deg, #3eb489 0%, #90ee90 100%);
+        border: none;
+        color: white;
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-weight: 500;
+        transition: all 0.3s;
+    }
+
+        .btn-accept-large:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        /* Modal styles */
+        .modal-backdrop {
+            background-color: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+        }
+
+        [id^="acceptBidModal_"] {
+            display: none;
+        }
+
+        [id^="acceptBidModal_"]:not(.hidden) {
+            display: flex !important;
+        }
+</style>
+
+<div class="bidder-analysis-container">
+    <div class="p-4 sm:ml-64">
+        <div class="p-4 mt-20">
+            <div class="mt-4">
+                <!-- Freelancer Header -->
+                <div class="freelancer-header">
+                    <img src="@(Model.Freelancer.Photo ?? "https://ik.imagekit.io/6txj3mofs/GIGHub%20(11).png?updatedAt=1750552804497")"
+                         alt="@Model.Freelancer.FirstName @Model.Freelancer.LastName" class="freelancer-avatar-large">
+                    <div>
+                        <h1 class="font-bold text-2xl">@Model.Freelancer.FirstName @Model.Freelancer.LastName</h1>
+                        <p class="mb-0 italic">@Model.CompletedProjectsCount projects completed | @Model.PastFeedbacks.Count reviews</p>
+                    </div>
+                </div>
+
+                <!-- Analysis Grid -->
+                <div class="analysis-grid">
+                    <!-- AI Analysis Card -->
+                    <div class="analysis-card">
+                        <h3 class="font-bold text-xl">Compatibility Analysis</h3>
+
+                        <div class="score-display">
+                            @{
+                                var scoreClass = Model.Prediction.MatchScore >= 0.8f ? "score-excellent" :
+                                Model.Prediction.MatchScore >= 0.6f ? "score-good" :
+                                Model.Prediction.MatchScore >= 0.4f ? "score-fair" : "score-poor";
+                            }
+                            <div class="main-score @scoreClass">
+                                @((Model.Prediction.MatchScore * 100).ToString("F0"))%
+                            </div>
+                            <h5>Match Score</h5>
+                            <p class="text-muted italic">Confidence: @((Model.Prediction.Confidence * 100).ToString("F0"))%</p>
+                        </div>
+
+                        <div class="mb-4">
+                            <h2 class="font-bold">Key Strengths:</h2>
+                            <div class="skill-tags">
+                                @foreach (var strength in Model.Prediction.KeyStrengths)
+                                {
+                                    <span class="skill-tag skill-match">@strength</span>
+                                }
+                            </div>
+                        </div>
+
+                        @if (Model.Prediction.PotentialConcerns.Any())
+                        {
+                            <div class="mb-4">
+                                <h2 class="font-bold">Considerations:</h2>
+                                <div class="skill-tags">
+                                    @foreach (var concern in Model.Prediction.PotentialConcerns)
+                                    {
+                                        <span class="skill-tag skill-missing">@concern</span>
+                                    }
+                                </div>
+                            </div>
+                        }
+
+                        <div class="mb-4">
+                            <h2 class="font-bold">Analysis:</h2>
+                            <p class="text-muted">@Model.Prediction.Reasoning</p>
+                        </div>
+                    </div>
+
+                    <!-- Performance Metrics Card -->
+                    <div class="analysis-card">
+                        <h3 class="font-bold text-xl">Performance Metrics</h3>
+
+                        <div class="metrics-grid">
+                            <div class="metric-item">
+                                <span class="metric-value">@Model.AverageRating.ToString("F1")</span>
+                                <div class="metric-label">Avg Rating</div>
+                            </div>
+                            <div class="metric-item">
+                                <span class="metric-value">@((Model.RecommendationRate * 100).ToString("F0"))%</span>
+                                <div class="metric-label">Recommendation Rate</div>
+                            </div>
+                            <div class="metric-item">
+                                <span class="metric-value">@Model.CompletedProjectsCount</span>
+                                <div class="metric-label">Completed Projects</div>
+                            </div>
+                            <div class="metric-item">
+                                <span class="metric-value">@Model.MatchingSkills.Count/@Model.Project.ProjectSkills.Count</span>
+                                <div class="metric-label">Skill Matches</div>
+                            </div>
+                        </div>
+
+                        <div class="skills-comparison">
+                            <div class="skill-category">
+                                <h2 class="font-bold">Matching Skills</h2>
+                                <div class="skill-tags">
+                                    @foreach (var skill in Model.MatchingSkills)
+                                    {
+                                        <span class="skill-tag skill-match">@skill.Name</span>
+                                    }
+                                </div>
+                            </div>
+
+                            @if (Model.MissingSkills.Any())
+                            {
+                                <div class="skill-category">
+                                    <h2 class="font-bold">Missing Skills</h2>
+                                    <div class="skill-tags">
+                                        @foreach (var skill in Model.MissingSkills)
+                                        {
+                                            <span class="skill-tag skill-missing-1">@skill.Name</span>
+                                        }
+                                    </div>
+                                </div>
+                            }
+
+                            @{
+                                var extraSkills = Model.FreelancerSkills.Where(fs => !Model.Project.ProjectSkills.Any(ps => ps.UserSkillId == fs.Id)).Take(5).ToList();
+                            }
+                            @if (extraSkills.Any())
+                            {
+                                <div class="skill-category">
+                                    <h2 class="font-bold">Additional Skills</h2>
+                                    <div class="skill-tags">
+                                        @foreach (var skill in extraSkills)
+                                        {
+                                            <span class="skill-tag skill-extra">@skill.Name</span>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Proposal Section -->
+                <div class="proposal-section">
+                    <h3 class="font-bold text-xl mb-4">Proposal Details</h3>
+                    <div class="row">
+                        <div class="col-md-3 mb-2">
+                            <strong>Budget:</strong><br>
+                            <span style="font-size: 1.8em;">₱@Model.Bid.Budget.ToString("N0")</span>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <strong>Delivery Time:</strong><br>
+                            <span style="font-size: 1.8em;">@Model.Bid.Delivery</span>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Proposal:</strong><br>
+                            <p class="text-muted">@(Model.Bid.Proposal)</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Past Feedback Section -->
+                @if (Model.PastFeedbacks.Any())
+                {
+                    <div class="analysis-card">
+                        <h3 class="font-bold text-xl">Recent Client Feedback</h3>
+                        <div class="feedback-section">
+                            @foreach (var feedback in Model.PastFeedbacks.Take(3))
+                            {
+                                <div class="feedback-item">
+                                    <div class="rating-display">
+                                        <div class="stars">
+                                            @for (int i = 1; i <= 5; i++)
+                                            {
+                                                <span>@(i <= feedback.Rating ? "★" : "☆")</span>
+                                            }
+                                        </div>
+                                        <span>(@feedback.Rating/5)</span>
+                                        <span class="recommendation-status @(feedback.WouldRecommend ? "recommended" : "not-recommended")">
+                                            @(feedback.WouldRecommend ? "✓ Recommended" : "✗ Not Recommended")
+                                        </span>
+                                    </div>
+                                    @if (!string.IsNullOrEmpty(feedback.Comments))
+                                    {
+                                        <p class="mb-0">"@feedback.Comments"</p>
+                                    }
+                                    <small class="text-muted">@feedback.CreatedAt.ToString("MMM dd, yyyy")</small>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+
+                <!-- Action Section -->
+                <div class="action-section">
+                    <h3>Ready to make your decision?</h3>
+                    <p class="text-muted mb-4">Based on the analysis, this freelancer has a <strong>@((Model.Prediction.MatchScore * 100).ToString("F0"))% compatibility score</strong> with your project.</p>
+
+                    <div>
+                        <button type="button" 
+                                class="btn btn-accept-large"
+                                data-modal-target="acceptBidModal_@Model.Bid.Id"
+                                data-modal-toggle="acceptBidModal_@Model.Bid.Id">
+                            Accept This Bid
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Accept Bid Modal -->
+                <div id="acceptBidModal_@Model.Bid.Id" tabindex="-1" class="hidden overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center w-full md:inset-0 h-[calc(100%-1rem)] max-h-full">
+                    <div class="modal-backdrop absolute inset-0 bg-opacity-50 bg-opacity-50"></div>
+                    <div class="relative p-4 w-full max-w-md max-h-full">
+                        <div class="relative bg-white rounded-lg shadow">
+                            <button type="button" class="absolute top-3 end-2.5 text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center" data-modal-hide="acceptBidModal_@Model.Bid.Id">
+                                <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
+                                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6" />
+                                </svg>
+                                <span class="sr-only">Close modal</span>
+                            </button>
+
+                            <div class="p-6 text-center">
+                                <svg class="mx-auto mb-4 text-gray-500 w-12 h-12" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20">
+                                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 11V6m0 8h.01M19 10a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                                </svg>
+                                <h3 class="mb-5 text-lg font-normal text-gray-800">Are you sure you want to accept @Model.Freelancer.FirstName @Model.Freelancer.LastName's bid?</h3>
+
+                                <form asp-action="AcceptBid" method="post" style="display: inline;">
+                                    <input type="hidden" name="bidId" value="@Model.Bid.Id" />
+                                    <button type="submit"
+                                            data-modal-hide="acceptBidModal_@Model.Bid.Id"
+                                            class="text-white bg-green-600 hover:bg-green-800 focus:ring-4 focus:outline-none focus:ring-green-300 font-medium rounded-lg text-sm inline-flex items-center px-5 py-2.5 text-center me-2">
+                                        Yes, I'm sure
+                                    </button>
+                                </form>
+                                <button type="button"
+                                        data-modal-hide="acceptBidModal_@Model.Bid.Id"
+                                        class="text-gray-500 bg-white hover:bg-gray-100 focus:ring-4 focus:outline-none focus:ring-gray-200 rounded-lg border border-gray-200 text-sm font-medium px-5 py-2.5 hover:text-gray-900 focus:z-10">
+                                    No, cancel
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Modal functionality
+    document.addEventListener('DOMContentLoaded', function() {
+        initializeModals();
+    });
+
+    function initializeModals() {
+        // Show modal
+        document.querySelectorAll('[data-modal-toggle]').forEach(button => {
+            button.addEventListener('click', function() {
+                const modalId = this.getAttribute('data-modal-toggle');
+                const modal = document.getElementById(modalId);
+                if (modal) {
+                    modal.classList.remove('hidden');
+                    modal.classList.add('flex');
+                }
+            });
+        });
+
+        // Hide modal
+        document.querySelectorAll('[data-modal-hide]').forEach(button => {
+            button.addEventListener('click', function() {
+                const modalId = this.getAttribute('data-modal-hide');
+                const modal = document.getElementById(modalId);
+                if (modal) {
+                    modal.classList.add('hidden');
+                    modal.classList.remove('flex');
+                }
+            });
+        });
+
+        // Close modal when clicking outside
+        document.querySelectorAll('[id^="acceptBidModal_"]').forEach(modal => {
+            modal.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    this.classList.add('hidden');
+                    this.classList.remove('flex');
+                }
+            });
+        });
+
+        // Close modal on escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                document.querySelectorAll('[id^="acceptBidModal_"]').forEach(modal => {
+                    if (!modal.classList.contains('hidden')) {
+                        modal.classList.add('hidden');
+                        modal.classList.remove('flex');
+                    }
+                });
+            }
+        });
+    }
+</script>

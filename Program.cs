@@ -28,6 +28,13 @@ builder.Services.AddScoped<IContractService, ContractService>();
 builder.Services.AddScoped<IContractTerminationService, ContractTerminationService>();
 builder.Services.AddScoped<IPdfGenerationService, PdfGenerationService>();
 
+// Smart Hiring Services
+builder.Services.AddScoped<ISmartHiringFeatureService, SmartHiringFeatureService>();
+builder.Services.AddScoped<ISmartHiringService, SmartHiringService>(); // Back to Scoped due to DbContext dependency
+builder.Services.AddSingleton<ILocalRandomForestService, LocalRandomForestService>(); // Local Random Forest
+builder.Services.AddHttpClient<SmartHiringService>(); // For Azure ML API calls
+builder.Services.AddHttpClient<LocalRandomForestService>(); // For Flask API calls
+
 // Add SignalR
 builder.Services.AddSignalR(options =>
 {
@@ -83,6 +90,36 @@ using (var scope = app.Services.CreateScope())
     await Freelancing.SeedGoals.SeedGoalsData(context);
     await Freelancing.SeedUserSkills.SeedUserSkillsData(context);
     await Freelancing.SeedContractTemplates.SeedAsync(context);
+}
+
+// Initialize Random Forest service at startup for faster first use
+using (var scope = app.Services.CreateScope())
+{
+    try
+    {
+        var randomForestService = scope.ServiceProvider.GetRequiredService<ILocalRandomForestService>();
+        
+        // Add timeout to prevent app from hanging at startup
+        var initTask = randomForestService.EnsureInitializedAsync();
+        var timeoutTask = Task.Delay(TimeSpan.FromSeconds(20)); // 20 second timeout
+        
+        var completedTask = await Task.WhenAny(initTask, timeoutTask);
+        
+        if (completedTask == initTask)
+        {
+            await initTask; // Get any exceptions
+            Console.WriteLine("Random Forest service initialized at startup");
+        }
+        else
+        {
+            Console.WriteLine("Random Forest initialization timed out - will initialize on first use");
+        }
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Random Forest initialization failed: {ex.Message}");
+        // Don't fail the app startup - the service will initialize on first use
+    }
 }
 
 // Register cleanup for PDF generation service

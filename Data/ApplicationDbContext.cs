@@ -1,4 +1,5 @@
 ﻿using Freelancing.Models.Entities;
+using Freelancing.Services;
 using Microsoft.EntityFrameworkCore;
 
 namespace Freelancing.Data
@@ -50,6 +51,9 @@ namespace Freelancing.Data
         
         // FreelancerFeedback entity
         public DbSet<FreelancerFeedback> FreelancerFeedbacks { get; set; }
+        
+        // Smart Hiring entities
+        public DbSet<HiringOutcome> HiringOutcomes { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<Project>()
@@ -598,6 +602,21 @@ namespace Freelancing.Data
             // Configure default values for freelancer feedback
             modelBuilder.Entity<FreelancerFeedback>()
                 .Property(ff => ff.CreatedAt)
+                .HasDefaultValueSql("GETUTCDATE()");
+
+            // HiringOutcome relationships and configurations
+            modelBuilder.Entity<HiringOutcome>()
+                .HasIndex(ho => ho.ProjectId);
+
+            modelBuilder.Entity<HiringOutcome>()
+                .HasIndex(ho => ho.FreelancerId);
+
+            modelBuilder.Entity<HiringOutcome>()
+                .HasIndex(ho => ho.RecordedAt);
+
+            // Configure default values for hiring outcomes
+            modelBuilder.Entity<HiringOutcome>()
+                .Property(ho => ho.RecordedAt)
                 .HasDefaultValueSql("GETUTCDATE()");
 
             base.OnModelCreating(modelBuilder);
