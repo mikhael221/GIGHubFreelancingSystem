@@ -1,0 +1,274 @@
+@model Freelancing.Models.VerificationStatusViewModel
+@{
+    ViewData["Title"] = "Verification Status";
+    Layout = User.IsInRole("Client") ? "_LayoutClient" : "_LayoutFreelancer";
+}
+
+<div class="p-4 sm:ml-64">
+    <div class="p-4 mt-20">
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="card-title">
+                        <i class="fas fa-clipboard-check me-2"></i>
+                        Identity Verification Status
+                    </h4>
+                </div>
+                <div class="card-body">
+                    @if (Model != null)
+                    {
+                        <div class="row">
+                            <!-- Status Overview -->
+                            <div class="col-md-4">
+                                <div class="card">
+                                    <div class="card-body text-center">
+                                        @if (Model.IsVerified)
+                                        {
+                                            <i class="fas fa-check-circle fa-4x text-success mb-3"></i>
+                                            <h5 class="text-success">Verified</h5>
+                                            <p class="text-muted">Your identity has been successfully verified</p>
+                                        }
+                                        else if (Model.Status == "REJECTED")
+                                        {
+                                            <i class="fas fa-times-circle fa-4x text-danger mb-3"></i>
+                                            <h5 class="text-danger">Rejected</h5>
+                                            <p class="text-muted">Verification was not successful</p>
+                                        }
+                                        else if (Model.Status == "UNDER_REVIEW")
+                                        {
+                                            <i class="fas fa-clock fa-4x text-warning mb-3"></i>
+                                            <h5 class="text-warning">Under Review</h5>
+                                            <p class="text-muted">Your verification is being processed</p>
+                                        }
+                                        else
+                                        {
+                                            <i class="fas fa-hourglass-half fa-4x text-info mb-3"></i>
+                                            <h5 class="text-info">Pending</h5>
+                                            <p class="text-muted">Verification is in progress</p>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Verification Details -->
+                            <div class="col-md-8">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5>Verification Details</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <h6>Status</h6>
+                                                <span class="badge @(Model.Status switch {
+                                                    "APPROVED" => "bg-success",
+                                                    "REJECTED" => "bg-danger",
+                                                    "UNDER_REVIEW" => "bg-warning",
+                                                    _ => "bg-info"
+                                                })">@Model.Status</span>
+                                            </div>
+                                        </div>
+
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <h6>Created</h6>
+                                                <p class="text-muted">@Model.CreatedAt.ToString("MMM dd, yyyy HH:mm")</p>
+                                            </div>
+                                            @if (Model.VerifiedAt.HasValue)
+                                            {
+                                                <div class="col-md-6">
+                                                    <h6>Verified</h6>
+                                                    <p class="text-muted">@Model.VerifiedAt.Value.ToString("MMM dd, yyyy HH:mm")</p>
+                                                </div>
+                                            }
+                                        </div>
+
+                                        @if (Model.RejectedAt.HasValue)
+                                        {
+                                            <div class="row">
+                                                <div class="col-12">
+                                                    <h6>Rejected</h6>
+                                                    <p class="text-muted">@Model.RejectedAt.Value.ToString("MMM dd, yyyy HH:mm")</p>
+                                                </div>
+                                            </div>
+                                        }
+
+                                        @if (!string.IsNullOrEmpty(Model.RejectionReason))
+                                        {
+                                            <div class="alert alert-danger">
+                                                <h6><i class="fas fa-exclamation-triangle me-2"></i>Rejection Reason</h6>
+                                                <p class="mb-0">@Model.RejectionReason</p>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Component Status -->
+                        <div class="row mt-4">
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5><i class="fas fa-id-card me-2"></i>ID Document Status</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        @if (Model.IdDocumentVerified.HasValue)
+                                        {
+                                            @if (Model.IdDocumentVerified.Value)
+                                            {
+                                                <div class="text-success">
+                                                    <i class="fas fa-check-circle me-2"></i>
+                                                    <strong>Verified</strong>
+                                                </div>
+                                                <p class="text-muted mt-2">ID Document: @Model.IdDocumentType</p>
+                                            }
+                                            else
+                                            {
+                                                <div class="text-danger">
+                                                    <i class="fas fa-times-circle me-2"></i>
+                                                    <strong>Not Verified</strong>
+                                                </div>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <div class="text-muted">
+                                                <i class="fas fa-minus-circle me-2"></i>
+                                                <strong>Not Required</strong>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5><i class="fas fa-camera me-2"></i>Face Verification Status</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        @if (Model.FaceVerified.HasValue)
+                                        {
+                                            @if (Model.FaceVerified.Value)
+                                            {
+                                                <div class="text-success">
+                                                    <i class="fas fa-check-circle me-2"></i>
+                                                    <strong>Verified</strong>
+                                                </div>
+                                                @if (Model.FaceConfidence.HasValue)
+                                                {
+                                                    <p class="text-muted mt-2">Confidence: @(Model.FaceConfidence.Value.ToString("F1"))%</p>
+                                                }
+                                            }
+                                            else
+                                            {
+                                                <div class="text-danger">
+                                                    <i class="fas fa-times-circle me-2"></i>
+                                                    <strong>Not Verified</strong>
+                                                </div>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <div class="text-muted">
+                                                <i class="fas fa-minus-circle me-2"></i>
+                                                <strong>Not Required</strong>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Actions -->
+                        <div class="row mt-4">
+                            <div class="col-12 text-center">
+                                @if (Model.IsVerified)
+                                {
+                                    <div class="alert alert-success">
+                                        <h5><i class="fas fa-check-circle me-2"></i>Verification Complete!</h5>
+                                        <p class="mb-0">You can now post projects and place bids on the platform.</p>
+                                    </div>
+                                    
+                                    <a href="@Url.Action("Index", "Home")" class="btn btn-primary btn-lg me-3">
+                                        <i class="fas fa-home me-2"></i>Go to Home
+                                    </a>
+                                }
+                                else if (Model.Status == "REJECTED")
+                                {
+                                    <div class="alert alert-warning">
+                                        <h5><i class="fas fa-exclamation-triangle me-2"></i>Verification Failed</h5>
+                                        <p class="mb-0">Please review the rejection reason and try again.</p>
+                                    </div>
+                                    
+                                    <a href="@Url.Action("Verify", "IdentityVerification")" class="btn btn-warning btn-lg me-3">
+                                        <i class="fas fa-redo me-2"></i>Try Again
+                                    </a>
+                                }
+                                else
+                                {
+                                    <div class="alert alert-info">
+                                        <h5><i class="fas fa-info-circle me-2"></i>Verification in Progress</h5>
+                                        <p class="mb-0">Your verification is being processed. Please wait for updates.</p>
+                                    </div>
+                                }
+                                
+                                <a href="@Url.Action("Index", "IdentityVerification")" class="btn btn-outline-secondary btn-lg">
+                                    <i class="fas fa-arrow-left me-2"></i>Back to Verification
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- Encryption Info -->
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5><i class="fas fa-lock me-2"></i>Security Information</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <h6>Encryption Status</h6>
+                                                <p class="text-muted">
+                                                    @if (Model.IsEncrypted)
+                                                    {
+                                                        <span class="text-success"><i class="fas fa-check-circle me-2"></i>Encrypted</span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="text-warning"><i class="fas fa-exclamation-triangle me-2"></i>Not Encrypted</span>
+                                                    }
+                                                </p>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <h6>Encryption Method</h6>
+                                                <p class="text-muted">@Model.EncryptionMethod</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center">
+                            <i class="fas fa-user-slash fa-4x text-muted mb-3"></i>
+                            <h5>No Verification Found</h5>
+                            <p class="text-muted">You haven't completed identity verification yet.</p>
+                            <a href="@Url.Action("Verify", "IdentityVerification")" class="btn btn-primary btn-lg">
+                                <i class="fas fa-play me-2"></i>Start Verification
+                            </a>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+    </div>
+</div>

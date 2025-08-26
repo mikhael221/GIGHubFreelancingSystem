@@ -740,6 +740,81 @@ namespace Freelancing.Migrations
                     b.ToTable("Goals");
                 });
 
+            modelBuilder.Entity("Freelancing.Models.Entities.IdentityVerification", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("EncryptedFaceImage")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("EncryptedIdDocumentImage")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("EncryptedIdDocumentNumber")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("EncryptionMethod")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<float?>("FaceConfidence")
+                        .HasColumnType("real");
+
+                    b.Property<bool?>("FaceVerified")
+                        .HasColumnType("bit");
+
+                    b.Property<float?>("IdDocumentConfidence")
+                        .HasColumnType("real");
+
+                    b.Property<DateTime?>("IdDocumentExpiryDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("IdDocumentType")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool?>("IdDocumentVerified")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsEncrypted")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("RejectedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("RejectionReason")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("UserAccountId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("VerifiedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserAccountId");
+
+                    b.ToTable("IdentityVerifications");
+                });
+
             modelBuilder.Entity("Freelancing.Models.Entities.MentorReview", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1546,6 +1621,17 @@ namespace Freelancing.Migrations
                     b.Navigation("AcceptBidding");
 
                     b.Navigation("Freelancer");
+                });
+
+            modelBuilder.Entity("Freelancing.Models.Entities.IdentityVerification", b =>
+                {
+                    b.HasOne("Freelancing.Models.Entities.UserAccount", "UserAccount")
+                        .WithMany()
+                        .HasForeignKey("UserAccountId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("UserAccount");
                 });
 
             modelBuilder.Entity("Freelancing.Models.Entities.MentorReview", b =>

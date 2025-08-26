@@ -1,0 +1,182 @@
+@model Freelancing.Models.FaceVerificationViewModel
+@{
+    ViewData["Title"] = "Face Verification";
+    Layout = User.IsInRole("Client") ? "_LayoutClient" : "_LayoutFreelancer";
+}
+
+<div class="p-4 sm:ml-64">
+    <div class="p-4 mt-20">
+        <div class="mt-4">
+            <div class="block w-full p-6">
+                <div class="container-fluid">
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="card">
+                                
+                                <!-- Progress Bar -->
+                                <div class="w-full max-w-md mx-auto mb-7">
+                                    <div class="w-full bg-[#6ce5e8] rounded-full h-7">
+                                        <div class="bg-[#41b8d5] h-7 rounded-full transition-all duration-500 ease-in-out" style="width: 100%"></div>
+                                    </div>
+                                    <div class="text-center mt-2">
+                                        <span class="text-sm text-gray-600">Step 2 of 2: Face Verification & Document Processing</span>
+                                    </div>
+                                </div>
+
+                                <div class="card-body">
+                                    <form asp-action="Verify" method="post" enctype="multipart/form-data" id="verificationForm">
+                                        
+                                        <!-- Face Verification Section -->
+                                        <div class="mb-5">
+                                            <div class="section-header mb-4 text-center">
+                                                <h3 class="text-2xl font-bold text-gray-800 mb-2">
+                                                    <i class="fas fa-camera me-3 text-[#62cff4]"></i>
+                                                    Step 2: Live Face Verification
+                                                </h3>
+                                                <p class="text-gray-600">Capture a live photo and complete document verification</p>
+                                            </div>
+
+                                            <!-- Document Data Display (for debugging) -->
+                                            @if (!string.IsNullOrEmpty(Model.IdDocumentType))
+                                            {
+                                                <div class="alert alert-info mb-4">
+                                                    <h6 class="alert-heading">Document Information:</h6>
+                                                    <p class="mb-1"><strong>ID Type:</strong> @Model.IdDocumentType</p>
+                                                    <p class="mb-1"><strong>ID Number:</strong> @Model.IdDocumentNumber</p>
+                                                    <p class="mb-1"><strong>Expiry Date:</strong> @(Model.IdDocumentExpiryDate?.ToString("MMM dd, yyyy") ?? "No expiration date")</p>
+                                                    <p class="mb-0"><strong>No Expiration:</strong> @(Model.IdDocumentHasNoExpiration ? "Yes" : "No")</p>
+                                                </div>
+                                            }
+                                            
+                                            <div class="card border-2 border-[#62cff4]/20 bg-gradient-to-br from-white to-[#62cff4]/5">
+                                                <div class="card-body p-4">
+                                                    <div class="row">
+                                                        <div class="col-md-6">
+                                                            <div class="text-center mb-3">
+                                                                <div id="cameraContainer" class="border rounded p-3">
+                                                                    <video id="video" width="100%" height="300" autoplay muted></video>
+                                                                    <canvas id="canvas" style="display: none;"></canvas>
+                                                                </div>
+                                                            </div>
+
+                                                            <div class="text-center mb-3">
+                                                                <button type="button" id="startCamera" class="btn btn-primary me-2">
+                                                                    <i class="fas fa-camera"></i> Start Camera
+                                                                </button>
+                                                                <button type="button" id="capturePhoto" class="btn btn-success me-2" style="display: none;">
+                                                                    <i class="fas fa-camera"></i> Capture Photo
+                                                                </button>
+                                                                <button type="button" id="retakePhoto" class="btn btn-warning" style="display: none;">
+                                                                    <i class="fas fa-redo"></i> Retake
+                                                                </button>
+                                                            </div>
+
+                                                            <div id="capturedImageContainer" class="text-center" style="display: none;">
+                                                                <img id="capturedImage" class="img-fluid border rounded" style="max-height: 200px;" />
+                                                                <p class="text-success mt-2"><i class="fas fa-check-circle"></i> Photo captured successfully!</p>
+                                                            </div>
+
+                                                            <input asp-for="LiveFaceImageData" type="hidden" id="liveFaceImageData" />
+                                                            <span asp-validation-for="LiveFaceImageData" class="text-danger"></span>
+                                                        </div>
+                                                        
+                                                        <div class="col-md-6">
+                                                            <div class="alert alert-info">
+                                                                <i class="fas fa-info-circle me-2"></i>
+                                                                <strong>Tips for better face verification:</strong>
+                                                                <ul class="mb-0 mt-2">
+                                                                    <li>Ensure good lighting</li>
+                                                                    <li>Look directly at the camera</li>
+                                                                    <li>Keep your eyes open and mouth closed</li>
+                                                                    <li>Remove glasses or hats if possible</li>
+                                                                </ul>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Terms and Submit -->
+                                        <div class="mb-5">
+                                            <div class="section-header mb-4 text-center">
+                                                <h3 class="text-2xl font-bold text-gray-800 mb-2">
+                                                    <i class="fas fa-check-circle me-3 text-[#62cff4]"></i>
+                                                    Final Step: Terms & Submission
+                                                </h3>
+                                                <p class="text-gray-600">Review terms and submit your verification</p>
+                                            </div>
+                                            
+                                            <div class="card border-2 border-[#62cff4]/20 bg-gradient-to-br from-white to-[#62cff4]/5">
+                                                <div class="card-body p-4">
+                                                    <div class="form-check mb-3">
+                                                        <input asp-for="AgreeToTerms" class="form-check-input" type="checkbox" required />
+                                                        <label asp-for="AgreeToTerms" class="form-check-label">
+                                                            I agree to the <a href="#" target="_blank">Terms and Conditions</a> and consent to identity verification
+                                                        </label>
+                                                        <span asp-validation-for="AgreeToTerms" class="text-danger"></span>
+                                                    </div>
+
+                                                    <div class="text-center">
+                                                        <button type="submit" class="btn btn-primary btn-lg" id="submitBtn">
+                                                            <i class="fas fa-paper-plane me-2"></i>
+                                                            Submit Verification
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Navigation Buttons -->
+                                        <div class="text-center">
+                                            <a href="@Url.Action("Document", "IdentityVerification")" class="btn btn-secondary btn-lg me-3">
+                                                <i class="fas fa-arrow-left me-2"></i>Back to Document
+                                            </a>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/identity-verification.js"></script>
+    <script>
+        $(document).ready(function() {
+            // Initialize the identity verification system
+            const identityVerification = new IdentityVerification();
+            identityVerification.initializeElements();
+            identityVerification.bindEvents();
+
+            // Form submission handling
+            $('#verificationForm').on('submit', function(e) {
+                e.preventDefault();
+
+
+
+                // Validate that we have face image
+                if (!$('#liveFaceImageData').val()) {
+                    alert('Please capture a live photo before submitting.');
+                    return false;
+                }
+
+                // Validate terms agreement
+                if (!$('#AgreeToTerms').is(':checked')) {
+                    alert('Please agree to the terms and conditions before submitting.');
+                    return false;
+                }
+
+                // Show loading state
+                $('#submitBtn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-2"></i>Processing...');
+
+                // Submit the form
+                this.submit();
+            });
+        });
+    </script>
+}

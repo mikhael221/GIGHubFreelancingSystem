@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Freelancing.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250817155628_AddContractCompletionTracking")]
-    partial class AddContractCompletionTracking
+    [Migration("20250826111910_initial")]
+    partial class initial
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -676,6 +676,45 @@ namespace Freelancing.Migrations
                     b.ToTable("Deliverables");
                 });
 
+            modelBuilder.Entity("Freelancing.Models.Entities.FreelancerFeedback", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("AcceptBidId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Comments")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETUTCDATE()");
+
+                    b.Property<Guid>("FreelancerId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Rating")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("WouldRecommend")
+                        .HasColumnType("bit");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AcceptBidId")
+                        .IsUnique();
+
+                    b.HasIndex("CreatedAt");
+
+                    b.HasIndex("FreelancerId");
+
+                    b.ToTable("FreelancerFeedbacks");
+                });
+
             modelBuilder.Entity("Freelancing.Models.Entities.Goal", b =>
                 {
                     b.Property<Guid>("Id")
@@ -702,6 +741,97 @@ namespace Freelancing.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Goals");
+                });
+
+            modelBuilder.Entity("Freelancing.Models.Entities.IdentityVerification", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("AwsRekognitionResponse")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("AwsTextractResponse")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("EncryptedFaceImage")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("EncryptedIdDocumentImage")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("EncryptedIdDocumentNumber")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("EncryptionMethod")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<float?>("FaceConfidence")
+                        .HasColumnType("real");
+
+                    b.Property<string>("FaceImagePath")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool?>("FaceVerified")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("IdDocumentExpiryDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("IdDocumentImagePath")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("IdDocumentNumber")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("IdDocumentType")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool?>("IdDocumentVerified")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsEncrypted")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("RejectedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("RejectionReason")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("UserAccountId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("VerificationType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("VerifiedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserAccountId");
+
+                    b.ToTable("IdentityVerifications");
                 });
 
             modelBuilder.Entity("Freelancing.Models.Entities.MentorReview", b =>
@@ -1260,6 +1390,37 @@ namespace Freelancing.Migrations
                     b.ToTable("UserSkills");
                 });
 
+            modelBuilder.Entity("Freelancing.Services.HiringOutcome", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("FreelancerId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ProjectId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("RecordedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETUTCDATE()");
+
+                    b.Property<bool>("WasSuccessful")
+                        .HasColumnType("bit");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FreelancerId");
+
+                    b.HasIndex("ProjectId");
+
+                    b.HasIndex("RecordedAt");
+
+                    b.ToTable("HiringOutcomes");
+                });
+
             modelBuilder.Entity("Freelancing.Models.Entities.Bidding", b =>
                 {
                     b.HasOne("Freelancing.Models.Entities.Project", "Project")
@@ -1460,6 +1621,36 @@ namespace Freelancing.Migrations
                     b.Navigation("ReviewedByUser");
 
                     b.Navigation("SubmittedByUser");
+                });
+
+            modelBuilder.Entity("Freelancing.Models.Entities.FreelancerFeedback", b =>
+                {
+                    b.HasOne("Freelancing.Models.Entities.Bidding", "AcceptBidding")
+                        .WithMany()
+                        .HasForeignKey("AcceptBidId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Freelancing.Models.Entities.UserAccount", "Freelancer")
+                        .WithMany()
+                        .HasForeignKey("FreelancerId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("AcceptBidding");
+
+                    b.Navigation("Freelancer");
+                });
+
+            modelBuilder.Entity("Freelancing.Models.Entities.IdentityVerification", b =>
+                {
+                    b.HasOne("Freelancing.Models.Entities.UserAccount", "UserAccount")
+                        .WithMany()
+                        .HasForeignKey("UserAccountId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("UserAccount");
                 });
 
             modelBuilder.Entity("Freelancing.Models.Entities.MentorReview", b =>

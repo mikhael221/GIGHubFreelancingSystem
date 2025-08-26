@@ -11,6 +11,15 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 
+// Add Session support
+builder.Services.AddDistributedMemoryCache();
+builder.Services.AddSession(options =>
+{
+    options.IdleTimeout = TimeSpan.FromMinutes(30);
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+});
+
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("Freelancing")));
 
@@ -34,6 +43,10 @@ builder.Services.AddScoped<ISmartHiringService, SmartHiringService>(); // Back t
 builder.Services.AddSingleton<ILocalRandomForestService, LocalRandomForestService>(); // Local Random Forest
 builder.Services.AddHttpClient<SmartHiringService>(); // For Azure ML API calls
 builder.Services.AddHttpClient<LocalRandomForestService>(); // For Flask API calls
+
+// Identity Verification Services
+builder.Services.AddScoped<IIdentityVerificationService, IdentityVerificationService>();
+builder.Services.AddScoped<IIdentityEncryptionService, IdentityEncryptionService>();
 
 // Add SignalR
 builder.Services.AddSignalR(options =>
@@ -70,6 +83,9 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 
 app.UseRouting();
+
+// Use Session middleware
+app.UseSession();
 
 app.UseAuthentication();
 

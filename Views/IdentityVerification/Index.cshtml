@@ -1,0 +1,126 @@
+@{
+    ViewData["Title"] = "Identity Verification";
+    Layout = User.IsInRole("Client") ? "_LayoutClient" : "_LayoutFreelancer";
+}
+
+<div class="p-4 sm:ml-64">
+    <div class="p-4 mt-20">
+        <div class="mt-4">
+            <div class="block w-full p-6">
+                <div class="container-fluid">
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="card">
+                                                <div class="card-body text-center">
+                                                    <!-- Progress Bar -->
+                                                    <div class="w-full max-w-md mx-auto mb-7">
+                                                        <div class="w-full bg-[#6ce5e8] rounded-full h-7">
+                                                            <div class="bg-[#41b8d5] h-7 rounded-full transition-all duration-500 ease-in-out" style="width: 33%"></div>
+                                                        </div>
+                                                    </div>
+                                                    <h2 class="text-3xl font-bold text-gray-900">Identity Verification</h2>
+                                                    <div class="flex items-center justify-center mt-8">
+                                                        <img class="w-60 h-60" src="https://ik.imagekit.io/6txj3mofs/document.png" />
+                                                    </div>
+                                                    <div class="mt-5 w-96 h-auto flex items-center justify-center mx-auto">
+                                                        <p class="font-light text-center">Don't miss out on opportunities! Complete identity verification now to unlock all GIGHub features.</p>
+                                                    </div>
+
+                                                    <a href="@Url.Action("Document", "IdentityVerification")" class="mt-2 inline-flex items-center px-6 py-3 text-white bg-gradient-to-br from-[#62cff4] to-[#2c67f2] hover:bg-gradient-to-bl focus:ring-4 focus:outline-none focus:[#62cff4] font-medium rounded-lg text-sm transition-all duration-200 transform hover:scale-105 shadow-lg">
+                                                        Verify Now!
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    @* <div class="row mt-4">
+                                        <div class="col-12">
+                                            <div class="card">
+                                                <div class="card-header">
+                                                    <h5>Verification Status</h5>
+                                                </div>
+                                                <div class="card-body">
+                                                    <div id="verificationStatus">
+                                                        <div class="text-center">
+                                                            <div class="spinner-border text-primary" role="status">
+                                                                <span class="visually-hidden">Loading...</span>
+                                                            </div>
+                                                            <p class="mt-2">Checking verification status...</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div> *@
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            checkVerificationStatus();
+        });
+
+        function checkVerificationStatus() {
+            $.ajax({
+                url: '@Url.Action("CheckStatus", "IdentityVerification")',
+                type: 'GET',
+                success: function(response) {
+                    if (response.success) {
+                        updateStatusDisplay(response);
+                    } else {
+                        showError('Failed to check verification status');
+                    }
+                },
+                error: function() {
+                    showError('Error checking verification status');
+                }
+            });
+        }
+
+        function updateStatusDisplay(data) {
+            let statusHtml = '';
+
+            if (data.isVerified) {
+                statusHtml = `
+                    <div class="alert alert-success">
+                        <i class="fas fa-check-circle"></i>
+                        <strong>Verified!</strong> Your identity has been successfully verified.
+                        <br><small>You can now post projects and place bids.</small>
+                    </div>
+                `;
+            } else {
+                statusHtml = `
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <strong>Not Verified</strong> Please complete identity verification to continue.
+                        <br><small>You need to verify your identity before posting projects or placing bids.</small>
+                    </div>
+                `;
+            }
+
+            $('#verificationStatus').html(statusHtml);
+        }
+
+        function showError(message) {
+            $('#verificationStatus').html(`
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-circle"></i>
+                    ${message}
+                </div>
+            `);
+        }
+    </script>
+}

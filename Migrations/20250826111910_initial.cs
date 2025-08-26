@@ -49,6 +49,21 @@ namespace Freelancing.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "HiringOutcomes",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    ProjectId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    FreelancerId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    WasSuccessful = table.Column<bool>(type: "bit", nullable: false),
+                    RecordedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()")
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_HiringOutcomes", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "UserAccounts",
                 columns: table => new
                 {
@@ -78,6 +93,48 @@ namespace Freelancing.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_UserSkills", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "IdentityVerifications",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    UserAccountId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    VerificationType = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    IdDocumentType = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    IdDocumentNumber = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    IdDocumentImagePath = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    IdDocumentExpiryDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    IdDocumentVerified = table.Column<bool>(type: "bit", nullable: true),
+                    FaceImagePath = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    FaceVerified = table.Column<bool>(type: "bit", nullable: true),
+                    FaceConfidence = table.Column<float>(type: "real", nullable: true),
+                    Status = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    RejectionReason = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    VerifiedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    RejectedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    IsEncrypted = table.Column<bool>(type: "bit", nullable: false),
+                    EncryptionMethod = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    EncryptedIdDocumentNumber = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    EncryptedIdDocumentImage = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    EncryptedFaceImage = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    AwsRekognitionResponse = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    AwsTextractResponse = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    UpdatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_IdentityVerifications", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_IdentityVerifications_UserAccounts_UserAccountId",
+                        column: x => x.UserAccountId,
+                        principalTable: "UserAccounts",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -377,6 +434,34 @@ namespace Freelancing.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "FreelancerFeedbacks",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    AcceptBidId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    FreelancerId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Rating = table.Column<int>(type: "int", nullable: false),
+                    WouldRecommend = table.Column<bool>(type: "bit", nullable: false),
+                    Comments = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()")
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_FreelancerFeedbacks", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_FreelancerFeedbacks_Biddings_AcceptBidId",
+                        column: x => x.AcceptBidId,
+                        principalTable: "Biddings",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_FreelancerFeedbacks_UserAccounts_FreelancerId",
+                        column: x => x.FreelancerId,
+                        principalTable: "UserAccounts",
+                        principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Projects",
                 columns: table => new
                 {
@@ -461,6 +546,7 @@ namespace Freelancing.Migrations
                     Status = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()"),
                     LastModifiedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    TerminatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     ClientSignedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     ClientSignatureType = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     ClientSignatureData = table.Column<string>(type: "nvarchar(max)", nullable: true),
@@ -474,6 +560,9 @@ namespace Freelancing.Migrations
                     PaymentTerms = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     DeliverableRequirements = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     RevisionPolicy = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    ClientMarkedCompleteAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    FreelancerMarkedCompleteAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CompletedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     Timeline = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     DocumentPath = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     DocumentHash = table.Column<string>(type: "nvarchar(max)", nullable: true),
@@ -615,6 +704,48 @@ namespace Freelancing.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "ContractTerminations",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    ContractId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    TerminationReason = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    TerminationDetails = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    RequestedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()"),
+                    RequestedByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    RequestedByUserRole = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Status = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    CompletedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    FinalPayment = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    ClientSignedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    ClientSignatureType = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    ClientSignatureData = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    ClientIPAddress = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    ClientUserAgent = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    FreelancerSignedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    FreelancerSignatureType = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    FreelancerSignatureData = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    FreelancerIPAddress = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    FreelancerUserAgent = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    TerminationTerms = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    SettlementDetails = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    SettlementNotes = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    DocumentPath = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    DocumentHash = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    DocumentSize = table.Column<long>(type: "bigint", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ContractTerminations", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ContractTerminations_Contracts_ContractId",
+                        column: x => x.ContractId,
+                        principalTable: "Contracts",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Deliverables",
                 columns: table => new
                 {
@@ -680,6 +811,35 @@ namespace Freelancing.Migrations
                         principalTable: "ChatMessages",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ContractTerminationAuditLogs",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    ContractTerminationId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Action = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Details = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Timestamp = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()"),
+                    IPAddress = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    UserAgent = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ContractTerminationAuditLogs", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ContractTerminationAuditLogs_ContractTerminations_ContractTerminationId",
+                        column: x => x.ContractTerminationId,
+                        principalTable: "ContractTerminations",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_ContractTerminationAuditLogs_UserAccounts_UserId",
+                        column: x => x.UserId,
+                        principalTable: "UserAccounts",
+                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateIndex(
@@ -801,6 +961,41 @@ namespace Freelancing.Migrations
                 column: "IsActive");
 
             migrationBuilder.CreateIndex(
+                name: "IX_ContractTerminationAuditLogs_ContractTerminationId",
+                table: "ContractTerminationAuditLogs",
+                column: "ContractTerminationId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ContractTerminationAuditLogs_Timestamp",
+                table: "ContractTerminationAuditLogs",
+                column: "Timestamp");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ContractTerminationAuditLogs_UserId",
+                table: "ContractTerminationAuditLogs",
+                column: "UserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ContractTerminations_ContractId",
+                table: "ContractTerminations",
+                column: "ContractId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ContractTerminations_RequestedAt",
+                table: "ContractTerminations",
+                column: "RequestedAt");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ContractTerminations_RequestedByUserId",
+                table: "ContractTerminations",
+                column: "RequestedByUserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ContractTerminations_Status",
+                table: "ContractTerminations",
+                column: "Status");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Deliverables_ContractId",
                 table: "Deliverables",
                 column: "ContractId");
@@ -829,6 +1024,42 @@ namespace Freelancing.Migrations
                 name: "IX_Deliverables_SubmittedByUserId",
                 table: "Deliverables",
                 column: "SubmittedByUserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_FreelancerFeedbacks_AcceptBidId",
+                table: "FreelancerFeedbacks",
+                column: "AcceptBidId",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_FreelancerFeedbacks_CreatedAt",
+                table: "FreelancerFeedbacks",
+                column: "CreatedAt");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_FreelancerFeedbacks_FreelancerId",
+                table: "FreelancerFeedbacks",
+                column: "FreelancerId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_HiringOutcomes_FreelancerId",
+                table: "HiringOutcomes",
+                column: "FreelancerId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_HiringOutcomes_ProjectId",
+                table: "HiringOutcomes",
+                column: "ProjectId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_HiringOutcomes_RecordedAt",
+                table: "HiringOutcomes",
+                column: "RecordedAt");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_IdentityVerifications_UserAccountId",
+                table: "IdentityVerifications",
+                column: "UserAccountId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_MentorReviews_CreatedAt",
@@ -1020,7 +1251,19 @@ namespace Freelancing.Migrations
                 name: "ContractTemplates");
 
             migrationBuilder.DropTable(
+                name: "ContractTerminationAuditLogs");
+
+            migrationBuilder.DropTable(
                 name: "Deliverables");
+
+            migrationBuilder.DropTable(
+                name: "FreelancerFeedbacks");
+
+            migrationBuilder.DropTable(
+                name: "HiringOutcomes");
+
+            migrationBuilder.DropTable(
+                name: "IdentityVerifications");
 
             migrationBuilder.DropTable(
                 name: "MentorReviews");
@@ -1047,7 +1290,7 @@ namespace Freelancing.Migrations
                 name: "ChatMessages");
 
             migrationBuilder.DropTable(
-                name: "Contracts");
+                name: "ContractTerminations");
 
             migrationBuilder.DropTable(
                 name: "MentorshipChatMessages");
@@ -1060,6 +1303,9 @@ namespace Freelancing.Migrations
 
             migrationBuilder.DropTable(
                 name: "ChatRooms");
+
+            migrationBuilder.DropTable(
+                name: "Contracts");
 
             migrationBuilder.DropTable(
                 name: "MentorshipMatches");

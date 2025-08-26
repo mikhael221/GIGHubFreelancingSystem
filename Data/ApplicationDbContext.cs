@@ -54,6 +54,9 @@ namespace Freelancing.Data
         
         // Smart Hiring entities
         public DbSet<HiringOutcome> HiringOutcomes { get; set; }
+        
+        // Identity Verification entities
+        public DbSet<IdentityVerification> IdentityVerifications { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<Project>()
