@@ -1,8 +1,43 @@
-@model Freelancing.Models.FaceVerificationViewModel
+﻿@model Freelancing.Models.FaceVerificationViewModel
 @{
     ViewData["Title"] = "Face Verification";
     Layout = User.IsInRole("Client") ? "_LayoutClient" : "_LayoutFreelancer";
 }
+
+<style>
+    /* Ensure modal is properly responsive */
+    #cameraModal {
+        touch-action: manipulation;
+    }
+
+    /* Prevent body scroll when modal is open */
+    body.modal-open {
+        overflow: hidden;
+    }
+
+    /* Responsive camera container */
+    .camera-responsive {
+        width: 100%;
+        max-width: 480px;
+        aspect-ratio: 4/3;
+    }
+
+    /* Better button spacing on mobile */
+    @@media (max-width: 640px) {
+        .camera-responsive {
+            max-width: 100%;
+        }
+
+        #cameraModal .btn {
+            font-size: 0.875rem;
+            padding: 0.5rem 1rem;
+        }
+
+        #cameraModal .fas {
+            font-size: 1rem;
+        }
+    }
+</style>
 
 <div class="p-4 sm:ml-64">
     <div class="p-4 mt-20">
@@ -12,28 +47,60 @@
                     <div class="row">
                         <div class="col-12">
                             <div class="card">
-                                
+
                                 <!-- Progress Bar -->
                                 <div class="w-full max-w-md mx-auto mb-7">
                                     <div class="w-full bg-[#6ce5e8] rounded-full h-7">
                                         <div class="bg-[#41b8d5] h-7 rounded-full transition-all duration-500 ease-in-out" style="width: 100%"></div>
                                     </div>
-                                    <div class="text-center mt-2">
-                                        <span class="text-sm text-gray-600">Step 2 of 2: Face Verification & Document Processing</span>
-                                    </div>
                                 </div>
 
                                 <div class="card-body">
-                                    <form asp-action="Verify" method="post" enctype="multipart/form-data" id="verificationForm">
-                                        
-                                        <!-- Face Verification Section -->
-                                        <div class="mb-5">
-                                            <div class="section-header mb-4 text-center">
-                                                <h3 class="text-2xl font-bold text-gray-800 mb-2">
-                                                    <i class="fas fa-camera me-3 text-[#62cff4]"></i>
-                                                    Step 2: Live Face Verification
-                                                </h3>
-                                                <p class="text-gray-600">Capture a live photo and complete document verification</p>
+                                    <div class="max-w-2xl mx-auto">
+                                        <form asp-action="Verify" method="post" enctype="multipart/form-data" id="verificationForm">
+
+                                            <!-- Face Verification Section -->
+                                            <div class="mb-5">
+                                                <div class="section-header mb-6 text-center">
+                                                    <h3 class="text-3xl font-bold text-gray-800 mb-1">
+                                                        Selfie Verification
+                                                    </h3>
+                                                </div>
+
+                                                <div class="card">
+                                                    <div class="card-body p-4">
+                                                        <div class="row">
+                                                            <div class="col-md-6">
+                                                                <div class="flex items-center justify-center mb-3">
+                                                                    <img class="w-60 h-60" src="https://ik.imagekit.io/6txj3mofs/faceveri.png" />
+                                                                </div>
+                                                                <div class="text-center mb-4">
+                                                                    <p class="italic font-light">Tap the 'Open Camera' button to start face verification.</p>
+                                                                </div>
+                                                                <div class="text-center mb-4">
+                                                                    <button type="button" id="openCameraModal" class="inline-flex items-center justify-center w-48 px-9 py-3 text-white bg-gradient-to-br from-[#62cff4] to-[#2c67f2] hover:bg-gradient-to-bl focus:ring-4 focus:outline-none focus:[#62cff4] font-medium rounded-lg text-sm transition-all duration-200 transform hover:scale-105 shadow-lg">
+                                                                        Open Camera
+                                                                    </button>
+                                                                </div>
+
+                                                                <div id="capturedImageContainer" class="text-center" style="display: none;">
+                                                                    <div class="mb-3">
+                                                                        <img id="capturedImage" class="img-fluid border rounded shadow-sm" style="max-height: 250px;" />
+                                                                    </div>
+                                                                    <div class="alert alert-success p-3">
+                                                                        <i class="fas fa-check-circle me-2"></i> Photo captured successfully!
+                                                                    </div>
+                                                                    <button type="button" id="retakePhotoBtn" class="btn btn-outline-primary">
+                                                                        <i class="fas fa-redo me-2"></i>Retake Photo
+                                                                    </button>
+                                                                </div>
+
+                                                                <input asp-for="LiveFaceImageData" type="hidden" id="liveFaceImageData" />
+                                                                <span asp-validation-for="LiveFaceImageData" class="text-danger"></span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
                                             </div>
 
                                             <!-- Document Data Display (for debugging) -->
@@ -47,95 +114,139 @@
                                                     <p class="mb-0"><strong>No Expiration:</strong> @(Model.IdDocumentHasNoExpiration ? "Yes" : "No")</p>
                                                 </div>
                                             }
-                                            
-                                            <div class="card border-2 border-[#62cff4]/20 bg-gradient-to-br from-white to-[#62cff4]/5">
-                                                <div class="card-body p-4">
-                                                    <div class="row">
-                                                        <div class="col-md-6">
-                                                            <div class="text-center mb-3">
-                                                                <div id="cameraContainer" class="border rounded p-3">
-                                                                    <video id="video" width="100%" height="300" autoplay muted></video>
-                                                                    <canvas id="canvas" style="display: none;"></canvas>
-                                                                </div>
-                                                            </div>
 
-                                                            <div class="text-center mb-3">
-                                                                <button type="button" id="startCamera" class="btn btn-primary me-2">
-                                                                    <i class="fas fa-camera"></i> Start Camera
-                                                                </button>
-                                                                <button type="button" id="capturePhoto" class="btn btn-success me-2" style="display: none;">
-                                                                    <i class="fas fa-camera"></i> Capture Photo
-                                                                </button>
-                                                                <button type="button" id="retakePhoto" class="btn btn-warning" style="display: none;">
-                                                                    <i class="fas fa-redo"></i> Retake
-                                                                </button>
-                                                            </div>
+                                            <!-- Terms and Submit -->
+                                            <div class="mb-5">
+                                                <div class="section-header mb-4 text-center">
+                                                    <h3 class="text-2xl font-bold text-gray-800 mb-2">
+                                                        <i class="fas fa-check-circle me-3 text-[#62cff4]"></i>
+                                                        Final Step: Terms & Submission
+                                                    </h3>
+                                                    <p class="text-gray-600">Review terms and submit your verification</p>
+                                                </div>
 
-                                                            <div id="capturedImageContainer" class="text-center" style="display: none;">
-                                                                <img id="capturedImage" class="img-fluid border rounded" style="max-height: 200px;" />
-                                                                <p class="text-success mt-2"><i class="fas fa-check-circle"></i> Photo captured successfully!</p>
-                                                            </div>
-
-                                                            <input asp-for="LiveFaceImageData" type="hidden" id="liveFaceImageData" />
-                                                            <span asp-validation-for="LiveFaceImageData" class="text-danger"></span>
+                                                <div class="card border-2 border-[#62cff4]/20 bg-gradient-to-br from-white to-[#62cff4]/5">
+                                                    <div class="card-body p-4">
+                                                        <div class="form-check mb-3">
+                                                            <input asp-for="AgreeToTerms" class="form-check-input" type="checkbox" required />
+                                                            <label asp-for="AgreeToTerms" class="form-check-label">
+                                                                I agree to the <a href="#" target="_blank">Terms and Conditions</a> and consent to identity verification
+                                                            </label>
+                                                            <span asp-validation-for="AgreeToTerms" class="text-danger"></span>
                                                         </div>
-                                                        
-                                                        <div class="col-md-6">
-                                                            <div class="alert alert-info">
-                                                                <i class="fas fa-info-circle me-2"></i>
-                                                                <strong>Tips for better face verification:</strong>
-                                                                <ul class="mb-0 mt-2">
-                                                                    <li>Ensure good lighting</li>
-                                                                    <li>Look directly at the camera</li>
-                                                                    <li>Keep your eyes open and mouth closed</li>
-                                                                    <li>Remove glasses or hats if possible</li>
-                                                                </ul>
-                                                            </div>
+
+                                                        <div class="text-center">
+                                                            <button type="submit" class="btn btn-primary btn-lg" id="submitBtn">
+                                                                <i class="fas fa-paper-plane me-2"></i>
+                                                                Submit Verification
+                                                            </button>
                                                         </div>
                                                     </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                        
-                                        <!-- Terms and Submit -->
-                                        <div class="mb-5">
-                                            <div class="section-header mb-4 text-center">
-                                                <h3 class="text-2xl font-bold text-gray-800 mb-2">
-                                                    <i class="fas fa-check-circle me-3 text-[#62cff4]"></i>
-                                                    Final Step: Terms & Submission
-                                                </h3>
-                                                <p class="text-gray-600">Review terms and submit your verification</p>
-                                            </div>
-                                            
-                                            <div class="card border-2 border-[#62cff4]/20 bg-gradient-to-br from-white to-[#62cff4]/5">
-                                                <div class="card-body p-4">
-                                                    <div class="form-check mb-3">
-                                                        <input asp-for="AgreeToTerms" class="form-check-input" type="checkbox" required />
-                                                        <label asp-for="AgreeToTerms" class="form-check-label">
-                                                            I agree to the <a href="#" target="_blank">Terms and Conditions</a> and consent to identity verification
-                                                        </label>
-                                                        <span asp-validation-for="AgreeToTerms" class="text-danger"></span>
-                                                    </div>
 
-                                                    <div class="text-center">
-                                                        <button type="submit" class="btn btn-primary btn-lg" id="submitBtn">
-                                                            <i class="fas fa-paper-plane me-2"></i>
-                                                            Submit Verification
-                                                        </button>
-                                                    </div>
-                                                </div>
+                                            <!-- Navigation Buttons -->
+                                            <div class="text-center">
+                                                <a href="@Url.Action("Document", "IdentityVerification")" class="btn btn-secondary btn-lg me-3">
+                                                    <i class="fas fa-arrow-left me-2"></i>Back to Document
+                                                </a>
                                             </div>
-                                        </div>
-                                        
-                                        <!-- Navigation Buttons -->
-                                        <div class="text-center">
-                                            <a href="@Url.Action("Document", "IdentityVerification")" class="btn btn-secondary btn-lg me-3">
-                                                <i class="fas fa-arrow-left me-2"></i>Back to Document
-                                            </a>
-                                        </div>
-                                    </form>
+                                        </form>
+                                    </div>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Fixed Responsive Camera Modal -->
+<div id="cameraModal" data-modal-backdrop="static" class="fixed inset-0 backdrop-blur-sm bg-black/50 z-50 hidden">
+    <!-- Added flex container with proper padding and scrolling -->
+    <div class="flex items-center justify-center min-h-full p-4 overflow-y-auto">
+        <div class="bg-white rounded-lg shadow-2xl w-full max-w-2xl my-4 max-h-[calc(100vh-2rem)] overflow-hidden flex flex-col">
+            <!-- Modal Header -->
+            <div class="bg-gradient-to-r from-[#62cff4] to-[#2c67f2] px-6 py-4 text-white flex-shrink-0">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-xl font-bold">
+                        <i class="fas fa-camera me-2"></i>Take Your Selfie
+                    </h3>
+                    <button onclick="closeCameraModal()" class="text-white hover:text-gray-200 text-2xl font-bold transition-colors">
+                        &times;
+                    </button>
+                </div>
+            </div>
+
+            <!-- Modal Body - Scrollable -->
+            <div class="p-4 sm:p-6 flex-1 overflow-y-auto">
+                <!-- Camera Instructions -->
+                <div class="mb-4 p-4 bg-orange-50 border-l-4 border-orange-400 rounded-r-lg">
+                    <div class="flex items-start">
+                        <i class="fas fa-info-circle text-orange-600 me-3 mt-0.5"></i>
+                        <div class="text-sm text-orange-700">
+                            <strong>Tips for a good selfie:</strong> Ensure good lighting, remove accessories, look directly at the camera, and keep your face centered.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Camera Container - Made Responsive -->
+                <div class="flex justify-center items-center mb-6">
+                    <div id="cameraContainer" class="relative border-2 border-gray-300 rounded-lg overflow-hidden bg-gray-100 w-full max-w-[480px] aspect-[4/3]" style="display: none;">
+                        <video id="video" autoplay muted class="absolute inset-0 w-full h-full object-cover" style="z-index: 1;"></video>
+                        <canvas id="canvas" style="display: none;"></canvas>
+
+                        <!-- Captured image that will replace video -->
+                        <img id="modalCapturedImage" class="absolute inset-0 w-full h-full object-cover" style="display: none; z-index: 10;" />
+
+                        <!-- Camera overlay for better UX (only shown when video is active) -->
+                        <div id="cameraOverlay" class="absolute inset-0 pointer-events-none" style="z-index: 5;">
+                            <!-- Face outline guide -->
+                            <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-48 h-64 border-2 border-white rounded-full opacity-30"></div>
+                        </div>
+                    </div>
+
+                    <!-- Camera placeholder when not active -->
+                    <div id="cameraPlaceholder" class="w-full max-w-[480px] aspect-[4/3] bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center text-center text-gray-500">
+                        <div class="flex flex-col items-center mt-20">
+                            <i class="fas fa-camera text-4xl sm:text-6xl mb-4 mt-8"></i>
+                            <p class="text-sm sm:text-lg">Click "Start Camera" to begin</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Camera Controls -->
+                <div class="text-center space-y-3">
+                    <div class="flex flex-wrap justify-center gap-2">
+                        <button type="button" id="startCamera" class="inline-flex items-center justify-center w-48 px-9 py-3 text-white bg-gradient-to-br from-[#62cff4] to-[#2c67f2] hover:bg-gradient-to-bl focus:ring-4 focus:outline-none focus:[#62cff4] font-medium rounded-lg text-sm transition-all duration-200 transform hover:scale-105 shadow-lg">
+                            Start Camera
+                        </button>
+                        <button type="button" id="capturePhoto" class="btn btn-success btn-lg" style="display: none;">
+                            <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" stroke-width="3" stroke="#000000" fill="none" class="w-20 h-20">
+                                <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
+                                <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
+                                <g id="SVGRepo_iconCarrier"><circle cx="32" cy="32" r="25"></circle><line x1="38.33" y1="21.87" x2="52.52" y2="46.27"></line><line x1="12.09" y1="16.88" x2="26.89" y2="42.33"></line><line x1="44.32" y1="32.16" x2="29.72" y2="56.9"></line><line x1="35.43" y1="7.23" x2="20.91" y2="32.05"></line><line x1="38.22" y1="42.5" x2="9.23" y2="42.33"></line><line x1="54.9" y1="21.95" x2="26.92" y2="21.78"></line></g>
+                            </svg>
+                        </button>
+                        <button type="button" id="retakePhoto" class="btn btn-warning btn-lg" style="display: none;" hidden>
+                            <i class="fas fa-redo me-2"></i>Retake
+                        </button>
+                    </div>
+
+                    <!-- Success message and controls for captured photo -->
+                    <div id="captureSuccessControls" style="display: none;">
+                        <div class="alert alert-success p-3 mb-3">
+                            <i class="fas fa-check-circle me-2"></i> Photo captured successfully!
+                        </div>
+                        <div class="flex flex-wrap justify-center gap-2">
+                            <button type="button" id="usePhoto" class="btn btn-primary btn-lg">
+                                <i class="fas fa-check me-2"></i>Use This Photo
+                            </button>
+                            <button type="button" id="retakeInModal" class="btn btn-outline-secondary btn-lg">
+                                <i class="fas fa-redo me-2"></i>Retake
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -153,30 +264,177 @@
             identityVerification.initializeElements();
             identityVerification.bindEvents();
 
+            // Modal functionality
+            $('#openCameraModal').on('click', function() {
+                openCameraModal();
+            });
+
+            $('#retakePhotoBtn').on('click', function() {
+                openCameraModal();
+            });
+
+            $('#usePhoto').on('click', function() {
+                useModalPhoto();
+            });
+
+            $('#retakeInModal').on('click', function() {
+                retakeModalPhoto();
+            });
+
             // Form submission handling
             $('#verificationForm').on('submit', function(e) {
                 e.preventDefault();
 
-
-
-                // Validate that we have face image
                 if (!$('#liveFaceImageData').val()) {
                     alert('Please capture a live photo before submitting.');
                     return false;
                 }
 
-                // Validate terms agreement
                 if (!$('#AgreeToTerms').is(':checked')) {
                     alert('Please agree to the terms and conditions before submitting.');
                     return false;
                 }
 
-                // Show loading state
                 $('#submitBtn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-2"></i>Processing...');
-
-                // Submit the form
                 this.submit();
             });
+        });
+
+        // Updated Modal Functions with body scroll prevention
+        function openCameraModal() {
+            document.body.classList.add('modal-open');
+            document.getElementById('cameraModal').classList.remove('hidden');
+            resetModalToInitialState();
+        }
+
+        function closeCameraModal() {
+            // Remove body scroll lock
+            document.body.classList.remove('modal-open');
+
+            // Stop all cameras
+            if (typeof window.stopAllCameras === 'function') {
+                window.stopAllCameras();
+            }
+
+            if (window.identityVerification && typeof window.identityVerification.forceStopCamera === 'function') {
+                window.identityVerification.forceStopCamera();
+            }
+
+            // Direct cleanup
+            const modalVideos = document.querySelectorAll('#cameraModal video');
+            modalVideos.forEach(video => {
+                if (video.srcObject) {
+                    const stream = video.srcObject;
+                    if (stream && stream.getTracks) {
+                        stream.getTracks().forEach(track => {
+                            if (track.readyState === 'live') {
+                                track.stop();
+                            }
+                        });
+                    }
+                    video.srcObject = null;
+                }
+
+                video.pause();
+                video.src = '';
+                video.removeAttribute('src');
+                video.load();
+            });
+
+            // Hide modal
+            document.getElementById('cameraModal').classList.add('hidden');
+        }
+
+        function useModalPhoto() {
+            const modalImage = document.getElementById('modalCapturedImage');
+            const mainImage = document.getElementById('capturedImage');
+            const mainContainer = document.getElementById('capturedImageContainer');
+
+            if (modalImage && mainImage && mainContainer && modalImage.src) {
+                mainImage.src = modalImage.src;
+                mainContainer.style.display = 'block';
+                closeCameraModal();
+            } else {
+                alert('Error: Could not use the captured photo. Please try again.');
+            }
+        }
+
+        function retakeModalPhoto() {
+            window.stopAllCameras();
+
+            const liveFaceImageData = document.getElementById('liveFaceImageData');
+            if (liveFaceImageData) {
+                liveFaceImageData.value = '';
+            }
+
+            if (window.identityVerification) {
+                window.identityVerification.forceStopCamera();
+            }
+
+            resetModalToInitialState();
+        }
+
+        function resetModalToInitialState() {
+            const uiElements = [
+                { id: 'cameraPlaceholder', show: true },
+                { id: 'cameraContainer', show: false },
+                { id: 'startCamera', show: true },
+                { id: 'capturePhoto', show: false },
+                { id: 'retakePhoto', show: false },
+                { id: 'modalCapturedImage', show: false },
+                { id: 'captureSuccessControls', show: false },
+                { id: 'video', show: true },
+                { id: 'cameraOverlay', show: true }
+            ];
+
+            uiElements.forEach(({ id, show }) => {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.style.display = show ? 'block' : 'none';
+                    if (id === 'startCamera' && show) {
+                        element.style.display = 'inline-block';
+                    }
+                }
+            });
+
+            const modalImage = document.getElementById('modalCapturedImage');
+            if (modalImage) {
+                modalImage.src = '';
+            }
+
+                         const captureBtn = document.getElementById('capturePhoto');
+             if (captureBtn) {
+                 captureBtn.disabled = false;
+                 captureBtn.innerHTML = '<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" stroke-width="3" stroke="#000000" fill="none" class="w-20 h-20"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"><circle cx="32" cy="32" r="25"></circle><line x1="38.33" y1="21.87" x2="52.52" y2="46.27"></line><line x1="12.09" y1="16.88" x2="26.89" y2="42.33"></line><line x1="44.32" y1="32.16" x2="29.72" y2="56.9"></line><line x1="35.43" y1="7.23" x2="20.91" y2="32.05"></line><line x1="38.22" y1="42.5" x2="9.23" y2="42.33"></line><line x1="54.9" y1="21.95" x2="26.92" y2="21.78"></line></g></svg>';
+             }
+        }
+
+        // Event handlers
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                const modal = document.getElementById('cameraModal');
+                if (modal && !modal.classList.contains('hidden')) {
+                    closeCameraModal();
+                }
+            }
+        });
+
+        window.addEventListener('blur', function() {
+            if (typeof window.stopAllCameras === 'function') {
+                window.stopAllCameras();
+            }
+        });
+
+        document.addEventListener('visibilitychange', function() {
+            if (document.hidden && typeof window.stopAllCameras === 'function') {
+                window.stopAllCameras();
+            }
+        });
+
+        document.getElementById('cameraModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeCameraModal();
+            }
         });
     </script>
 }

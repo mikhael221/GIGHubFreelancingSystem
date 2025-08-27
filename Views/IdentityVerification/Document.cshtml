@@ -97,7 +97,8 @@
                                                                                 @if (ViewBag.StoredImageData != null)
                                                                                 {
                                                                                     <!-- Show actual uploaded image -->
-                                                                                    <div id="existingImagePreview" class="w-40 h-24 rounded-lg border-2 border-gray-300 transition-colors shadow-sm overflow-hidden">
+                                                                                    <div id="existingImagePreview" class="w-40 h-24 rounded-lg border-2 border-gray-300 cursor-pointer hover:border-blue-400 transition-colors shadow-sm overflow-hidden"
+                                                                                         onclick="showDocumentPreview()">
                                                                                         <img src="data:@ViewBag.StoredImageContentType;base64,@ViewBag.StoredImageData"
                                                                                              alt="Uploaded Document"
                                                                                              class="w-full h-full object-cover">
@@ -150,7 +151,7 @@
                                                                                         </div>
                                                                                     </div>
                                                                                 }
-                                                                                <p class="text-xs text-gray-600 mt-1">Uploaded ID</p>
+                                                                                <p class="text-xs text-gray-600 mt-1">Click to enlarge</p>
                                                                             </div>
                                                                         </div>
   
@@ -384,15 +385,59 @@
 
         // Function to show document preview modal
         function showDocumentPreview() {
-            @if (ViewBag.StoredImageData != null)
-            {
-                <text>
-                // Show actual uploaded image in modal
-                document.getElementById('modalImage').style.display = 'block';
-                document.getElementById('modalTitle').textContent = 'Previously Uploaded Document';
-                document.getElementById('modalImage').src = 'data:@ViewBag.StoredImageContentType;base64,@ViewBag.StoredImageData';
-                document.getElementById('imageModal').classList.remove('hidden');
-                </text>
+            // Check if stored image data is available from ViewBag
+            var storedImageData = '@Html.Raw(ViewBag.StoredImageData)';
+            var storedImageContentType = '@Html.Raw(ViewBag.StoredImageContentType)';
+            
+            // Debug logging
+            console.log('Attempting to show document preview');
+            console.log('StoredImageData length:', storedImageData ? storedImageData.length : 'null');
+            console.log('StoredImageContentType:', storedImageContentType);
+            
+            // Try ViewBag data first
+            if (storedImageData && storedImageData !== '' && storedImageContentType && storedImageContentType !== '') {
+                try {
+                    showModalWithImageData('data:' + storedImageContentType + ';base64,' + storedImageData, 'Previously Uploaded Document');
+                    return;
+                } catch (error) {
+                    console.error('Error using ViewBag data:', error);
+                }
+            }
+            
+            // Fallback: Try to get image data from existing img element on the page
+            var existingImg = document.querySelector('#existingImagePreview img');
+            if (existingImg && existingImg.src && existingImg.src.startsWith('data:')) {
+                try {
+                    showModalWithImageData(existingImg.src, 'Previously Uploaded Document');
+                    return;
+                } catch (error) {
+                    console.error('Error using existing img data:', error);
+                }
+            }
+            
+            // No image data available
+            console.log('No stored image data available from any source');
+            console.warn('No uploaded document image available to preview.');
+        }
+        
+        // Helper function to show modal with image data
+        function showModalWithImageData(imageSrc, title) {
+            var modalImage = document.getElementById('modalImage');
+            var modalTitle = document.getElementById('modalTitle');
+            var imageModal = document.getElementById('imageModal');
+            
+            if (modalImage && modalTitle && imageModal) {
+                modalImage.style.display = 'block';
+                modalTitle.textContent = title;
+                modalImage.src = imageSrc;
+                imageModal.classList.remove('hidden');
+                console.log('Modal opened successfully with image data');
+            } else {
+                console.error('Modal elements not found');
+                console.error('modalImage:', modalImage);
+                console.error('modalTitle:', modalTitle);
+                console.error('imageModal:', imageModal);
+                console.warn('Cannot show image preview: Modal elements not found');
             }
         }
 

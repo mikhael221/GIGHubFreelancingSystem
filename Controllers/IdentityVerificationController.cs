@@ -53,6 +53,12 @@ namespace Freelancing.Controllers
                     {
                         ViewBag.StoredImageData = documentData.IdDocumentImageData;
                         ViewBag.StoredImageContentType = documentData.IdDocumentImageContentType;
+                        _logger.LogInformation("ViewBag image data set for Document GET. Image data length: {Length}, Content type: {ContentType}", 
+                            documentData.IdDocumentImageData.Length, documentData.IdDocumentImageContentType);
+                    }
+                    else
+                    {
+                        _logger.LogInformation("No image data found in session for Document GET");
                     }
                     
                     return View(model);
@@ -60,7 +66,8 @@ namespace Freelancing.Controllers
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, "Error deserializing document data from session in Document GET");
-                    // If deserialization fails, return empty model
+                    // If deserialization fails, clear the corrupted session data and return empty model
+                    HttpContext.Session.Remove("DocumentData");
                     return View(new DocumentVerificationViewModel());
                 }
             }
@@ -96,15 +103,52 @@ namespace Freelancing.Controllers
                 
                 if (isReturningUser)
                 {
-                    // User is returning without uploading a new file, reuse existing verification
+                    // User is returning without uploading a new file
                     var existingSessionData = HttpContext.Session.GetString("DocumentData");
                     if (!string.IsNullOrEmpty(existingSessionData))
                     {
-                        // Store the existing data back to session to ensure it's available for face verification
-                        HttpContext.Session.SetString("DocumentData", existingSessionData);
-                        
-                        // Redirect directly to face verification since document is already verified
-                        return RedirectToAction("Verify");
+                        try
+                        {
+                            // Check if the form data has changed
+                            var existingData = System.Text.Json.JsonSerializer.Deserialize<DocumentVerificationData>(existingSessionData);
+                            
+                            bool hasChanges = existingData.IdDocumentType != model.IdDocumentType ||
+                                            existingData.IdDocumentNumber != model.IdDocumentNumber ||
+                                            existingData.IdDocumentExpiryDate != expiryDate ||
+                                            existingData.IdDocumentHasNoExpiration != model.IdDocumentHasNoExpiration;
+                            
+                            if (hasChanges)
+                            {
+                                // User made changes to form fields, update the session data while preserving image data
+                                existingData.IdDocumentType = model.IdDocumentType;
+                                existingData.IdDocumentNumber = model.IdDocumentNumber;
+                                existingData.IdDocumentExpiryDate = expiryDate;
+                                existingData.IdDocumentHasNoExpiration = model.IdDocumentHasNoExpiration;
+                                existingData.IdDocumentMessage = "Document data updated, pending verification";
+                                // Note: existingData.IdDocumentImageData and IdDocumentImageContentType are preserved from existing session
+                                
+                                // Save updated data back to session
+                                var updatedSerializedData = System.Text.Json.JsonSerializer.Serialize(existingData);
+                                HttpContext.Session.SetString("DocumentData", updatedSerializedData);
+                                
+                                // Log for debugging
+                                _logger.LogInformation("Updated document data for user {UserId}. Image data preserved: {HasImageData}", 
+                                    userId, !string.IsNullOrEmpty(existingData.IdDocumentImageData));
+                            }
+                            else
+                            {
+                                // No changes detected, reuse existing data
+                                HttpContext.Session.SetString("DocumentData", existingSessionData);
+                            }
+                            
+                            // Redirect to face verification
+                            return RedirectToAction("Verify");
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError(ex, "Error updating document data for returning user");
+                            // Fall through to create new document data if deserialization fails
+                        }
                     }
                 }
                 
